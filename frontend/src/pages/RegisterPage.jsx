@@ -1,11 +1,13 @@
 import { User, Calendar, Lock, Mail, Eye, EyeOff, Phone } from "lucide-react";
 import { useState, useCallback } from "react";
 import signUpValidation from "../utils/signUpValidation";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 
 function RegisterPage() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [invalid, setInvalid] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -13,7 +15,7 @@ function RegisterPage() {
     fName: "",
     lName: "",
     birthDate: "",
-    sex: "",
+    gender: "",
     email: "",
     mNumber: "",
     password: "",
@@ -37,7 +39,7 @@ function RegisterPage() {
     setInputs((prev) => ({ ...prev, [name]: value }));
 
     // Validate only after user stops typing (simple debounce)
-    if (name !== "sex") {
+    if (name !== "gender") {
       // Don't validate gender on every change
       const timer = setTimeout(() => validateField(name, value), 500);
       return () => clearTimeout(timer);
@@ -46,34 +48,37 @@ function RegisterPage() {
 
   // Handle gender selection
   const handleGenderSelect = async (gender) => {
-    const updatedInputs = { ...inputs, sex: gender };
+    const updatedInputs = { ...inputs, gender: gender };
     setInputs(updatedInputs);
 
     // Validate gender selection
     const { notValid } = await signUpValidation(updatedInputs);
-    setInvalid((prev) => ({ ...prev, sex: notValid.sex || "" }));
+    setInvalid((prev) => ({ ...prev, gender: notValid.gender || "" }));
   };
 
   // Handle form submission
   const onSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const ApiTest = true;
 
     try {
       const { notValid, isValid } = await signUpValidation(inputs);
-
+      const body = inputs;
       if (isValid || Object.keys(notValid).length === 0) {
-        console.log("READY TO SUBMIT 🚀", inputs);
+        const response = await axios.post(
+          "http://localhost:3000/register",
+          body,
+        );
 
-        if (ApiTest) {
-          // Set token logic here
-        }
-        toast(ApiTest ? "Checking Credentials." : "Email is already used.", {
+        toast(`User ${response.data.fName} Registered`, {
           toastId: "validation-errors",
-          type: ApiTest ? "success" : "error",
-          autoClose: ApiTest ? 3000 : 5000,
+          type: response ? "success" : "error",
+          autoClose: response ? 3000 : 5000,
         });
+
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
       } else {
         setInvalid(notValid);
         const errorMessages = Object.values(notValid).join(", ");
@@ -188,7 +193,7 @@ function RegisterPage() {
                     type="button"
                     onClick={() => handleGenderSelect(option)}
                     className={`py-3 text-sm font-medium rounded-lg border transition-all ${
-                      inputs.sex === option
+                      inputs.gender === option
                         ? "border-green-500 bg-green-50 text-green-700"
                         : "border-gray-300 text-gray-700 hover:bg-gray-50"
                     }`}
@@ -197,10 +202,8 @@ function RegisterPage() {
                   </button>
                 ))}
               </div>
-              {invalid.sex && (
-                <p className="text-sm text-red-500 text-center">
-                  {invalid.sex}
-                </p>
+              {invalid.gender && (
+                <p className="text-sm text-red-500">{invalid.gender}</p>
               )}
             </div>
 

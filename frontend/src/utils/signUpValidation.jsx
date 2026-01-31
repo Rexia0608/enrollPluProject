@@ -25,12 +25,25 @@ const schema = Joi.object({
         "Last name must not contain numbers or special characters",
     }),
 
-  birthDate: Joi.date().iso().required().messages({
-    "date.base": "Birth date is required",
-    "date.format": "Birth date must be a valid date",
-  }),
+  birthDate: Joi.date()
+    .iso()
+    .required()
+    .custom((value, helpers) => {
+      const currentYear = new Date().getFullYear();
+      const birthYear = new Date(value).getFullYear();
 
-  sex: Joi.string().valid("Male", "Female").required().messages({
+      if (birthYear === currentYear) {
+        return helpers.error("date.thisYear");
+      }
+
+      return value;
+    })
+    .messages({
+      "date.base": "Birth date is required",
+      "date.thisYear": "Birth date must not be in the current year",
+    }),
+
+  gender: Joi.string().valid("Male", "Female").required().messages({
     "any.only": "Please select a gender",
   }),
 
