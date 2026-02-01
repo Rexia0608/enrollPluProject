@@ -6,7 +6,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
-function RegisterPage() {
+function RegisterPage({ setAuth }) {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [invalid, setInvalid] = useState({});
@@ -70,22 +70,34 @@ function RegisterPage() {
           body,
         );
 
-        toast(`User ${response.data.fName} Registered`, {
-          toastId: "validation-errors",
-          type: response ? "success" : "error",
-          autoClose: response ? 3000 : 5000,
-        });
+        if (response.data.result == "Email is already in used.") {
+          toast(`User ${inputs.email} already used. Pleae try to sign in`, {
+            toastId: "validation-errors",
+            type: "warning",
+            autoClose: 4000,
+          });
 
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+          setTimeout(() => {
+            navigate("/login");
+          }, 5000);
+        } else {
+          toast(`User ${inputs.fName} Registered`, {
+            toastId: "validation-errors",
+            type: "success",
+            autoClose: 3000,
+          });
+          localStorage.setItem("token", response.data.result);
+          setTimeout(async () => {
+            setAuth(true);
+          }, 1000);
+        }
       } else {
         setInvalid(notValid);
         const errorMessages = Object.values(notValid).join(", ");
         toast(`${errorMessages}`, {
           toastId: "validation-errors",
           type: "error",
-          autoClose: 5000, // Added for consistency
+          autoClose: 5000,
         });
       }
     } catch (error) {

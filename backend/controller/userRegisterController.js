@@ -1,19 +1,16 @@
-import globalHandler from "../utils/GlobalErrorHandler.js";
 import { registerUserModel } from "../models/usersModel.js";
 
 const UserRegisterController = async (req, res) => {
   try {
-    const { fName, lName, birthDate, gender, email, mNumber, password } =
-      req.body;
-    const data = { fName, lName, birthDate, gender, email, mNumber, password };
-    const test = await registerUserModel(data);
-    if (test) {
-      return res.status(200).json(test);
-    } else {
-      return res.status(400).json(test);
+    const result = await registerUserModel(req.body);
+
+    if (result === "Email is already in used.") {
+      console.log(result);
+      return res.status(200).json({ result });
     }
+    return res.status(200).json({ result });
   } catch (error) {
-    globalHandler(error);
+    console.log(error);
   }
 };
 
