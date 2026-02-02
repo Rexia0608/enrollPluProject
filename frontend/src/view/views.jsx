@@ -13,6 +13,7 @@ import RegisterPage from "../pages/RegisterPage";
 import NotFound from "../pages/NotFound";
 import MaintenancePage from "../pages/MaintenancePage";
 import UnauthorizedPage from "../pages/UnauthorizedPage";
+import EmailValidationPage from "../pages/EmailValidationPage";
 
 import ProtectedRoute from "../routes/ProtectedRotues";
 
@@ -25,6 +26,7 @@ const Views = () => {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
+        <Route path="/email-validation" element={<EmailValidationPage />} />
 
         {/* ================= ADMIN ================= */}
         <Route

@@ -1,12 +1,12 @@
 import { User, Calendar, Lock, Mail, Eye, EyeOff, Phone } from "lucide-react";
 import { useState, useCallback } from "react";
 import signUpValidation from "../utils/signUpValidation";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, redirect, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
-function RegisterPage({ setAuth }) {
+function RegisterPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [invalid, setInvalid] = useState({});
@@ -86,10 +86,11 @@ function RegisterPage({ setAuth }) {
             type: "success",
             autoClose: 3000,
           });
-          localStorage.setItem("token", response.data.result);
-          setTimeout(async () => {
-            setAuth(true);
-          }, 1000);
+          navigate("/email-validation", {
+            state: {
+              currentEmail: inputs.email,
+            },
+          });
         }
       } else {
         setInvalid(notValid);
