@@ -2,15 +2,19 @@ import { registerUserModel } from "../models/usersModel.js";
 
 const UserRegisterController = async (req, res) => {
   try {
-    const result = await registerUserModel(req.body);
+    const response = await registerUserModel(req.body);
 
-    if (result === "Email is already in used.") {
-      console.log(result);
-      return res.status(200).json({ result });
+    if (response.error) {
+      console.log(response.error);
+      return res.status(400).json({ error: response.error });
     }
-    return res.status(200).json({ result });
+
+    // Success
+    console.log(response.message);
+    return res.status(200).json(response);
   } catch (error) {
-    console.log(error);
+    console.error("Controller error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
