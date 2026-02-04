@@ -70,28 +70,18 @@ function RegisterPage() {
           body,
         );
 
-        if (response.data.result == "Email is already in used.") {
-          toast(`User ${inputs.email} already used. Pleae try to sign in`, {
-            toastId: "validation-errors",
-            type: "warning",
-            autoClose: 4000,
-          });
-
-          setTimeout(() => {
-            navigate("/login");
-          }, 5000);
-        } else {
-          toast(`User ${inputs.fName} Registered`, {
-            toastId: "validation-errors",
-            type: "success",
-            autoClose: 3000,
-          });
+        toast(`User ${response.data.email} Registered`, {
+          toastId: "validation-errors",
+          type: "success",
+          autoClose: 2000,
+        });
+        setTimeout(() => {
           navigate("/email-validation", {
             state: {
               currentEmail: inputs.email,
             },
           });
-        }
+        }, 1500);
       } else {
         setInvalid(notValid);
         const errorMessages = Object.values(notValid).join(", ");
@@ -102,7 +92,16 @@ function RegisterPage() {
         });
       }
     } catch (error) {
-      console.error("Validation error:", error);
+      if (error.response.data.error) {
+        toast(error.response.data.error, {
+          toastId: "validation-errors",
+          type: "warning",
+          autoClose: 4000,
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 3000);
+      }
     } finally {
       setIsSubmitting(false);
     }

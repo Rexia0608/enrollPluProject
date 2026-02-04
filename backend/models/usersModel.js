@@ -40,9 +40,12 @@ const registerUserModel = async (data) => {
     ]);
 
     // 4️⃣ Send OTP
-    await sendOTPEmail(data.email, otp);
+    await sendOTPEmail("sending_OTP", data.email, otp);
 
-    return { message: "OTP sent successfully", email: data.email };
+    return {
+      message: `OTP sent successfully to ${data.email}`,
+      email: data.email,
+    };
   } catch (error) {
     console.error("Register error:", error);
     throw error;
