@@ -9,7 +9,7 @@ const registerUserModel = async (data) => {
 
     // 1️⃣ Check if email exists
     const isAlreadyRegistered = await checkIfTheUserExist(data.email);
-    if (isAlreadyRegistered) {
+    if (isAlreadyRegistered.length > 0) {
       return { error: "Email is already in use." };
     }
 
@@ -53,9 +53,9 @@ const registerUserModel = async (data) => {
 };
 
 const checkIfTheUserExist = async (email) => {
-  const query = `SELECT 1 FROM credentials WHERE email = $1`;
+  const query = `SELECT user_id, email, login_attempts, last_login, email_otp, otp_expires_at, is_verified FROM credentials WHERE email = $1`;
   const result = await db.query(query, [email]);
-  return result.rows.length > 0;
+  return result.rows;
 };
 
 export { registerUserModel, checkIfTheUserExist };

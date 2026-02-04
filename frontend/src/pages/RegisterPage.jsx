@@ -66,7 +66,7 @@ function RegisterPage() {
       const body = inputs;
       if (isValid || Object.keys(notValid).length === 0) {
         const response = await axios.post(
-          "http://localhost:3000/register",
+          "http://localhost:3000/enrollplus/register",
           body,
         );
 

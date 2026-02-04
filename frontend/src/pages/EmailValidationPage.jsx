@@ -77,10 +77,13 @@ function EmailValidationPage() {
     }
 
     try {
-      const response = await axios.post("/api/auth/verify-otp", {
-        email: currentEmail,
-        otp: code,
-      });
+      const response = await axios.post(
+        "http://localhost:3000/auth/verify-otp",
+        {
+          email: currentEmail,
+          otp: code,
+        },
+      );
 
       toast(response.data.message, { type: "success" });
 
