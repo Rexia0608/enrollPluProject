@@ -56,7 +56,7 @@ const resendOtp = async ({ email }) => {
 
     const user = users[0];
     const { otp, otpExpires } = await authCodeGenerator();
-    console.log(user);
+
     if (user.is_verified) {
       return { error: "Email already verified" };
     }
