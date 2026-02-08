@@ -110,23 +110,15 @@ WHERE credentials.email = $1;`;
   return result.rows;
 };
 
-const firstUserAdminSetRole = async (data) => {
+const firstUserAdminSetRole = async (userId) => {
   try {
-    const checkCount = await db.query(
-      `SELECT COUNT(*) AS total_users FROM users;`,
-    );
-    console.log(checkCount.rowCount);
-    if (checkCount.rowCount == 1) {
-      await db.query(`UPDATE users SET role = $1 WHERE id = $2`, [
-        "admin",
-        data,
-      ]);
-    } else {
-      await db.query(`UPDATE users SET role = $1 WHERE id = $2`, [
-        "student",
-        data,
-      ]);
-    }
+    const result = await db.query(`SELECT COUNT(*) AS total_users FROM users;`);
+
+    const totalUsers = parseInt(result.rows[0].total_users, 10);
+
+    const role = totalUsers === 1 ? "admin" : "student";
+
+    await db.query(`UPDATE users SET role = $1 WHERE id = $2`, [role, userId]);
   } catch (error) {
     console.error("Register error:", error);
     throw error;
