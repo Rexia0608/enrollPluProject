@@ -6,7 +6,8 @@ import { NavLink } from "react-router-dom";
 import { button } from "framer-motion/client";
 
 function AppHeader({ title, role, onMenuClick }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
   const isStaff = ["admin", "faculty"].includes(user.role);
 
   const getRoleColor = () => {
@@ -20,6 +21,11 @@ function AppHeader({ title, role, onMenuClick }) {
       default:
         return "bg-gray-600";
     }
+  };
+
+  const handleLogout = () => {
+    logout(); // clears context + localStorage
+    navigate("/login"); // redirect
   };
 
   return (
@@ -67,6 +73,15 @@ function AppHeader({ title, role, onMenuClick }) {
               )}
             </div>
           </div>
+
+          <button
+            onClick={handleLogout}
+            className={`hidden md:flex items-center space-x-2 py-1 px-2 bg-red-400 rounded-lg hover:bg-gray-300 cursor-pointer`}
+          >
+            <div className="block text-center text-gray-50">
+              <h3 className="text-sm font-light">Logout</h3>
+            </div>
+          </button>
         </div>
       </div>
     </header>
