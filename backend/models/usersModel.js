@@ -28,7 +28,7 @@ const registerUserModel = async (data) => {
     const hashPassword = await bcrypt.hash(data.password, 10);
     const credQuery = `
       INSERT INTO credentials (
-        user_id, email, password, email_otp, otp_expires_at, is_verified
+        user_id, email, password, email_otp, otp_expire_at, is_verified
       )
       VALUES ($1, $2, $3, $4, $5, false)
     `;
@@ -101,7 +101,7 @@ const checkIfTheUserExist = async (email) => {
     credentials.login_attempts,
     credentials.last_login,
     credentials.email_otp,
-    credentials.otp_expires_at,
+    credentials.otp_expire_at,
     credentials.is_verified
 FROM credentials
 INNER JOIN users ON credentials.user_id = users.id

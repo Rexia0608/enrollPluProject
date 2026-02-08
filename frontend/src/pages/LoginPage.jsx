@@ -64,12 +64,21 @@ const LoginPage = () => {
       else if (user.role === "faculty") navigate("/faculty/dashboard");
       else navigate("/student/dashboard");
     } catch (err) {
+      if (err.response?.data?.message) {
+        setTimeout(() => {
+          navigate("/email-validation", {
+            state: {
+              currentEmail: inputs.email,
+            },
+          });
+        }, 1500);
+      }
       toast(
         err.response?.data?.message ||
           "Login failed. Please check your credentials.",
         { type: "error" },
       );
-      console.log(err);
+      console.log(err.response?.data?.message);
     }
   };
 

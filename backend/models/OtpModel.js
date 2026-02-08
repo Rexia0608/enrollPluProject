@@ -62,7 +62,7 @@ const resendOtp = async ({ email }) => {
     }
 
     await db.query(
-      `UPDATE credentials SET email_otp = $1, otp_expires_at = $2  WHERE email = $3`,
+      `UPDATE credentials SET email_otp = $1, otp_expire_at = $2  WHERE email = $3`,
       [otp, otpExpires, email],
     );
 

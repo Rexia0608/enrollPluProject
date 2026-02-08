@@ -7,7 +7,7 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import NotFound from "../pages/NotFound";
 import MaintenancePage from "../pages/MaintenancePage";
-import UnauthorizedPage from "../pages/UnauthorizedPage";
+import UnauthorizedPage from "../pages/UnAuthorizedPage";
 import EmailValidationPage from "../pages/EmailValidationPage";
 
 import ProtectedRoute from "../routes/ProtectedRotues";

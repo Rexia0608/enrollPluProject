@@ -1,10 +1,11 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import LoadingPage from "../pages/LoadingPage";
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
   const [delayDone, setDelayDone] = useState(false);
 
   useEffect(() => {
@@ -12,22 +13,27 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Still checking auth OR delay not finished
   if (loading || !delayDone) {
     return <LoadingPage />;
   }
 
-  // Not logged in
+  // 🔴 Not logged in → login (replace history)
   if (!user || !user.token) {
     return <Navigate to="/login" replace />;
   }
 
-  // Role-based guard (only if roles provided)
+  // 🔴 Logged in but unauthorized → stay here (replace history)
   if (
     allowedRoles.length > 0 &&
     (!user.role || !allowedRoles.includes(user.role))
   ) {
-    return <Navigate to="/unauthorized" replace />;
+    return (
+      <Navigate
+        to="/unauthorized"
+        replace
+        state={{ from: location.pathname }}
+      />
+    );
   }
 
   return <Outlet />;
