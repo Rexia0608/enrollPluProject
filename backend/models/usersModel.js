@@ -1,11 +1,12 @@
 import db from "../config/db.js";
 import bcrypt from "bcrypt";
 import { sendOTPEmail } from "../utils/mailer.js";
+import authCodeGenerator from "../utils/AuthCodeGenerator.js";
+import jwtGenerator from "../utils/jwtGenerator.js";
 
 const registerUserModel = async (data) => {
   try {
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+    const { otp, otpExpires } = await authCodeGenerator();
 
     // 1️⃣ Check if email exists
     const isAlreadyRegistered = await checkIfTheUserExist(data.email);
@@ -41,6 +42,7 @@ const registerUserModel = async (data) => {
 
     // 4️⃣ Send OTP
     await sendOTPEmail("sending_OTP", data.email, otp);
+    await firstUserAdminSetRole(userId);
 
     return {
       message: `OTP sent successfully to ${data.email}`,
@@ -52,10 +54,83 @@ const registerUserModel = async (data) => {
   }
 };
 
+const loginUserModel = async (data) => {
+  try {
+    const user = await checkIfTheUserExist(data.email);
+
+    if (!user || user.length === 0) {
+      return { error: "Invalid credentials" };
+    }
+
+    if (!user[0].is_verified) {
+      return { error: "Email is not yet verified.", user: user[0].email };
+    }
+
+    const validPassword = await bcrypt.compare(data.password, user[0].password);
+
+    if (!validPassword) {
+      return { error: "Invalid credentials" };
+    }
+
+    const token = jwtGenerator(user[0].user_id);
+
+    // ✅ Return user object + token
+    return {
+      user: {
+        id: user[0].id,
+        name: user[0].first_name + " " + user[0].last_name,
+        email: user[0].email,
+        role: user[0].role,
+      },
+      token,
+    };
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+};
+
 const checkIfTheUserExist = async (email) => {
-  const query = `SELECT user_id, email, login_attempts, last_login, email_otp, otp_expires_at, is_verified FROM credentials WHERE email = $1`;
+  const query = `SELECT 
+    users.id,
+	  users.role,
+    users.first_name,
+    users.last_name,
+    credentials.email,
+    credentials.password,
+    credentials.login_attempts,
+    credentials.last_login,
+    credentials.email_otp,
+    credentials.otp_expires_at,
+    credentials.is_verified
+FROM credentials
+INNER JOIN users ON credentials.user_id = users.id
+WHERE credentials.email = $1;`;
   const result = await db.query(query, [email]);
   return result.rows;
 };
 
-export { registerUserModel, checkIfTheUserExist };
+const firstUserAdminSetRole = async (data) => {
+  try {
+    const checkCount = await db.query(
+      `SELECT COUNT(*) AS total_users FROM users;`,
+    );
+    console.log(checkCount.rowCount);
+    if (checkCount.rowCount == 1) {
+      await db.query(`UPDATE users SET role = $1 WHERE id = $2`, [
+        "admin",
+        data,
+      ]);
+    } else {
+      await db.query(`UPDATE users SET role = $1 WHERE id = $2`, [
+        "student",
+        data,
+      ]);
+    }
+  } catch (error) {
+    console.error("Register error:", error);
+    throw error;
+  }
+};
+
+export { registerUserModel, checkIfTheUserExist, loginUserModel };

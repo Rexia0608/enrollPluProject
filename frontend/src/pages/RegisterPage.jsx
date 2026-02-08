@@ -6,7 +6,10 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
-function RegisterPage() {
+// Constants
+const API_BASE_URL = "http://localhost:3000/enrollplus/register";
+
+const RegisterPage = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [invalid, setInvalid] = useState({});
@@ -65,10 +68,7 @@ function RegisterPage() {
       const { notValid, isValid } = await signUpValidation(inputs);
       const body = inputs;
       if (isValid || Object.keys(notValid).length === 0) {
-        const response = await axios.post(
-          "http://localhost:3000/enrollplus/register",
-          body,
-        );
+        const response = await axios.post(`${API_BASE_URL}`, body);
 
         toast(`User ${response.data.email} Registered`, {
           toastId: "validation-errors",
@@ -341,6 +341,6 @@ function RegisterPage() {
       </div>
     </div>
   );
-}
+};
 
 export default RegisterPage;

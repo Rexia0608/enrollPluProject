@@ -1,5 +1,7 @@
 import db from "../config/db.js";
+import authCodeGenerator from "../utils/AuthCodeGenerator.js";
 import { checkIfTheUserExist } from "./usersModel.js";
+import { sendOTPEmail } from "../utils/mailer.js";
 
 const verifyingOtpModel = async ({ email, otp }) => {
   try {
@@ -32,6 +34,8 @@ const verifyingOtpModel = async ({ email, otp }) => {
       [email],
     );
 
+    await sendOTPEmail("verified_email", email, " ");
+
     return {
       message: `Email verified successfully! You may now login: ${email}`,
       email,
@@ -42,4 +46,36 @@ const verifyingOtpModel = async ({ email, otp }) => {
   }
 };
 
-export { verifyingOtpModel };
+const resendOtp = async ({ email }) => {
+  try {
+    const users = await checkIfTheUserExist(email);
+
+    if (!users.length) {
+      return { error: "Email not found" };
+    }
+
+    const user = users[0];
+    const { otp, otpExpires } = await authCodeGenerator();
+    console.log(user);
+    if (user.is_verified) {
+      return { error: "Email already verified" };
+    }
+
+    await db.query(
+      `UPDATE credentials SET email_otp = $1, otp_expires_at = $2  WHERE email = $3`,
+      [otp, otpExpires, email],
+    );
+
+    await sendOTPEmail("sending_OTP", email, otp);
+
+    return {
+      message: `OTP sent successfully to ${email}`,
+      email: email,
+    };
+  } catch (error) {
+    console.error("Sending OTP error:", error);
+    throw error;
+  }
+};
+
+export { verifyingOtpModel, resendOtp };

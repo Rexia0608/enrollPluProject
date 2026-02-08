@@ -4,14 +4,24 @@ import signInValidation from "../utils/signInValidation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { NavLink } from "react-router-dom";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-function LoginPage({ setAuth }) {
+// Constants
+const API_BASE_URL = "http://localhost:3000/auth/login";
+
+const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [invalid, setInvalid] = useState({});
   const [inputs, setInputs] = useState({
     email: "",
     password: "",
   });
+
+  // 🔐 AUTH CONTEXT
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const onChange = async (e) => {
     const newInputs = { ...inputs, [e.target.name]: e.target.value };
@@ -22,33 +32,44 @@ function LoginPage({ setAuth }) {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+
     const { notValid } = await signInValidation(inputs);
     setInvalid(notValid);
-    // Replace with actual API check
-    const ApiTest = false;
-    if (Object.keys(notValid).length === 0) {
-      console.log("Form is valid, proceeding with login...");
 
-      if (ApiTest) {
-        setAuth(true);
-      }
-      toast(
-        ApiTest
-          ? "Checking Credentials."
-          : "Login failed. Please check your credentials or register.",
-        {
-          toastId: "validation-errors",
-          type: ApiTest ? "success" : "error",
-          autoClose: ApiTest ? 3000 : 5000,
-        },
-      );
-    } else {
-      const errorMessages = Object.values(notValid).join(", ");
-      toast(`${errorMessages}`, {
-        toastId: "validation-errors",
-        type: "error",
-        autoClose: 5000, // Added for consistency
+    if (Object.keys(notValid).length !== 0) {
+      toast(Object.values(notValid).join(", "), { type: "error" });
+      return;
+    }
+
+    try {
+      const response = await axios.post(API_BASE_URL, inputs);
+
+      // Correctly destructure from response.data.response
+      const { user, token } = response.data.response;
+
+      // Save to AuthContext
+      login({
+        ...user,
+        token,
       });
+
+      // Optional persistence
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      toast("Login successful!", { type: "success" });
+
+      // Redirect by role
+      if (user.role === "admin") navigate("/admin/dashboard");
+      else if (user.role === "faculty") navigate("/faculty/dashboard");
+      else navigate("/student/dashboard");
+    } catch (err) {
+      toast(
+        err.response?.data?.message ||
+          "Login failed. Please check your credentials.",
+        { type: "error" },
+      );
+      console.log(err);
     }
   };
 
@@ -291,6 +312,6 @@ function LoginPage({ setAuth }) {
       </div>
     </div>
   );
-}
+};
 
 export default LoginPage;

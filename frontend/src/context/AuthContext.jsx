@@ -7,13 +7,13 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true); // 🔥 IMPORTANT
 
   useEffect(() => {
-    // simulate auth check
-    setUser({
-      id: 1,
-      role: "admin",
-      name: "John Doe",
-      token: "test-jwt-token",
-    });
+    const savedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+
+    if (savedUser && token) {
+      setUser({ ...JSON.parse(savedUser), token });
+    }
+
     setLoading(false);
   }, []);
 

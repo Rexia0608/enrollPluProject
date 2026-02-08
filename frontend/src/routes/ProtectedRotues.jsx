@@ -3,32 +3,30 @@ import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import LoadingPage from "../pages/LoadingPage";
 
-const ProtectedRoute = ({ allowedRoles }) => {
+const ProtectedRoute = ({ allowedRoles = [] }) => {
   const { user, loading } = useAuth();
   const [delayDone, setDelayDone] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDelayDone(true);
-    }, 800);
-
+    const timer = setTimeout(() => setDelayDone(true), 800);
     return () => clearTimeout(timer);
   }, []);
 
   // Still checking auth OR delay not finished
   if (loading || !delayDone) {
-    return (
-      <>
-        <LoadingPage />
-      </>
-    );
+    return <LoadingPage />;
   }
 
-  if (!user) {
+  // Not logged in
+  if (!user || !user.token) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  // Role-based guard (only if roles provided)
+  if (
+    allowedRoles.length > 0 &&
+    (!user.role || !allowedRoles.includes(user.role))
+  ) {
     return <Navigate to="/unauthorized" replace />;
   }
 

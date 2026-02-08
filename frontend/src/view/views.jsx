@@ -1,9 +1,4 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import AdminDashboard from "../pages/AdminDashboard";
 import FacultyDashboard from "../pages/FacultyDashboard";
