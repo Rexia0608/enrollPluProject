@@ -7,18 +7,31 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
+    try {
+      const savedUser = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
 
-    if (savedUser && token) {
-      setUser({ ...JSON.parse(savedUser), token });
+      if (savedUser && token) {
+        setUser({ ...JSON.parse(savedUser), token });
+      }
+    } catch {
+      localStorage.clear();
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, []);
 
-  const login = (userData) => setUser(userData);
-  const logout = () => setUser(null);
+  const login = (userData) => {
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", userData.token);
+    setUser(userData);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>

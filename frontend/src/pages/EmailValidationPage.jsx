@@ -10,7 +10,8 @@ const OTP_LENGTH = 4;
 const REDIRECT_DELAY = 3000;
 const RESEND_COOLDOWN = 30; // seconds
 const SUBMIT_COOLDOWN = 2000; // milliseconds
-const API_BASE_URL = "http://localhost:3000/auth/resend-otp";
+const API_BASE_URL_RESEND = "http://localhost:3000/auth/resend-otp";
+const API_BASE_URL_VERIFY = "http://localhost:3000/auth/verify-otp";
 
 // Email masking utility
 const maskEmailSmart = (email) => {
@@ -197,7 +198,7 @@ function EmailValidationPage() {
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL}`,
+        `${API_BASE_URL_VERIFY}`,
         {
           email: currentEmail,
           otp: code,
@@ -256,7 +257,7 @@ function EmailValidationPage() {
 
     try {
       setIsSubmitting(true);
-      await axios.post(`${API_BASE_URL}`, {
+      await axios.post(`${API_BASE_URL_RESEND}`, {
         email: currentEmail,
       });
 

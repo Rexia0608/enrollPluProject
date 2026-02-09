@@ -11,14 +11,32 @@ import UnauthorizedPage from "../pages/UnAuthorizedPage";
 import EmailValidationPage from "../pages/EmailValidationPage";
 
 import ProtectedRoute from "../routes/ProtectedRotues";
+import PublicRoute from "../routes/PublicRoute";
 
 const Views = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Routes>
-        {/* ================= PUBLIC ================= */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        {/* ================= PUBLIC (ONLY WHEN NOT LOGGED IN) ================= */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* ================= PUBLIC (ALWAYS ACCESSIBLE) ================= */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/maintenance" element={<MaintenancePage />} />
         <Route path="/email-validation" element={<EmailValidationPage />} />

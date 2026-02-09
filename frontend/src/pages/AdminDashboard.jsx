@@ -13,9 +13,12 @@ import EnrollmentControlCard from "../components/admin/EnrollmentControlCard";
 import RecentActivityCard from "../components/admin/RecentActivityCard";
 import UserManagement from "../components/admin/UserManagement";
 import NotFound from "./NotFound";
+import { useAdminTest } from "../context/AdminContextTest";
 
 function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { users, loading, refreshUsers } = useAdminTest();
+  console.log(refreshUsers);
 
   return (
     <div className="min-h-screen bg-gray-50">
