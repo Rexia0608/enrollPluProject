@@ -1,0 +1,332 @@
+====================================================
+ Project Title : EnrollPlus: A Protected, Logical, Unified, 
+                 and Systematic School Enrollment System 
+                 with Document and Tuition Payment Validation
+
+ Description   : Enrollment with Notifications, Review, 
+                 Online Logging, and Legitimacy Validation
+====================================================
+
+1. INTRODUCTION
+----------------------------------------------------
+EnrollPlus is a web-based school enrollment system designed 
+to streamline the registration process for students, 
+faculty, and administrators. It provides automation for 
+document verification, payment validation, scheduling 
+workflows, and system notifications. The system also 
+ensures secure account handling with password recovery 
+features for students, faculty, and admins.
+
+2. GENERAL PROBLEM
+----------------------------------------------------
+Traditional school enrollment processes are often time-
+consuming, prone to human error, and lack transparency. 
+Students face long queues and delays in submitting 
+documents and payments, while faculty and administrators 
+struggle with manual validation and record-keeping. 
+Without an automated system, communication gaps and 
+missed deadlines lead to efficiency and frustration 
+for all stakeholders.
+
+3. OBJECTIVES
+----------------------------------------------------
+- Provide a secure and user-friendly enrollment platform.
+- Automate validation of student documents.
+- Enable online submission of proof of payments.
+- Support role-based dashboards (Student, Faculty, Admin).
+- Manage enrollment periods using scheduling workflows.
+- Ensure secure authentication with password recovery.
+
+4. SYSTEM FEATURES
+----------------------------------------------------
+STUDENT:
+- Register/login to the system.
+- Password recovery (via email).
+- Upload required enrollment documents.
+- Submit proof of payment within the deadline.
+- Track application status and receive notifications.
+
+FACULTY:
+- Review student documents.
+- Validate proof of payment.
+- Approve or reject applications with feedback.
+- Reset own password via recovery module.
+
+ADMIN:
+- Manage users (students & faculty).
+- Configure schedules (deadlines for enrollment, review, payment).
+- Manage academic years (insert new series of enrollment year).
+- Manage course offerings (insert available courses).
+- Toggle system maintenance mode.
+- Handle user account recovery requests.
+
+SCHEDULING MODULE:
+- Set enrollment start/end dates.
+- Trigger automatic notifications tied to deadlines.
+- Restrict late submissions.
+
+MAINTENANCE MODULE:
+- Enable/disable system access.
+- Show "System Under Maintenance" message.
+
+AUTHENTICATION & SECURITY:
+- Secure session-based login system.
+- Role-based access control.
+- Password recovery with email verification.
+- Input validations for forms and account updates.
+
+5. WORKFLOW OVERVIEW
+----------------------------------------------------
+Step 1: Admin configures academic year and available courses.
+Step 2: Admin creates and activates an enrollment schedule.
+Step 3: Student registers and submits documents for enrollment.
+Step 4: Faculty reviews documents.
+Step 5: Student submits proof of payment.
+Step 6: Faculty validates payments.
+Step 7: Student receives final enrollment confirmation.
+Step 8: If a user forgets their password, the system 
+        provides a recovery link via email.
+
+6. DATABASE MODELS (SUMMARY)
+----------------------------------------------------
+- Users: Authentication, password recovery, and roles.
+- Academic Years: School year management (e.g., 2024-2025).
+- Courses: Course offerings management.
+- Student Profiles: Personal student information.
+- Schedules: Enrollment period timelines.
+- Enrollments: Core enrollment records (links students to years/courses).
+- Documents: Enrollment requirements submissions.
+- Payments: Tuition payment submissions.
+- Notifications: System alerts and recovery emails.
+- Maintenance: System maintenance mode control.
+- Audit Logs: Security and action tracking.
+
+7. TECHNOLOGIES USED
+----------------------------------------------------
+Backend   : Node.js (Express.js)
+Frontend  : React.js
+Database  : PostgreSQL
+Auth      : Sessions (Password Recovery included, 
+             JWT optional alternative)
+Email     : Nodemailer (SMTP) for notifications & recovery
+Hosting   : Cloud or Local Server
+
+8. PROJECT PLAN & PROGRESS
+----------------------------------------------------
+PHASE 1 – PLANNING & SETUP (✓ Completed)
+- Define system objectives & scope
+- Design database schema (PostgreSQL)
+- Create ERD and system documentation
+
+PHASE 2 – BACKEND DEVELOPMENT (In Progress)
+- Setup Node.js + Express project structure (✓)
+- Implement authentication & role-based access (✓)
+- Add password recovery & email notifications (✓)
+- Build CRUD APIs for users, documents, and payments (In Progress)
+- Integrate schedule-based restrictions (Pending)
+
+PHASE 3 – FRONTEND DEVELOPMENT (Pending)
+- Setup React project structure
+- Build login, registration, and password recovery pages
+- Student dashboard (documents, payments, notifications)
+- Faculty dashboard (reviews, approvals)
+- Admin dashboard (users, schedules, academic years, courses)
+
+PHASE 4 – INTEGRATION & TESTING (Pending)
+- Connect frontend to backend APIs
+- Implement email notifications
+- User acceptance testing (UAT)
+- Fix bugs and optimize performance
+
+PHASE 5 – DEPLOYMENT & MAINTENANCE (Pending)
+- Deploy on server/cloud
+- Conduct live testing with sample users
+- Maintenance schedule planning
+- Future enhancements (payment gateway, SMS, mobile app)
+
+STATUS SUMMARY:
+- Database: ✅ Completed
+- Backend Core APIs: 🔄 In Progress
+- Password Recovery & Notifications: ✅ Completed
+- Frontend UI: ⏳ Pending
+- Testing & Deployment: ⏳ Pending
+
+9. FUTURE ENHANCEMENTS
+----------------------------------------------------
+- Integration with online payment gateways.
+- Email deadline reminders.
+- Mobile app version (Android/iOS).
+- Audit logs for transparency.
+- AI chatbot for student inquiries.
+
+10. CONCLUSION
+----------------------------------------------------
+EnrollPlus modernizes enrollment by automating repetitive 
+tasks, improving transparency, and enforcing deadlines 
+through scheduling. It ensures efficiency, secure account 
+management, and reduces errors, making the enrollment 
+process easier for both students and administrators.
+
+Prepared by : John Rey Gomez Cejas
+Date        : August 2025
+====================================================
+
+
+-- ===================================================
+-- EnrollPlus Database Setup
+-- ===================================================
+
+-- Enable UUID support
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ===================== USERS =====================
+CREATE TABLE users (
+  user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role VARCHAR(50) NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  max_attempt INTEGER DEFAULT 0 NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== ACADEMIC YEARS =====================
+CREATE TABLE academic_years (
+    academic_year_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(20) UNIQUE NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT FALSE,
+    created_by UUID REFERENCES users(user_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== SEMESTERS =====================
+CREATE TABLE semesters (
+    semester_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    academic_year_id UUID REFERENCES academic_years(academic_year_id) ON DELETE CASCADE,
+    name VARCHAR(50) NOT NULL,          -- e.g., "First Semester", "Second Semester"
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE,
+    created_by UUID REFERENCES users(user_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== COURSES =====================
+CREATE TABLE courses (
+    course_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_code VARCHAR(50) UNIQUE NOT NULL,
+    course_name VARCHAR(150) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by UUID REFERENCES users(user_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== STUDENT PROFILES =====================
+CREATE TABLE student_profiles (
+    student_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
+    student_number VARCHAR(50) UNIQUE NOT NULL,
+    address TEXT,
+    date_of_birth DATE,
+    contact_number VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== ENROLLMENT SCHEDULES =====================
+CREATE TABLE schedules (
+    schedule_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    academic_year_id UUID REFERENCES academic_years(academic_year_id),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE,
+    created_by UUID REFERENCES users(user_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== ENROLLMENTS =====================
+CREATE TABLE enrollments (
+    enrollment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID REFERENCES student_profiles(student_id) ON DELETE CASCADE,
+    academic_year_id UUID REFERENCES academic_years(academic_year_id),
+    schedule_id UUID REFERENCES schedules(schedule_id),
+    course_id UUID REFERENCES courses(course_id),
+    semester_id UUID REFERENCES semesters(semester_id) ON DELETE SET NULL,
+    year_level INT,
+    overall_status VARCHAR(50) DEFAULT 'not_started' CHECK (overall_status IN (
+        'not_started', 
+        'documents_pending',
+        'documents_approved',
+        'payment_pending',
+        'payment_validated',
+        'enrolled'
+    )),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== DOCUMENT SUBMISSIONS =====================
+CREATE TABLE documents (
+    document_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    enrollment_id UUID REFERENCES enrollments(enrollment_id) ON DELETE CASCADE,
+    doc_type VARCHAR(100) NOT NULL,
+    file_path TEXT NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    reviewed_by UUID REFERENCES users(user_id),
+    feedback TEXT,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP
+);
+
+-- ===================== PAYMENT SUBMISSIONS =====================
+CREATE TABLE payments (
+    payment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    enrollment_id UUID REFERENCES enrollments(enrollment_id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    reference_number VARCHAR(100),
+    amount NUMERIC(10, 2),
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'validated', 'rejected')),
+    validated_by UUID REFERENCES users(user_id),
+    feedback TEXT,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    validated_at TIMESTAMP
+);
+
+-- ===================== NOTIFICATIONS =====================
+CREATE TABLE notifications (
+    notification_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(255),
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    related_entity VARCHAR(50),
+    related_entity_id UUID,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== MAINTENANCE MODE =====================
+CREATE TABLE maintenance (
+    maintenance_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    is_active BOOLEAN DEFAULT FALSE,
+    message TEXT DEFAULT 'System under maintenance. Please try again later.',
+    updated_by UUID REFERENCES users(user_id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===================== AUDIT LOGS =====================
+CREATE TABLE audit_logs (
+    log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(user_id),
+    action VARCHAR(100) NOT NULL,
+    description TEXT,
+    ip_address VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
