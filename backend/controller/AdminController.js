@@ -8,14 +8,14 @@ const getUserList = async (req, res) => {
         id: 1,
         name: "Alice Admin",
         email: "alice@school.edu",
-        role: "admin",
+        role: "student",
         status: "active",
       },
       {
         id: 2,
         name: "Bob Faculty",
         email: "bob@school.edu",
-        role: "faculty",
+        role: "student",
         status: "active",
       },
       {
@@ -30,7 +30,7 @@ const getUserList = async (req, res) => {
         name: "Daisy Student",
         email: "daisy@school.edu",
         role: "student",
-        status: "inactive",
+        status: "active",
       },
     ];
 

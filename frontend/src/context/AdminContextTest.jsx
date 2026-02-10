@@ -3,7 +3,7 @@ import { useAuth } from "./AuthContext";
 import axios from "axios";
 
 const AdminContextTest = createContext(null);
-const GET_USER_API = "http://localhost:3000/admin/usersList"; // Your backend endpoint
+const GET_USER_API = "http://localhost:3000/admin/usersList";
 
 export const AdminProviderTest = ({ children }) => {
   const { user } = useAuth(); // Admin user
