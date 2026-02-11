@@ -2,13 +2,13 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 
 const AdminContext = createContext(null);
+const API_BASE_URL_COURSE = "http://localhost:3000/admin/courseList";
+const API_BASE_URL_USER = "http://localhost:3000/admin/usersList";
 
 export const AdminProvider = ({ children }) => {
   const { user } = useAuth(); // Admin user
-  const [users, setUsers] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
-  const [schedules, setSchedules] = useState([]);
-  const [systemStatus, setSystemStatus] = useState(null);
+  const [initialCourses, setInitialCourses] = useState([]);
+  const [userList, setUserList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch admin data when user is admin
@@ -19,27 +19,17 @@ export const AdminProvider = ({ children }) => {
       setLoading(true);
 
       try {
-        // Example API calls
-        const usersRes = await fetch("/api/admin/users", {
+        const initialCoursesRes = await fetch(`${API_BASE_URL_COURSE}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
-        const usersData = await usersRes.json();
-        setUsers(usersData);
+        const initialCoursesData = await initialCoursesRes.json();
+        setInitialCourses(initialCoursesData);
 
-        const auditRes = await fetch("/api/admin/audit-logs", {
+        const userListRes = await fetch(`${API_BASE_URL_USER}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
-        setAuditLogs(await auditRes.json());
-
-        const schedulesRes = await fetch("/api/admin/schedules", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        setSchedules(await schedulesRes.json());
-
-        const systemRes = await fetch("/api/admin/system-status", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        setSystemStatus(await systemRes.json());
+        const userListResData = await userListRes.json();
+        setUserList(userListResData);
       } catch (err) {
         console.error("Admin data fetch error", err);
       } finally {
@@ -53,10 +43,7 @@ export const AdminProvider = ({ children }) => {
   // Reset on logout
   useEffect(() => {
     if (!user) {
-      setUsers([]);
-      setAuditLogs([]);
-      setSchedules([]);
-      setSystemStatus(null);
+      setInitialCourses([]);
     }
   }, [user]);
 
@@ -72,10 +59,8 @@ export const AdminProvider = ({ children }) => {
   return (
     <AdminContext.Provider
       value={{
-        users,
-        auditLogs,
-        schedules,
-        systemStatus,
+        initialCourses,
+        userList,
         loading,
         refreshUsers,
       }}

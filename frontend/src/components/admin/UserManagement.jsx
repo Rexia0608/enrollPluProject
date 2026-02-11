@@ -1,5 +1,5 @@
 // components/admin/UserManagement.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Users,
   Shield,
@@ -16,90 +16,11 @@ import {
 } from "lucide-react";
 import Card from "../ui/Card";
 import StatusBadge from "../ui/StatusBadge";
+import { useAdmin } from "../../context/AdminContext";
 
 function UserManagement() {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "John Smith",
-      email: "john.smith@example.com",
-      role: "student",
-      status: "active",
-      joinedDate: "2024-01-15",
-      lastLogin: "2024-01-18",
-      studentId: "S2024001",
-    },
-    {
-      id: 2,
-      name: "Jane Doe",
-      email: "jane.doe@example.com",
-      role: "faculty",
-      status: "active",
-      joinedDate: "2023-08-20",
-      lastLogin: "2024-01-18",
-      facultyId: "F2023001",
-    },
-    {
-      id: 3,
-      name: "Robert Johnson",
-      email: "robert.j@example.com",
-      role: "student",
-      status: "inactive",
-      joinedDate: "2024-01-10",
-      lastLogin: "2024-01-12",
-      studentId: "S2024002",
-    },
-    {
-      id: 4,
-      name: "Sarah Williams",
-      email: "sarah.w@example.com",
-      role: "admin",
-      status: "active",
-      joinedDate: "2023-09-15",
-      lastLogin: "2024-01-18",
-      adminId: "A2023001",
-    },
-    {
-      id: 5,
-      name: "Michael Brown",
-      email: "michael.b@example.com",
-      role: "student",
-      status: "suspended",
-      joinedDate: "2024-01-05",
-      lastLogin: "2024-01-08",
-      studentId: "S2024003",
-    },
-    {
-      id: 6,
-      name: "Emily Davis",
-      email: "emily.d@example.com",
-      role: "faculty",
-      status: "active",
-      joinedDate: "2023-10-10",
-      lastLogin: "2024-01-18",
-      facultyId: "F2023002",
-    },
-    {
-      id: 7,
-      name: "David Wilson",
-      email: "david.w@example.com",
-      role: "student",
-      status: "pending",
-      joinedDate: "2024-01-16",
-      lastLogin: "2024-01-16",
-      studentId: "S2024004",
-    },
-    {
-      id: 8,
-      name: "Lisa Taylor",
-      email: "lisa.t@example.com",
-      role: "faculty",
-      status: "inactive",
-      joinedDate: "2023-11-05",
-      lastLogin: "2023-12-20",
-      facultyId: "F2023003",
-    },
-  ]);
+  const { userList } = useAdmin();
+  const [users, setUsers] = useState([]);
 
   // Search and Filter States
   const [searchTerm, setSearchTerm] = useState("");
@@ -109,6 +30,10 @@ function UserManagement() {
     key: null,
     direction: "ascending",
   });
+
+  useEffect(() => {
+    setUsers(userList);
+  }, [userList]);
 
   // Handle sorting
   const handleSort = (key) => {

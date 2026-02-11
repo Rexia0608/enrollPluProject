@@ -15,59 +15,13 @@ import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import StatusBadge from "../ui/StatusBadge";
 import Modal from "../ui/Modal";
+import { useAdmin } from "../../context/AdminContext";
 
 function CourseManagement() {
-  // Initial courses data
-  const initialCourses = [
-    {
-      id: 1,
-      code: "BSCS",
-      name: "Bachelor of Science in Computer Science",
-      type: "4 years Course",
-      started_date: "2023-09-01",
-      end_date: "2027-06-30",
-      status: "active",
-    },
-    {
-      id: 2,
-      code: "CSS",
-      name: "Computer System Servicing NC II",
-      type: "Short Course",
-      started_date: "2024-01-15",
-      end_date: "2024-06-15",
-      status: "active",
-    },
-    {
-      id: 3,
-      code: "BSIT",
-      name: "Bachelor of Science in Information Technology",
-      type: "4 years Course",
-      started_date: "2023-09-01",
-      end_date: "2027-06-30",
-      status: "inactive",
-    },
-    {
-      id: 4,
-      code: "Humss",
-      name: "Humanities and Social Sciences",
-      type: "2 years Course",
-      started_date: "2024-01-20",
-      end_date: "2026-01-20",
-      status: "active",
-    },
-    {
-      id: 5,
-      code: "STEM",
-      name: "Science, Technology, Engineering and Mathematics",
-      type: "2 years Course",
-      started_date: "2024-02-01",
-      end_date: "2026-02-01",
-      status: "inactive",
-    },
-  ];
+  const { initialCourses } = useAdmin();
 
   // State management
-  const [courses, setCourses] = useState(initialCourses);
+  const [courses, setCourses] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCourse, setCurrentCourse] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,6 +30,10 @@ function CourseManagement() {
     key: null,
     direction: "ascending",
   });
+
+  useEffect(() => {
+    setCourses(initialCourses);
+  }, [initialCourses]);
 
   // Form state
   const [formData, setFormData] = useState({
