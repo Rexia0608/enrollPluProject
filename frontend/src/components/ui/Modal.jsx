@@ -1,4 +1,3 @@
-// components/ui/Modal.jsx
 import React, { useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 
@@ -11,6 +10,8 @@ function Modal({
   closeOnBackdropClick = true,
   closeOnEsc = true,
   className = "",
+  backdropBlur = "md", // "none", "sm", "md", "lg"
+  backdropOpacity = "dark", // "light", "dark", "darker"
 }) {
   // Define size classes
   const sizeClasses = {
@@ -18,6 +19,23 @@ function Modal({
     md: "sm:max-w-lg",
     lg: "sm:max-w-2xl",
     xl: "sm:max-w-4xl",
+  };
+
+  // Define backdrop styles
+  const backdropStyles = {
+    // Opacity variants
+    opacity: {
+      light: "bg-black/20",
+      dark: "bg-black/40",
+      darker: "bg-black/60",
+    },
+    // Blur variants
+    blur: {
+      none: "",
+      sm: "backdrop-blur-sm",
+      md: "backdrop-blur-md",
+      lg: "backdrop-blur-lg",
+    },
   };
 
   // Handle Escape key press
@@ -57,9 +75,14 @@ function Modal({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop with blur effect */}
       <div
-        className="fixed inset-0 z-50 bg-gray-500 bg-opacity-75 transition-opacity"
+        className={`
+          fixed inset-0 z-50 
+          ${backdropStyles.opacity[backdropOpacity]} 
+          ${backdropStyles.blur[backdropBlur]}
+          transition-all duration-300 ease-in-out
+        `}
         aria-hidden="true"
         onClick={handleBackdropClick}
       />
@@ -70,7 +93,7 @@ function Modal({
           {/* Modal Panel */}
           <div
             className={`
-              relative transform overflow-hidden rounded-2xl bg-white shadow-xl 
+              relative transform overflow-hidden rounded-2xl bg-white shadow-2xl 
               transition-all sm:my-8 sm:w-full
               ${sizeClasses[size]}
               ${className}

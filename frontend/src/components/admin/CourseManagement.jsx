@@ -15,13 +15,306 @@ import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import StatusBadge from "../ui/StatusBadge";
 import Modal from "../ui/Modal";
+import Pagination from "../ui/Pagination";
 import { useAdmin } from "../../context/AdminContext";
+
+// Constants
+const ITEMS_PER_PAGE = 5;
+
+// Course Form Component (extracted for reusability)
+const CourseForm = ({
+  formData,
+  onInputChange,
+  onSubmit,
+  onCancel,
+  isEditing,
+}) => {
+  return (
+    <form onSubmit={onSubmit} className="space-y-6">
+      <div className="space-y-5">
+        {/* Course Code */}
+        <div className="relative">
+          <input
+            type="text"
+            name="code"
+            value={formData.code}
+            onChange={onInputChange}
+            className="
+              w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
+              focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
+              outline-none transition-all duration-200
+              placeholder:text-gray-400
+              hover:border-gray-400
+            "
+            required
+            placeholder="Course Code *"
+          />
+          <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
+            Course Code
+          </div>
+        </div>
+
+        {/* Course Name */}
+        <div className="relative">
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={onInputChange}
+            className="
+              w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
+              focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
+              outline-none transition-all duration-200
+              placeholder:text-gray-400
+              hover:border-gray-400
+            "
+            required
+            placeholder="Course Name *"
+          />
+          <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
+            Course Name
+          </div>
+        </div>
+
+        {/* Course Type */}
+        <div className="relative">
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            Course Type *
+          </label>
+          <div className="relative">
+            <select
+              name="type"
+              value={formData.type}
+              onChange={onInputChange}
+              className="
+                w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
+                focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
+                outline-none transition-all duration-200 appearance-none
+                bg-white hover:border-gray-400
+              "
+              required
+            >
+              <option value="" className="text-gray-400">
+                Select Course Type
+              </option>
+              <option value="4 years Course">4 years Course</option>
+              <option value="2 years Course">2 years Course</option>
+              <option value="Short Course">Short Course</option>
+              <option value="1 year Course">1 year Course</option>
+              <option value="Certificate Course">Certificate Course</option>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <svg
+                className="w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                ></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Date Range */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+              Start Date
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                name="started_date"
+                value={formData.started_date}
+                onChange={onInputChange}
+                className="
+                  w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
+                  focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
+                  outline-none transition-all duration-200
+                  hover:border-gray-400
+                  scheme-light
+                "
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+              End Date
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                name="end_date"
+                value={formData.end_date}
+                onChange={onInputChange}
+                className="
+                  w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
+                  focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
+                  outline-none transition-all duration-200
+                  hover:border-gray-400
+                  scheme-light
+                "
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            Status
+          </label>
+          <div className="relative">
+            <select
+              name="status"
+              value={formData.status}
+              onChange={onInputChange}
+              className="
+                w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
+                focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
+                outline-none transition-all duration-200 appearance-none
+                bg-white hover:border-gray-400
+              "
+            >
+              <option value="active" className="text-green-600">
+                Active
+              </option>
+              <option value="inactive" className="text-red-600">
+                Inactive
+              </option>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <svg
+                className="w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                ></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Actions */}
+      <div className="flex justify-end space-x-3 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="
+            px-6 py-3 border border-gray-300 rounded-xl text-sm font-medium 
+            text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-sm
+            transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300
+          "
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="
+            px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white 
+            rounded-xl text-sm font-medium hover:from-blue-700 hover:to-blue-800
+            transition-all duration-200 focus:outline-none focus:ring-3 focus:ring-blue-500/40
+            shadow-sm hover:shadow-md active:scale-[0.98]
+          "
+        >
+          <span className="flex items-center">
+            {isEditing ? (
+              <>
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
+                </svg>
+                Update Course
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 4v16m8-8H4"
+                  ></path>
+                </svg>
+                Add Course
+              </>
+            )}
+          </span>
+        </button>
+      </div>
+    </form>
+  );
+};
 
 function CourseManagement() {
   const { initialCourses } = useAdmin();
 
   // State management
-  const [courses, setCourses] = useState("");
+  const [courses, setCourses] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCourse, setCurrentCourse] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -154,7 +447,7 @@ function CourseManagement() {
     } else {
       // Add new course
       const newCourse = {
-        id: Math.max(...courses.map((c) => c.id)) + 1,
+        id: Math.max(...courses.map((c) => c.id), 0) + 1,
         ...formData,
       };
       setCourses([...courses, newCourse]);
@@ -199,290 +492,188 @@ function CourseManagement() {
     });
   };
 
+  // Render table rows
+  const renderCourseTable = (coursesToRender) => (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort("code")}
+            >
+              <div className="flex items-center">
+                Course Code
+                {sortConfig.key === "code" &&
+                  (sortConfig.direction === "ascending" ? (
+                    <ChevronUp className="w-4 h-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  ))}
+              </div>
+            </th>
+            <th
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort("name")}
+            >
+              <div className="flex items-center">
+                Course Name
+                {sortConfig.key === "name" &&
+                  (sortConfig.direction === "ascending" ? (
+                    <ChevronUp className="w-4 h-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  ))}
+              </div>
+            </th>
+            <th
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort("type")}
+            >
+              <div className="flex items-center">
+                Course Type
+                {sortConfig.key === "type" &&
+                  (sortConfig.direction === "ascending" ? (
+                    <ChevronUp className="w-4 h-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  ))}
+              </div>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Duration
+            </th>
+            <th
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort("status")}
+            >
+              <div className="flex items-center">
+                Status
+                {sortConfig.key === "status" &&
+                  (sortConfig.direction === "ascending" ? (
+                    <ChevronUp className="w-4 h-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  ))}
+              </div>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {coursesToRender.length > 0 ? (
+            coursesToRender.map((course) => (
+              <tr
+                key={course.id}
+                className="hover:bg-gray-50 transition-colors"
+              >
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="font-medium text-gray-900">{course.code}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-gray-900">{course.name}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-gray-900">{course.type}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-gray-900">
+                    {course.started_date && course.end_date
+                      ? `${formatDate(course.started_date)} - ${formatDate(course.end_date)}`
+                      : "N/A"}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <StatusBadge status={course.status} />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleEdit(course)}
+                      className="p-1 text-gray-600 hover:text-blue-600 transition-colors rounded hover:bg-blue-50"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(course.id)}
+                      className="p-1 text-gray-600 hover:text-yellow-600 transition-colors rounded hover:bg-yellow-50"
+                      title={
+                        course.status === "active" ? "Deactivate" : "Activate"
+                      }
+                    >
+                      {course.status === "active" ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(course.id)}
+                      className="p-1 text-gray-600 hover:text-red-600 transition-colors rounded hover:bg-red-50"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6" className="px-6 py-12 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <Search className="w-12 h-12 text-gray-400 mb-4" />
+                  <p className="text-gray-500 font-medium">No courses found</p>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {searchTerm || statusFilter !== "all"
+                      ? "Try adjusting your search or filter"
+                      : "Add your first course using the 'Add New Course' button"}
+                  </p>
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // Empty state component for pagination
+  const emptyStateComponent = (
+    <div className="text-center py-12">
+      <div className="flex flex-col items-center justify-center">
+        <Search className="w-12 h-12 text-gray-400 mb-4" />
+        <p className="text-gray-500 font-medium">No courses found</p>
+        <p className="text-gray-400 text-sm mt-1">
+          {searchTerm || statusFilter !== "all"
+            ? "Try adjusting your search or filter"
+            : "Add your first course using the 'Add New Course' button"}
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div>
-      {/* Course Modal */}
+      {/* Course Modal - Using the reusable Modal component */}
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         title={currentCourse ? "Edit Course" : "Add New Course"}
         size="md"
+        closeOnBackdropClick={true}
+        closeOnEsc={true}
       >
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-5">
-            {/* Course Code */}
-            <div className="relative">
-              <input
-                type="text"
-                name="code"
-                value={formData.code}
-                onChange={handleInputChange}
-                className="
-          w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
-          focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
-          outline-none transition-all duration-200
-          placeholder:text-gray-400
-          hover:border-gray-400
-        "
-                required
-                placeholder="Course Code *"
-              />
-              <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
-                Course Code
-              </div>
-            </div>
-
-            {/* Course Name */}
-            <div className="relative">
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="
-          w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
-          focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
-          outline-none transition-all duration-200
-          placeholder:text-gray-400
-          hover:border-gray-400
-        "
-                required
-                placeholder="Course Name *"
-              />
-              <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
-                Course Name
-              </div>
-            </div>
-
-            {/* Course Type */}
-            <div className="relative">
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                Course Type *
-              </label>
-              <div className="relative">
-                <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  className="
-            w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
-            focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
-            outline-none transition-all duration-200 appearance-none
-            bg-white hover:border-gray-400
-          "
-                  required
-                >
-                  <option value="" className="text-gray-400">
-                    Select Course Type
-                  </option>
-                  <option value="4 years Course">4 years Course</option>
-                  <option value="2 years Course">2 years Course</option>
-                  <option value="Short Course">Short Course</option>
-                  <option value="1 year Course">1 year Course</option>
-                  <option value="Certificate Course">Certificate Course</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    ></path>
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Date Range */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                  Start Date
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    name="started_date"
-                    value={formData.started_date}
-                    onChange={handleInputChange}
-                    className="
-              w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
-              focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
-              outline-none transition-all duration-200
-              hover:border-gray-400
-              [color-scheme:light]
-            "
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      ></path>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                  End Date
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    name="end_date"
-                    value={formData.end_date}
-                    onChange={handleInputChange}
-                    className="
-              w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
-              focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
-              outline-none transition-all duration-200
-              hover:border-gray-400
-              [color-scheme:light]
-            "
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      ></path>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                Status
-              </label>
-              <div className="relative">
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="
-            w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
-            focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
-            outline-none transition-all duration-200 appearance-none
-            bg-white hover:border-gray-400
-          "
-                >
-                  <option value="active" className="text-green-600">
-                    Active
-                  </option>
-                  <option value="inactive" className="text-red-600">
-                    Inactive
-                  </option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    ></path>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-3 pt-2">
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="
-        px-6 py-3 border border-gray-300 rounded-xl text-sm font-medium 
-        text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-sm
-        transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300
-      "
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="
-        px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white 
-        rounded-xl text-sm font-medium hover:from-blue-700 hover:to-blue-800
-        transition-all duration-200 focus:outline-none focus:ring-3 focus:ring-blue-500/40
-        shadow-sm hover:shadow-md active:scale-[0.98]
-      "
-            >
-              {currentCourse ? (
-                <span className="flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    ></path>
-                  </svg>
-                  Update Course
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 4v16m8-8H4"
-                    ></path>
-                  </svg>
-                  Add Course
-                </span>
-              )}
-            </button>
-          </div>
-        </form>
+        <CourseForm
+          formData={formData}
+          onInputChange={handleInputChange}
+          onSubmit={handleSubmit}
+          onCancel={handleCloseModal}
+          isEditing={!!currentCourse}
+        />
       </Modal>
 
       {/* Main Content */}
@@ -504,7 +695,7 @@ function CourseManagement() {
 
       <Card className="p-0 overflow-hidden">
         {/* Filter and Search Bar */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h3 className="text-lg font-semibold text-gray-900">All Courses</h3>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -512,7 +703,7 @@ function CourseManagement() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
@@ -526,7 +717,7 @@ function CourseManagement() {
                   placeholder="Search courses..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 pl-10 pr-10 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="border border-gray-300 rounded-lg px-3 py-2 pl-10 pr-10 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
                 />
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 {searchTerm && (
@@ -534,6 +725,7 @@ function CourseManagement() {
                     onClick={handleClearSearch}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     type="button"
+                    aria-label="Clear search"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -543,187 +735,15 @@ function CourseManagement() {
           </div>
         </div>
 
-        {/* Courses Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort("code")}
-                >
-                  <div className="flex items-center">
-                    Course Code
-                    {sortConfig.key === "code" &&
-                      (sortConfig.direction === "ascending" ? (
-                        <ChevronUp className="w-4 h-4 ml-1" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 ml-1" />
-                      ))}
-                  </div>
-                </th>
-                <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort("name")}
-                >
-                  <div className="flex items-center">
-                    Course Name
-                    {sortConfig.key === "name" &&
-                      (sortConfig.direction === "ascending" ? (
-                        <ChevronUp className="w-4 h-4 ml-1" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 ml-1" />
-                      ))}
-                  </div>
-                </th>
-                <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort("type")}
-                >
-                  <div className="flex items-center">
-                    Course Type
-                    {sortConfig.key === "type" &&
-                      (sortConfig.direction === "ascending" ? (
-                        <ChevronUp className="w-4 h-4 ml-1" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 ml-1" />
-                      ))}
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duration
-                </th>
-                <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort("status")}
-                >
-                  <div className="flex items-center">
-                    Status
-                    {sortConfig.key === "status" &&
-                      (sortConfig.direction === "ascending" ? (
-                        <ChevronUp className="w-4 h-4 ml-1" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 ml-1" />
-                      ))}
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredCourses.length > 0 ? (
-                filteredCourses.map((course) => (
-                  <tr
-                    key={course.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">
-                        {course.code}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-gray-900">{course.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-gray-900">{course.type}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-gray-900">
-                        {course.started_date && course.end_date
-                          ? `${formatDate(course.started_date)} - ${formatDate(course.end_date)}`
-                          : "N/A"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <StatusBadge status={course.status} />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(course)}
-                          className="p-1 text-gray-600 hover:text-blue-600 transition-colors rounded hover:bg-blue-50"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(course.id)}
-                          className="p-1 text-gray-600 hover:text-yellow-600 transition-colors rounded hover:bg-yellow-50"
-                          title={
-                            course.status === "active"
-                              ? "Deactivate"
-                              : "Activate"
-                          }
-                        >
-                          {course.status === "active" ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(course.id)}
-                          className="p-1 text-gray-600 hover:text-red-600 transition-colors rounded hover:bg-red-50"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <Search className="w-12 h-12 text-gray-400 mb-4" />
-                      <p className="text-gray-500 font-medium">
-                        No courses found
-                      </p>
-                      <p className="text-gray-400 text-sm mt-1">
-                        {searchTerm || statusFilter !== "all"
-                          ? "Try adjusting your search or filter"
-                          : "Add your first course using the 'Add New Course' button"}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer with Pagination */}
-        <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold">{filteredCourses.length}</span> of{" "}
-            <span className="font-semibold">{courses.length}</span> courses
-            {(searchTerm || statusFilter !== "all") && (
-              <span className="ml-2 text-gray-400 text-xs">(filtered)</span>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled
-            >
-              Previous
-            </button>
-            <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium">
-              1
-            </button>
-            <button
-              className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={filteredCourses.length <= 10}
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        {/* Pagination Component with Integrated Logic */}
+        <Pagination
+          items={filteredCourses}
+          itemsPerPage={ITEMS_PER_PAGE}
+          renderItems={renderCourseTable}
+          emptyStateComponent={emptyStateComponent}
+          showFirstLast={true}
+          siblingCount={1}
+        />
       </Card>
     </div>
   );
