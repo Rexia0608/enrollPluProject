@@ -1,43 +1,39 @@
 // components/admin/AdminOverview.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Users, FileText, CreditCard, CheckCircle } from "lucide-react";
 import Card from "../ui/Card";
 import StatCard from "../ui/StatCard";
 import EnrollmentControlCard from "./EnrollmentControlCard";
 import RecentActivityCard from "./RecentActivityCard";
 import MaintenanceModeCard from "./MaintenanceModeCard";
+import { useAdmin } from "../../context/AdminContext";
+
+// Map string icons to actual components
+const iconMap = {
+  Users: Users,
+  FileText: FileText,
+  CreditCard: CreditCard,
+  CheckCircle: CheckCircle,
+};
 
 function AdminOverview() {
-  const stats = [
-    {
-      title: "Total Students",
-      value: "1,248",
-      change: 12,
-      icon: Users,
-      color: "blue",
-    },
-    {
-      title: "Pending Documents",
-      value: "42",
-      change: -5,
-      icon: FileText,
-      color: "yellow",
-    },
-    {
-      title: "Pending Payments",
-      value: "28",
-      change: 8,
-      icon: CreditCard,
-      color: "red",
-    },
-    {
-      title: "Enrolled Students",
-      value: "876",
-      change: 15,
-      icon: CheckCircle,
-      color: "green",
-    },
-  ];
+  const [stats, setStats] = useState([]);
+  const { overView } = useAdmin();
+
+  useEffect(() => {
+    // If overView is already in context, use it
+    if (overView) {
+      // Map string icons to components
+      const mappedStats = overView.map((stat) => ({
+        ...stat,
+        icon: iconMap[stat.icon],
+      }));
+      setStats(mappedStats);
+    }
+
+    // If you need to fetch from API
+    // fetchOverview();
+  }, [overView]);
 
   return (
     <div>
@@ -65,25 +61,6 @@ function AdminOverview() {
 
         <div className="space-y-6">
           <MaintenanceModeCard />
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                Create New Academic Year
-              </button>
-              <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                Add New Course
-              </button>
-              <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                View System Reports
-              </button>
-              <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                Manage User Roles
-              </button>
-            </div>
-          </Card>
         </div>
       </div>
     </div>

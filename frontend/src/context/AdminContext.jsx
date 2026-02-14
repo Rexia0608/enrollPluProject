@@ -4,11 +4,13 @@ import { useAuth } from "./AuthContext";
 const AdminContext = createContext(null);
 const API_BASE_URL_COURSE = "http://localhost:3000/admin/courseList";
 const API_BASE_URL_USER = "http://localhost:3000/admin/usersList";
+const API_BASE_URL_OVERVIEW = "http://localhost:3000/admin/overView";
 
 export const AdminProvider = ({ children }) => {
   const { user } = useAuth(); // Admin user
   const [initialCourses, setInitialCourses] = useState([]);
   const [userList, setUserList] = useState([]);
+  const [overView, setOverView] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch admin data when user is admin
@@ -30,6 +32,12 @@ export const AdminProvider = ({ children }) => {
         });
         const userListResData = await userListRes.json();
         setUserList(userListResData);
+
+        const overViewRes = await fetch(`${API_BASE_URL_OVERVIEW}`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        const overViewData = await overViewRes.json();
+        setOverView(overViewData);
       } catch (err) {
         console.error("Admin data fetch error", err);
       } finally {
@@ -62,6 +70,7 @@ export const AdminProvider = ({ children }) => {
         initialCourses,
         userList,
         loading,
+        overView,
         refreshUsers,
       }}
     >

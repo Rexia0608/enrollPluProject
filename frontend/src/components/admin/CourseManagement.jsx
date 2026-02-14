@@ -101,6 +101,7 @@ const CourseForm = ({
               <option value="2 years Course">2 years Course</option>
               <option value="Short Course">Short Course</option>
               <option value="1 year Course">1 year Course</option>
+              <option value="Summer Class">Summer Class Course</option>
               <option value="Certificate Course">Certificate Course</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -122,79 +123,30 @@ const CourseForm = ({
           </div>
         </div>
 
-        {/* Date Range */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
-              Start Date
-            </label>
-            <div className="relative">
-              <input
-                type="date"
-                name="started_date"
-                value={formData.started_date}
-                onChange={onInputChange}
-                className="
-                  w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
-                  focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
-                  outline-none transition-all duration-200
-                  hover:border-gray-400
-                  scheme-light
-                "
-              />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  ></path>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
-              End Date
-            </label>
-            <div className="relative">
-              <input
-                type="date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={onInputChange}
-                className="
-                  w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
-                  focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
-                  outline-none transition-all duration-200
-                  hover:border-gray-400
-                  scheme-light
-                "
-              />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  ></path>
-                </svg>
-              </div>
+        {/* Tuition Fee */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            Tuition Fee ($)
+          </label>
+          <div className="relative">
+            <input
+              type="number"
+              name="tuition_fee"
+              min="0"
+              step="100"
+              value={formData.tuition_fee}
+              onChange={onInputChange}
+              className="
+                w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm
+                focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg
+                outline-none transition-all duration-200
+                hover:border-gray-400
+                scheme-light
+              "
+              placeholder="Enter tuition fee"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <span className="text-gray-400">$</span>
             </div>
           </div>
         </div>
@@ -333,8 +285,7 @@ function CourseManagement() {
     code: "",
     name: "",
     type: "",
-    started_date: "",
-    end_date: "",
+    tuition_fee: "",
     status: "active",
   });
 
@@ -355,13 +306,11 @@ function CourseManagement() {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
 
-      // Handle dates
-      if (sortConfig.key.includes("date")) {
-        const dateA = new Date(aValue);
-        const dateB = new Date(bValue);
+      // Handle numbers (tuition_fee)
+      if (sortConfig.key === "tuition_fee") {
         return sortConfig.direction === "ascending"
-          ? dateA - dateB
-          : dateB - dateA;
+          ? (aValue || 0) - (bValue || 0)
+          : (bValue || 0) - (aValue || 0);
       }
 
       // Handle strings
@@ -378,9 +327,9 @@ function CourseManagement() {
   // Filter courses based on search and status
   const filteredCourses = getSortedCourses().filter((course) => {
     const matchesSearch =
-      course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.type.toLowerCase().includes(searchTerm.toLowerCase());
+      course.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.type?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === "all" || course.status === statusFilter;
@@ -395,8 +344,7 @@ function CourseManagement() {
       code: "",
       name: "",
       type: "",
-      started_date: "",
-      end_date: "",
+      tuition_fee: "",
       status: "active",
     });
     setIsModalOpen(true);
@@ -405,12 +353,11 @@ function CourseManagement() {
   const handleEdit = (course) => {
     setCurrentCourse(course);
     setFormData({
-      code: course.code,
-      name: course.name,
-      type: course.type,
-      started_date: course.started_date || "",
-      end_date: course.end_date || "",
-      status: course.status,
+      code: course.code || "",
+      name: course.name || "",
+      type: course.type || "",
+      tuition_fee: course.tuition_fee || "",
+      status: course.status || "active",
     });
     setIsModalOpen(true);
   };
@@ -447,7 +394,7 @@ function CourseManagement() {
     } else {
       // Add new course
       const newCourse = {
-        id: Math.max(...courses.map((c) => c.id), 0) + 1,
+        id: courses.length > 0 ? Math.max(...courses.map((c) => c.id)) + 1 : 1,
         ...formData,
       };
       setCourses([...courses, newCourse]);
@@ -471,8 +418,7 @@ function CourseManagement() {
       code: "",
       name: "",
       type: "",
-      started_date: "",
-      end_date: "",
+      tuition_fee: "",
       status: "active",
     });
   };
@@ -481,15 +427,15 @@ function CourseManagement() {
     setSearchTerm("");
   };
 
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  // Format currency for display
+  const formatCurrency = (amount) => {
+    if (!amount) return "N/A";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   // Render table rows
@@ -540,8 +486,19 @@ function CourseManagement() {
                   ))}
               </div>
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Duration
+            <th
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => handleSort("tuition_fee")}
+            >
+              <div className="flex items-center">
+                Tuition Fee
+                {sortConfig.key === "tuition_fee" &&
+                  (sortConfig.direction === "ascending" ? (
+                    <ChevronUp className="w-4 h-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  ))}
+              </div>
             </th>
             <th
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
@@ -579,10 +536,8 @@ function CourseManagement() {
                   <div className="text-gray-900">{course.type}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-gray-900">
-                    {course.started_date && course.end_date
-                      ? `${formatDate(course.started_date)} - ${formatDate(course.end_date)}`
-                      : "N/A"}
+                  <div className="text-gray-900 font-medium">
+                    {formatCurrency(course.tuition_fee)}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

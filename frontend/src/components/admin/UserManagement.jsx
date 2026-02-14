@@ -630,7 +630,6 @@ function UserManagement() {
                   className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
                 >
                   <option value="all">All Roles</option>
-                  <option value="admin">Admin</option>
                   <option value="faculty">Faculty</option>
                   <option value="student">Student</option>
                 </select>

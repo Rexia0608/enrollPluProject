@@ -142,189 +142,6 @@ const getCourseList = async (req, res) => {
         end_date: "2026-02-01",
         status: "inactive",
       },
-
-      // ➕ Additional 20 dummy courses
-
-      {
-        id: 6,
-        code: "ABENG",
-        name: "Bachelor of Arts in English",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 7,
-        code: "ABPSY",
-        name: "Bachelor of Arts in Psychology",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 8,
-        code: "BSA",
-        name: "Bachelor of Science in Accountancy",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "inactive",
-      },
-      {
-        id: 9,
-        code: "BSBA",
-        name: "Bachelor of Science in Business Administration",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 10,
-        code: "BSTM",
-        name: "Bachelor of Science in Tourism Management",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 11,
-        code: "BSHM",
-        name: "Bachelor of Science in Hospitality Management",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "inactive",
-      },
-      {
-        id: 12,
-        code: "BSED",
-        name: "Bachelor of Secondary Education",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 13,
-        code: "BEED",
-        name: "Bachelor of Elementary Education",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 14,
-        code: "ICT",
-        name: "Information and Communications Technology",
-        type: "2 years Course",
-        started_date: "2024-01-15",
-        end_date: "2026-01-15",
-        status: "active",
-      },
-      {
-        id: 15,
-        code: "EIM",
-        name: "Electrical Installation and Maintenance NC II",
-        type: "Short Course",
-        started_date: "2024-02-01",
-        end_date: "2024-07-01",
-        status: "inactive",
-      },
-      {
-        id: 16,
-        code: "SMAW",
-        name: "Shielded Metal Arc Welding NC II",
-        type: "Short Course",
-        started_date: "2024-03-01",
-        end_date: "2024-08-01",
-        status: "active",
-      },
-      {
-        id: 17,
-        code: "BSCHE",
-        name: "Bachelor of Science in Chemical Engineering",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "inactive",
-      },
-      {
-        id: 18,
-        code: "BSME",
-        name: "Bachelor of Science in Mechanical Engineering",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 19,
-        code: "BSEE",
-        name: "Bachelor of Science in Electrical Engineering",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "inactive",
-      },
-      {
-        id: 20,
-        code: "BSCIV",
-        name: "Bachelor of Science in Civil Engineering",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 21,
-        code: "BSN",
-        name: "Bachelor of Science in Nursing",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 22,
-        code: "BSPH",
-        name: "Bachelor of Science in Pharmacy",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "inactive",
-      },
-      {
-        id: 23,
-        code: "RADTECH",
-        name: "Radiologic Technology",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 24,
-        code: "CRIM",
-        name: "Bachelor of Science in Criminology",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "active",
-      },
-      {
-        id: 25,
-        code: "ABCOMM",
-        name: "Bachelor of Arts in Communication",
-        type: "4 years Course",
-        started_date: "2023-09-01",
-        end_date: "2027-06-30",
-        status: "inactive",
-      },
     ];
 
     res.status(200).json(initialCourses);
@@ -334,4 +151,43 @@ const getCourseList = async (req, res) => {
   }
 };
 
-export { getUserList, getCourseList };
+const overView = async (req, res) => {
+  try {
+    const systemOverview = [
+      {
+        title: "Total Students",
+        value: "1,248",
+        change: 12,
+        icon: "Users",
+        color: "blue",
+      },
+      {
+        title: "Pending Documents",
+        value: "42",
+        change: -5,
+        icon: "FileText",
+        color: "yellow",
+      },
+      {
+        title: "Pending Payments",
+        value: "28",
+        change: 8,
+        icon: "CreditCard",
+        color: "red",
+      },
+      {
+        title: "Enrolled Students",
+        value: "876",
+        change: 15,
+        icon: "CheckCircle",
+        color: "green",
+      },
+    ];
+    res.status(200).json(systemOverview);
+  } catch (error) {
+    console.error("Error in overView:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export { getUserList, getCourseList, overView };
