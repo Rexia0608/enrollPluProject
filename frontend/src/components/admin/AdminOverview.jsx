@@ -1,9 +1,7 @@
 // components/admin/AdminOverview.jsx
 import React, { useState, useEffect } from "react";
 import { Users, FileText, CreditCard, CheckCircle } from "lucide-react";
-import Card from "../ui/Card";
 import StatCard from "../ui/StatCard";
-import EnrollmentControlCard from "./EnrollmentControlCard";
 import RecentActivityCard from "./RecentActivityCard";
 import MaintenanceModeCard from "./MaintenanceModeCard";
 import { useAdmin } from "../../context/AdminContext";
@@ -53,14 +51,9 @@ function AdminOverview() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <EnrollmentControlCard />
           <RecentActivityCard />
-        </div>
-
-        <div className="space-y-6">
-          <MaintenanceModeCard />
         </div>
       </div>
     </div>
