@@ -1,5 +1,6 @@
 // components/admin/MaintenanceModeCard.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Shield,
   AlertTriangle,
@@ -20,30 +21,90 @@ function MaintenanceModeCard() {
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [messageInput, setMessageInput] = useState(maintenanceMessage);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const API_URL = "http://localhost:3000/admin/maintenance";
+
+  // Fetch current maintenance status on component mount
+  useEffect(() => {
+    fetchMaintenanceStatus();
+  }, []);
+
+  const fetchMaintenanceStatus = async () => {
+    try {
+      const response = await axios.get(API_URL);
+      const data = response.data;
+      setMaintenanceMode(data.maintenanceMode);
+      setMaintenanceMessage(data.message || maintenanceMessage);
+      setMessageInput(data.message || maintenanceMessage);
+    } catch (err) {
+      console.error("Error fetching maintenance status:", err);
+      setError(
+        err.response?.data?.message || "Failed to load maintenance status",
+      );
+    }
+  };
+
+  const updateMaintenanceStatus = async (mode, message) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.put(API_URL, {
+        maintenanceMode: mode,
+        message: message,
+      });
+
+      const data = response.data;
+
+      // Update local state with the response
+      setMaintenanceMode(data.maintenanceMode);
+      setMaintenanceMessage(data.message);
+      setMessageInput(data.message);
+    } catch (err) {
+      console.error("Error updating maintenance status:", err);
+      setError(
+        err.response?.data?.message || "Failed to update maintenance status",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleMaintenanceMode = () => {
+    console.log("Toggle clicked, current mode:", maintenanceMode);
     if (maintenanceMode) {
-      // Turning off maintenance mode
-      setMaintenanceMode(false);
+      // Turning off maintenance mode - update immediately
+      updateMaintenanceStatus(false, maintenanceMessage);
     } else {
       // Turning on maintenance mode - show confirmation
+      console.log("Opening confirmation dialog");
       setShowConfirmDialog(true);
     }
   };
 
-  const confirmActivateMaintenance = () => {
-    setMaintenanceMode(true);
+  const confirmActivateMaintenance = async () => {
+    console.log("Confirm button clicked in modal");
+    console.log("Current maintenanceMessage:", maintenanceMessage);
+    await updateMaintenanceStatus(true, maintenanceMessage);
     setShowConfirmDialog(false);
   };
 
-  const saveMaintenanceMessage = () => {
-    setMaintenanceMessage(messageInput);
+  const saveMaintenanceMessage = async () => {
+    await updateMaintenanceStatus(maintenanceMode, messageInput);
     setIsEditingMessage(false);
   };
 
   return (
     <>
       <Card>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            Error: {error}
+          </div>
+        )}
+
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center space-x-3">
             <div
@@ -100,7 +161,7 @@ function MaintenanceModeCard() {
                   Maintenance Message
                 </span>
               </div>
-              {!isEditingMessage && (
+              {!isEditingMessage && !isLoading && (
                 <button
                   onClick={() => setIsEditingMessage(true)}
                   className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -117,14 +178,23 @@ function MaintenanceModeCard() {
                   onChange={(e) => setMessageInput(e.target.value)}
                   className="w-full h-24 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter maintenance message for users..."
+                  disabled={isLoading}
                 />
                 <div className="flex space-x-2">
-                  <PrimaryButton onClick={saveMaintenanceMessage} size="sm">
-                    Save Message
+                  <PrimaryButton
+                    onClick={saveMaintenanceMessage}
+                    size="sm"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Saving..." : "Save Message"}
                   </PrimaryButton>
                   <SecondaryButton
-                    onClick={() => setIsEditingMessage(false)}
+                    onClick={() => {
+                      setIsEditingMessage(false);
+                      setMessageInput(maintenanceMessage);
+                    }}
                     size="sm"
+                    disabled={isLoading}
                   >
                     Cancel
                   </SecondaryButton>
@@ -166,10 +236,13 @@ function MaintenanceModeCard() {
               onClick={toggleMaintenanceMode}
               className="w-full"
               icon={Shield}
+              disabled={isLoading}
             >
-              {maintenanceMode
-                ? "Disable Maintenance Mode"
-                : "Enable Maintenance Mode"}
+              {isLoading
+                ? "Updating..."
+                : maintenanceMode
+                  ? "Disable Maintenance Mode"
+                  : "Enable Maintenance Mode"}
             </PrimaryButton>
             <p className="text-sm text-gray-600 mt-2 text-center">
               {maintenanceMode
@@ -182,12 +255,17 @@ function MaintenanceModeCard() {
 
       <ConfirmDialog
         isOpen={showConfirmDialog}
-        onClose={() => setShowConfirmDialog(false)}
-        onConfirm={confirmActivateMaintenance}
+        onClose={() => {
+          console.log("Closing dialog");
+          setShowConfirmDialog(false);
+        }}
+        onConfirm={() => {
+          console.log("onConfirm triggered in ConfirmDialog");
+          confirmActivateMaintenance();
+        }}
         title="Enable Maintenance Mode?"
         message="This will restrict system access to admin users only. Students and faculty will see the maintenance message and won't be able to access the system."
         confirmText="Enable Maintenance Mode"
-        confirmColor="orange"
       />
     </>
   );

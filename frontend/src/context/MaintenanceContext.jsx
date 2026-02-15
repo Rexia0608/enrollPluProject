@@ -15,10 +15,15 @@ export const MaintenanceProvider = ({ children }) => {
       // API returns true or false directly
       const response = await axios.get(
         "http://localhost:3000/admin/maintenance",
+        {
+          headers: user?.token ? { Authorization: `Bearer ${user.token}` } : {},
+        },
       );
+      console.log(response);
       setIsMaintenanceMode(response.data);
     } catch (error) {
       console.error("Error checking maintenance status:", error);
+      // If error, assume maintenance mode is false
       setIsMaintenanceMode(false);
     } finally {
       setCheckingStatus(false);
@@ -32,9 +37,12 @@ export const MaintenanceProvider = ({ children }) => {
 
   useEffect(() => {
     checkMaintenanceStatus();
+
+    // Poll for updates every 30 seconds
     const interval = setInterval(checkMaintenanceStatus, 30000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.token]); // Add dependency on user token
 
   return (
     <MaintenanceContext.Provider
@@ -42,6 +50,7 @@ export const MaintenanceProvider = ({ children }) => {
         isMaintenanceMode,
         checkingStatus,
         canAccessDuringMaintenance,
+        refreshStatus: checkMaintenanceStatus, // Expose this to manually refresh
       }}
     >
       {children}
@@ -49,4 +58,10 @@ export const MaintenanceProvider = ({ children }) => {
   );
 };
 
-export const useMaintenance = () => useContext(MaintenanceContext);
+export const useMaintenance = () => {
+  const context = useContext(MaintenanceContext);
+  if (!context) {
+    throw new Error("useMaintenance must be used within a MaintenanceProvider");
+  }
+  return context;
+};

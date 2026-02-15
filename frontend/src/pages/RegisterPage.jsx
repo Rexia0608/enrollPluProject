@@ -1,7 +1,7 @@
 import { User, Calendar, Lock, Mail, Eye, EyeOff, Phone } from "lucide-react";
 import { useState, useCallback } from "react";
 import signUpValidation from "../utils/signUpValidation";
-import { NavLink, redirect, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";

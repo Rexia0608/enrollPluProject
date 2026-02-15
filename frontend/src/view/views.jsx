@@ -1,4 +1,4 @@
-// view/views.jsx
+// views/views.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import AdminDashboard from "../pages/AdminDashboard";
@@ -11,7 +11,7 @@ import MaintenancePage from "../pages/MaintenancePage";
 import UnauthorizedPage from "../pages/UnAuthorizedPage";
 import EmailValidationPage from "../pages/EmailValidationPage";
 
-import ProtectedRoute from "../routes/ProtectedRotues";
+import ProtectedRoute from "../routes/ProtectedRoutes";
 import PublicRoute from "../routes/PublicRoute";
 import MaintenanceGuard from "../routes/MaintenanceGuard";
 
@@ -22,19 +22,24 @@ const Views = () => {
         {/* Maintenance page - always accessible */}
         <Route path="/maintenance" element={<MaintenancePage />} />
 
-        {/* Public pages - always accessible (no maintenance guard) */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        {/* PUBLIC ROUTES - These should bypass MaintenanceGuard */}
+        <Route element={<PublicRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
+
+        {/* Other public pages - also bypass MaintenanceGuard */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/email-validation" element={<EmailValidationPage />} />
 
-        {/* All protected routes wrapped with MaintenanceGuard */}
+        {/* PROTECTED ROUTES - These are wrapped with MaintenanceGuard */}
         <Route element={<MaintenanceGuard />}>
           {/* ================= ADMIN ================= */}
           <Route
             path="/admin"
             element={<ProtectedRoute allowedRoles={["admin"]} />}
           >
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard/*" element={<AdminDashboard />} />
           </Route>
 
@@ -43,6 +48,7 @@ const Views = () => {
             path="/faculty"
             element={<ProtectedRoute allowedRoles={["faculty", "admin"]} />}
           >
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard/*" element={<FacultyDashboard />} />
           </Route>
 

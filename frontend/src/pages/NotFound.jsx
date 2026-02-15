@@ -16,11 +16,11 @@ function NotFound() {
         </p>
         <div className="mt-6 space-x-4">
           <Link
-            to="/login"
+            to="/"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Lock className="w-4 h-4 mr-2" />
-            Go to sign in page.
+            Go Back.
           </Link>
         </div>
       </div>
