@@ -190,4 +190,14 @@ const overView = async (req, res) => {
   }
 };
 
-export { getUserList, getCourseList, overView };
+const getMaintenance = async (req, res) => {
+  try {
+    const maintenance = true;
+    res.status(200).json(maintenance);
+  } catch (error) {
+    console.error("Error in getMaintenance:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export { getUserList, getCourseList, overView, getMaintenance };

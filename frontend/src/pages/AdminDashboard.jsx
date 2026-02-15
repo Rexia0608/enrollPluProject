@@ -8,8 +8,8 @@ import DashboardContainer from "../components/layout/DashboardContainer";
 import AdminOverview from "../components/admin/AdminOverview";
 import EnrollmentControl from "../components/admin/EnrollmentControl";
 import CourseManagement from "../components/admin/CourseManagement";
+import BurstEmailCard from "../components/admin/BurstEmailCard";
 import MaintenanceModeCard from "../components/admin/MaintenanceModeCard";
-import EnrollmentControlCard from "../components/admin/EnrollmentControlCard";
 import RecentActivityCard from "../components/admin/RecentActivityCard";
 import UserManagement from "../components/admin/UserManagement";
 import NotFound from "./NotFound";
@@ -34,7 +34,7 @@ function AdminDashboard() {
               <Route index element={<AdminOverview />} />
               <Route path="enrollment" element={<EnrollmentControl />} />
               <Route path="course" element={<CourseManagement />} />
-              <Route path="schedule" element={<EnrollmentControlCard />} />
+              <Route path="schedule" element={<BurstEmailCard />} />
               <Route path="activity" element={<RecentActivityCard />} />
               <Route path="maintenance" element={<MaintenanceModeCard />} />
               <Route path="users" element={<UserManagement />} />
