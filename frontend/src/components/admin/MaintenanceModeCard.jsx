@@ -1,13 +1,7 @@
 // components/admin/MaintenanceModeCard.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import {
-  Shield,
-  AlertTriangle,
-  MessageSquare,
-  Clock,
-  Edit2,
-} from "lucide-react";
+import { Shield, AlertTriangle, MessageSquare, Edit2 } from "lucide-react";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import SecondaryButton from "../ui/SecondaryButton";
@@ -35,7 +29,8 @@ function MaintenanceModeCard() {
     try {
       const response = await axios.get(API_URL);
       const data = response.data;
-      setMaintenanceMode(data.maintenanceMode);
+      // Change from data.maintenanceMode to data.isActive
+      setMaintenanceMode(data.isActive); // <-- FIX HERE
       setMaintenanceMessage(data.message || maintenanceMessage);
       setMessageInput(data.message || maintenanceMessage);
     } catch (err) {
@@ -52,14 +47,16 @@ function MaintenanceModeCard() {
 
     try {
       const response = await axios.put(API_URL, {
-        maintenanceMode: mode,
+        maintenanceMode: mode, // This is correct - sending to backend
         message: message,
       });
 
       const data = response.data;
+      console.log("Response from server:", data); // Add this to debug
 
       // Update local state with the response
-      setMaintenanceMode(data.maintenanceMode);
+      // Change from data.maintenanceMode to data.isActive
+      setMaintenanceMode(data.isActive); // <-- FIX HERE
       setMaintenanceMessage(data.message);
       setMessageInput(data.message);
     } catch (err) {
@@ -73,20 +70,16 @@ function MaintenanceModeCard() {
   };
 
   const toggleMaintenanceMode = () => {
-    console.log("Toggle clicked, current mode:", maintenanceMode);
     if (maintenanceMode) {
       // Turning off maintenance mode - update immediately
       updateMaintenanceStatus(false, maintenanceMessage);
     } else {
       // Turning on maintenance mode - show confirmation
-      console.log("Opening confirmation dialog");
       setShowConfirmDialog(true);
     }
   };
 
   const confirmActivateMaintenance = async () => {
-    console.log("Confirm button clicked in modal");
-    console.log("Current maintenanceMessage:", maintenanceMessage);
     await updateMaintenanceStatus(true, maintenanceMessage);
     setShowConfirmDialog(false);
   };
@@ -166,7 +159,7 @@ function MaintenanceModeCard() {
                   onClick={() => setIsEditingMessage(true)}
                   className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
                 >
-                  <Edit2 className="w-4 h-4" />
+                  <Edit2 className="w-6 h-6" />
                 </button>
               )}
             </div>
@@ -205,29 +198,6 @@ function MaintenanceModeCard() {
                 <p className="text-gray-700">{maintenanceMessage}</p>
               </div>
             )}
-          </div>
-
-          {/* Scheduled Maintenance */}
-          <div>
-            <div className="flex items-center space-x-2 mb-3">
-              <Clock className="w-5 h-5 text-gray-600" />
-              <span className="font-medium text-gray-900">
-                Scheduled Maintenance
-              </span>
-            </div>
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">
-                    Next Maintenance Window
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    March 15, 2024 • 2:00 AM - 4:00 AM
-                  </p>
-                </div>
-                <SecondaryButton size="sm">Schedule</SecondaryButton>
-              </div>
-            </div>
           </div>
 
           {/* Toggle Button */}

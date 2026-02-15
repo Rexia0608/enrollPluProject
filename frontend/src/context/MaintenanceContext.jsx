@@ -4,33 +4,47 @@ import { useAuth } from "./AuthContext";
 import axios from "axios";
 
 const MaintenanceContext = createContext(null);
+const BASE_URL_MAINTENANCE = "http://localhost:3000/admin/maintenance";
 
 export const MaintenanceProvider = ({ children }) => {
   const { user } = useAuth();
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState(
+    "System is undergoing scheduled maintenance. We expect to be back online shortly.",
+  );
   const [checkingStatus, setCheckingStatus] = useState(true);
 
   const checkMaintenanceStatus = async () => {
     try {
-      // API returns true or false directly
-      const response = await axios.get(
-        "http://localhost:3000/admin/maintenance",
-        {
-          headers: user?.token ? { Authorization: `Bearer ${user.token}` } : {},
-        },
-      );
-      console.log(response);
-      setIsMaintenanceMode(response.data);
+      const response = await axios.get(`${BASE_URL_MAINTENANCE}`, {
+        headers: user?.token ? { Authorization: `Bearer ${user.token}` } : {},
+      });
+
+      // Check what your API actually returns
+      console.log("Maintenance API response:", response.data);
+
+      // If your API returns an object with isActive property
+      if (response.data && typeof response.data === "object") {
+        setIsMaintenanceMode(response.data.isActive === true);
+        setMaintenanceMessage(response.data.message || maintenanceMessage);
+      }
+      // If your API returns a boolean directly
+      else if (typeof response.data === "boolean") {
+        setIsMaintenanceMode(response.data);
+      }
+      // If your API returns { data: { isActive: boolean } } structure
+      else if (response.data?.data?.isActive !== undefined) {
+        setIsMaintenanceMode(response.data.data.isActive);
+        setMaintenanceMessage(response.data.data.message || maintenanceMessage);
+      }
     } catch (error) {
       console.error("Error checking maintenance status:", error);
-      // If error, assume maintenance mode is false
       setIsMaintenanceMode(false);
     } finally {
       setCheckingStatus(false);
     }
   };
 
-  // Only admin can access during maintenance
   const canAccessDuringMaintenance = () => {
     return user?.role === "admin";
   };
@@ -38,19 +52,18 @@ export const MaintenanceProvider = ({ children }) => {
   useEffect(() => {
     checkMaintenanceStatus();
 
-    // Poll for updates every 30 seconds
     const interval = setInterval(checkMaintenanceStatus, 30000);
-
     return () => clearInterval(interval);
-  }, [user?.token]); // Add dependency on user token
+  }, [user?.token]);
 
   return (
     <MaintenanceContext.Provider
       value={{
         isMaintenanceMode,
+        maintenanceMessage,
         checkingStatus,
         canAccessDuringMaintenance,
-        refreshStatus: checkMaintenanceStatus, // Expose this to manually refresh
+        refreshStatus: checkMaintenanceStatus,
       }}
     >
       {children}

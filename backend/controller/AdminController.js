@@ -1,4 +1,8 @@
 // controllers/adminController.js
+import {
+  maintenanceCheckerModel,
+  maintenanceModel,
+} from "../models/maintenanceModel.js";
 
 const getUserList = async (req, res) => {
   try {
@@ -190,14 +194,38 @@ const overView = async (req, res) => {
   }
 };
 
-const getMaintenance = async (req, res) => {
+const setMaintenance = async (req, res) => {
   try {
-    const maintenance = true;
+    const { maintenanceMode, message } = req.body;
+
+    // Pass the parameters as an object to the model
+    const maintenance = await maintenanceModel({
+      isActive: maintenanceMode, // Map maintenanceMode to isActive
+      message: message,
+    });
+
+    // Return the updated maintenance state
     res.status(200).json(maintenance);
   } catch (error) {
-    console.error("Error in getMaintenance:", error);
+    console.error("Error in setMaintenance:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-export { getUserList, getCourseList, overView, getMaintenance };
+const checkMaintenance = async (req, res) => {
+  try {
+    const maintenance = await maintenanceCheckerModel();
+    res.status(200).json(maintenance);
+  } catch (error) {
+    console.error("Error in checkMaintenance:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export {
+  getUserList,
+  getCourseList,
+  overView,
+  checkMaintenance,
+  setMaintenance,
+};

@@ -3,7 +3,8 @@ import {
   getUserList,
   getCourseList,
   overView,
-  getMaintenance,
+  checkMaintenance,
+  setMaintenance,
 } from "../controller/AdminController.js";
 
 const router = express.Router();
@@ -11,6 +12,8 @@ const router = express.Router();
 router.get("/usersList", getUserList);
 router.get("/courseList", getCourseList);
 router.get("/overView", overView);
-router.get("/maintenance", getMaintenance);
+router.get("/maintenance", checkMaintenance);
+
+router.put("/maintenance", setMaintenance);
 
 export default router;

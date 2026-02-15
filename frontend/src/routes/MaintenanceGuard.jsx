@@ -1,23 +1,11 @@
 // routes/MaintenanceGuard.jsx
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { useMaintenance } from "../context/MaintenanceContext";
 
 const MaintenanceGuard = () => {
-  const { user } = useAuth();
   const { isMaintenanceMode, checkingStatus, canAccessDuringMaintenance } =
     useMaintenance();
   const location = useLocation();
-
-  // Debug log
-  console.log(
-    "MaintenanceGuard - User:",
-    user?.role,
-    "Maintenance Mode:",
-    isMaintenanceMode,
-    "Path:",
-    location.pathname,
-  );
 
   // Show loading while checking maintenance status
   if (checkingStatus) {
@@ -38,7 +26,6 @@ const MaintenanceGuard = () => {
   ];
 
   if (publicPaths.includes(location.pathname)) {
-    console.log("Public path accessed during maintenance:", location.pathname);
     return <Outlet />;
   }
 
@@ -46,12 +33,10 @@ const MaintenanceGuard = () => {
   if (isMaintenanceMode) {
     // Allow admin to bypass maintenance mode
     if (canAccessDuringMaintenance()) {
-      console.log("Admin bypassing maintenance mode");
       return <Outlet />;
     }
 
     // Redirect non-admin users to maintenance page
-    console.log("Redirecting to maintenance page");
     return <Navigate to="/maintenance" replace />;
   }
 
