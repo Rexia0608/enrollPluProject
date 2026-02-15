@@ -96,4 +96,23 @@ const maintenanceCheckerModel = async () => {
   }
 };
 
-export { maintenanceModel, maintenanceCheckerModel };
+const maintenanceMessageModel = async () => {
+  try {
+    // Optional: Refresh from DB to ensure latest data
+    // You can comment this out if you want pure in-memory like your original
+    let message;
+    const result = await db.query(
+      "SELECT message FROM maintenance_settings WHERE id = 1;",
+    );
+
+    if (result.rows.length > 0) {
+      message = result.rows[0];
+    }
+
+    return message; // Same as your original - returns a copy
+  } catch (error) {
+    console.error("maintenanceCheckerModel error:", error);
+  }
+};
+
+export { maintenanceModel, maintenanceCheckerModel, maintenanceMessageModel };

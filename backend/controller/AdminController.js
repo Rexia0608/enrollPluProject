@@ -2,6 +2,7 @@
 import {
   maintenanceCheckerModel,
   maintenanceModel,
+  maintenanceMessageModel,
 } from "../models/maintenanceModel.js";
 
 const getUserList = async (req, res) => {
@@ -222,10 +223,21 @@ const checkMaintenance = async (req, res) => {
   }
 };
 
+const getMaintenanceMessege = async (req, res) => {
+  try {
+    const message = await maintenanceMessageModel();
+    res.status(200).json(message);
+  } catch (error) {
+    console.error("Error in checkMaintenance:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   getUserList,
   getCourseList,
   overView,
   checkMaintenance,
   setMaintenance,
+  getMaintenanceMessege,
 };
