@@ -1,5 +1,5 @@
 // components/admin/BurstEmailCard.jsx
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Mail, Send, Clock, AlertCircle, CheckCircle } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -7,8 +7,11 @@ import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import StatusBadge from "../ui/StatusBadge";
 import ConfirmDialog from "../ui/ConfirmDialog";
+import axios from "axios";
 
 // Constants
+const API_URL = "http://localhost:3000/admin/announcement";
+const API_URL_STATS = "http://localhost:3000/admin/stats";
 const PERIODS = [
   "Enrollment",
   "Prelim",
@@ -50,28 +53,20 @@ const EMAIL_MESSAGES = {
     "Final examinations are approaching. Please complete all required payments to be eligible for your final grades.",
   Summer:
     "The summer term is approaching. Please complete all required payments to remain eligible for your final grades.",
-
   "Testda/Short-Courses":
     "TESDA course assessments are approaching. Please ensure that all requirements are completed to avoid any issues with your evaluation.",
-};
-
-// Stats data - ✅ Added missing periods
-const STATS = {
-  Enrollment: { students: 245, sent: 0, pending: 245 }, // Default values
-  Prelim: { students: 245, sent: 198, pending: 47 },
-  Midterm: { students: 245, sent: 212, pending: 33 },
-  "Pre-Final": { students: 245, sent: 187, pending: 58 },
-  Final: { students: 245, sent: 156, pending: 89 },
-  Summer: { students: 120, sent: 45, pending: 75 }, // Different numbers for summer
-  "Testda/Short-Courses": { students: 85, sent: 32, pending: 53 }, // Different numbers for TESDA
 };
 
 function BurstEmailCard() {
   const [selectedPeriod, setSelectedPeriod] = useState(PERIODS[0]);
   const [status, setStatus] = useState(STATUS.IDLE);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Removed unused handlePeriodChange
+  useEffect(() => {
+    fetchMaintenanceStats();
+  }, []);
 
   const handlePeriodSelect = useCallback((period) => {
     setSelectedPeriod(period);
@@ -85,80 +80,88 @@ function BurstEmailCard() {
     setConfirmOpen(false);
     setStatus(STATUS.SENDING);
 
-    // Show loading toast
     const toastId = toast.loading(
       `Preparing to send ${selectedPeriod} emails...`,
     );
 
     try {
-      // Simulate API call - replace with actual fetch
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await axios.post(API_URL, {
+        period: selectedPeriod,
+        message: EMAIL_MESSAGES[selectedPeriod],
+        recipients: stats?.[selectedPeriod]?.pending || 0,
+      });
 
-      // Simulate successful response
-      const data = { sentCount: STATS[selectedPeriod]?.pending || 0 };
+      const sentCount =
+        response.data?.sentCount || stats?.[selectedPeriod]?.pending || 0;
 
-      // Dismiss loading toast and show success
       toast.dismiss(toastId);
       toast.success(
-        `✅ Successfully sent ${data.sentCount} ${selectedPeriod} emails!`,
+        `✅ Successfully sent ${sentCount} ${selectedPeriod} emails!`,
         {
           position: "top-right",
           autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           icon: CheckCircle,
         },
       );
 
       setStatus(STATUS.SENT);
+      await fetchMaintenanceStats();
 
-      // Auto-reset after 3 seconds
       setTimeout(() => {
         setStatus(STATUS.IDLE);
       }, 3000);
     } catch (err) {
       console.error("Failed to send burst email:", err);
 
-      // Dismiss loading toast and show error
       toast.dismiss(toastId);
       toast.error(
-        err instanceof Error
-          ? err.message
-          : "Failed to send emails. Please try again.",
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to send emails. Please try again.",
         {
           position: "top-right",
           autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
           icon: AlertCircle,
         },
       );
 
       setStatus(STATUS.IDLE);
     }
-  }, [selectedPeriod]);
+  }, [selectedPeriod, stats]);
 
   const handleCancel = useCallback(() => {
     setConfirmOpen(false);
   }, []);
+
+  const fetchMaintenanceStats = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(API_URL_STATS);
+      setStats(response.data);
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+      toast.info("Using default statistics. Some data may not be available.", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const emailMessage = useMemo(
     () => EMAIL_MESSAGES[selectedPeriod] || EMAIL_MESSAGES.Prelim,
     [selectedPeriod],
   );
 
-  const periodStats = useMemo(
-    () => STATS[selectedPeriod] || STATS.Prelim,
-    [selectedPeriod],
-  );
+  const periodStats = useMemo(() => {
+    return stats?.[selectedPeriod] || null;
+  }, [selectedPeriod, stats]);
 
   const isSending = status === STATUS.SENDING;
   const buttonText = isSending ? "Sending Emails..." : "Send Burst Email";
-  const isButtonDisabled = isSending || status === STATUS.SENT;
+  const isButtonDisabled =
+    isSending || status === STATUS.SENT || loading || !periodStats;
 
   const periodColorClass =
     PERIOD_COLORS[selectedPeriod] || PERIOD_COLORS.Prelim;
@@ -196,7 +199,7 @@ function BurstEmailCard() {
                 <button
                   key={period}
                   onClick={() => handlePeriodSelect(period)}
-                  disabled={isSending}
+                  disabled={isSending || loading}
                   className={`
                     px-4 py-3 rounded-lg border-2 transition-all font-medium text-sm
                     ${
@@ -204,7 +207,7 @@ function BurstEmailCard() {
                         ? `${PERIOD_COLORS[period]} border-gray-300 shadow-md scale-105`
                         : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
                     }
-                    ${isSending ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                    ${isSending || loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
                   `}
                 >
@@ -228,7 +231,6 @@ function BurstEmailCard() {
             </div>
 
             <div className="rounded-xl overflow-hidden bg-white shadow-sm border border-gray-200">
-              {/* Email Header */}
               <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-gray-500" />
@@ -238,22 +240,71 @@ function BurstEmailCard() {
                 </div>
               </div>
 
-              {/* Email Body */}
               <div className="p-4">
                 <div className="prose prose-sm max-w-none">
                   <p className="text-gray-600 leading-relaxed">
                     {emailMessage}
                   </p>
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg shadow-2xs">
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg shadow-xs">
                     <p className="text-xs text-blue-700 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
-                      This message will be sent to{" "}
-                      <strong>{periodStats.pending} students </strong> with
-                      pending balances
+                      {loading ? (
+                        "Loading statistics..."
+                      ) : !periodStats ? (
+                        <>
+                          This message will be sent to{" "}
+                          <span className="font-semibold">
+                            not available yet
+                          </span>{" "}
+                          students with pending balances
+                        </>
+                      ) : (
+                        <>
+                          This message will be sent to{" "}
+                          <strong>{periodStats.pending} students</strong> with
+                          pending balances
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Stats Summary */}
+          <div className="mb-4 grid grid-cols-3 gap-3 text-sm">
+            <div className="bg-gray-50 p-2 rounded-lg text-center">
+              <span className="text-gray-600 block text-xs">
+                Total Students
+              </span>
+              <span className="font-semibold">
+                {!periodStats ? (
+                  <span className="font-semibold">not available yet</span>
+                ) : (
+                  periodStats.students
+                )}
+              </span>
+            </div>
+            <div className="bg-gray-50 p-2 rounded-lg text-center">
+              <span className="text-gray-600 block text-xs">Already Sent</span>
+              <span className="font-semibold">
+                {!periodStats ? (
+                  <span className="font-semibold">not available yet</span>
+                ) : (
+                  periodStats.sent
+                )}
+              </span>
+            </div>
+            <div className="bg-gray-50 p-2 rounded-lg text-center">
+              <span className="text-gray-600 block text-xs">Pending</span>
+              <span className="font-semibold">
+                {!periodStats ? (
+                  <span className="font-semibold">not available yet</span>
+                ) : (
+                  periodStats.pending
+                )}
+              </span>
             </div>
           </div>
 
@@ -266,14 +317,26 @@ function BurstEmailCard() {
             loading={isSending}
             aria-label={buttonText}
           >
-            {buttonText}
+            {loading ? "Loading..." : buttonText}
           </PrimaryButton>
 
           {/* Info Message */}
           <p className="text-xs text-gray-500 text-center mt-4 flex items-center justify-center gap-1">
             <Clock className="w-3 h-3" />
-            This action will send emails to {periodStats.pending} students with
-            pending balances for {selectedPeriod}
+            {loading ? (
+              "Loading statistics..."
+            ) : !periodStats ? (
+              <>
+                Cannot send emails: Student count{" "}
+                <span className="font-semibold">not available yet</span> for{" "}
+                {selectedPeriod}
+              </>
+            ) : (
+              <>
+                This action will send emails to {periodStats.pending} students
+                with pending balances for {selectedPeriod}
+              </>
+            )}
           </p>
         </div>
       </Card>
@@ -292,11 +355,26 @@ function BurstEmailCard() {
             </p>
             <ul className="list-disc list-inside text-sm bg-gray-50 p-3 rounded-lg">
               <li>
-                <strong>{periodStats.pending} students</strong> with pending
-                balances
+                {!periodStats ? (
+                  <>
+                    <span className="font-semibold">not available yet</span>{" "}
+                    students with pending balances
+                  </>
+                ) : (
+                  <>
+                    <strong>{periodStats.pending} students</strong> with pending
+                    balances
+                  </>
+                )}
               </li>
               <li>All active student accounts</li>
             </ul>
+            {!periodStats && (
+              <p className="text-sm text-red-600 font-medium">
+                ⚠️ Cannot proceed: Student count is{" "}
+                <span className="font-semibold">not available yet</span>
+              </p>
+            )}
             <p className="text-sm text-amber-600 font-medium">
               This action cannot be undone.
             </p>
@@ -306,6 +384,7 @@ function BurstEmailCard() {
         cancelText="Cancel"
         variant="warning"
         isLoading={isSending}
+        disabled={!periodStats}
       />
       <ToastContainer
         position="top-right"

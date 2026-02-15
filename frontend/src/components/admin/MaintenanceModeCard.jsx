@@ -7,6 +7,8 @@ import PrimaryButton from "../ui/PrimaryButton";
 import SecondaryButton from "../ui/SecondaryButton";
 import ConfirmDialog from "../ui/ConfirmDialog";
 
+const API_URL = "http://localhost:3000/admin/maintenance";
+
 function MaintenanceModeCard() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState(
@@ -17,8 +19,6 @@ function MaintenanceModeCard() {
   const [messageInput, setMessageInput] = useState(maintenanceMessage);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const API_URL = "http://localhost:3000/admin/maintenance";
 
   // Fetch current maintenance status on component mount
   useEffect(() => {

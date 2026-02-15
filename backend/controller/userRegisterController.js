@@ -5,12 +5,9 @@ const UserRegisterController = async (req, res) => {
     const response = await registerUserModel(req.body);
 
     if (response.error) {
-      console.log(response.error);
       return res.status(400).json({ error: response.error });
     }
 
-    // Success
-    console.log(response.message);
     return res.status(200).json(response);
   } catch (error) {
     console.error("Controller error:", error);
