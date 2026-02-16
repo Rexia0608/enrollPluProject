@@ -80,10 +80,20 @@ const AppHeader = ({ title, onMenuClick }) => {
   };
 
   const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+    try {
+      logout();
+      // Clear any local storage/session data if needed
+      localStorage.clear(); // Optional: clear all local storage
+      sessionStorage.clear(); // Optional: clear all session storage
 
+      // Force a full page reload to login
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Fallback navigation if logout fails
+      navigate("/login");
+    }
+  };
   const notifications = [
     { id: 1, title: "New enrollment request", time: "10 min ago", read: false },
     { id: 2, title: "Payment received", time: "1 hour ago", read: true },

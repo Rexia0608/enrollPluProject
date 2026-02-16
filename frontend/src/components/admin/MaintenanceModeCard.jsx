@@ -47,7 +47,7 @@ function MaintenanceModeCard() {
 
     try {
       const response = await axios.put(API_URL, {
-        maintenanceMode: mode, // This is correct - sending to backend
+        maintenanceMode: mode,
         message: message,
       });
 
