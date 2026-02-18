@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
-import userRouter from "./routes/userRoutes.js";
-import authRouter from "./routes/authRoutes.js";
+import userAuthRouter from "./routes/userAuthRoutes.js";
 import AdminRouter from "./routes/adminRoutes.js";
 import dotenv from "dotenv";
 dotenv.config();
@@ -12,8 +11,7 @@ const port = 3000;
 app.use(express.json());
 app.use(cors());
 
-app.use("/auth", authRouter);
-app.use("/enrollplus", userRouter);
+app.use("/auth", userAuthRouter);
 app.use("/admin", AdminRouter);
 
 app.listen(port, () => {

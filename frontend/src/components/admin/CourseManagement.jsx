@@ -92,7 +92,7 @@ const CourseForm = ({
 
       <div>
         <label className="block text-xs font-medium text-gray-500 mb-1.5">
-          Tuition Fee ($)
+          Tuition Fee (₱)
         </label>
         <div className="relative">
           <input
@@ -106,7 +106,7 @@ const CourseForm = ({
             placeholder="Enter tuition fee"
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <span className="text-gray-400">$</span>
+            <span className="text-gray-400">₱</span>
           </div>
         </div>
       </div>
@@ -311,7 +311,7 @@ function CourseManagement() {
     amount
       ? new Intl.NumberFormat("en-US", {
           style: "currency",
-          currency: "USD",
+          currency: "PHP",
           minimumFractionDigits: 0,
         }).format(amount)
       : "N/A";

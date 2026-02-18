@@ -1,9 +1,9 @@
 import db from "../config/db.js";
 import authCodeGenerator from "../utils/AuthCodeGenerator.js";
-import { checkIfTheUserExist } from "./usersModel.js";
+import { checkIfTheUserExist } from "../models/userAuthModel.js";
 import { sendOTPEmail } from "../utils/mailer.js";
 
-const verifyingOtpModel = async ({ email, otp }) => {
+const verifyingOtpServices = async ({ email, otp }) => {
   try {
     const users = await checkIfTheUserExist(email);
 
@@ -78,4 +78,4 @@ const resendOtp = async ({ email }) => {
   }
 };
 
-export { verifyingOtpModel, resendOtp };
+export { verifyingOtpServices, resendOtp };
