@@ -1,6 +1,6 @@
 // components/admin/EnrollmentControl.jsx
-import React, { useState } from "react";
-import { Calendar, Lock, Unlock, Clock, Plus } from "lucide-react";
+import React, { useState, useCallback, useMemo } from "react";
+import { Calendar, Lock, Unlock, Clock, Plus, X } from "lucide-react";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import StatusBadge from "../ui/StatusBadge";
@@ -8,15 +8,15 @@ import ConfirmDialog from "../ui/ConfirmDialog";
 import Modal from "../ui/Modal";
 
 function EnrollmentControl() {
-  const [enrollmentOpen, setEnrollmentOpen] = useState(true);
+  const [enrollmentOpen, setEnrollmentOpen] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showAddYearModal, setShowAddYearModal] = useState(false);
   const [academicYears, setAcademicYears] = useState([]);
   const [activeYear, setActiveYear] = useState("");
   const [scheduleData, setScheduleData] = useState({
-    startDate: "2024-01-15",
-    endDate: "2024-03-31",
-    registrationDeadline: "2024-03-15",
+    startDate: "",
+    endDate: "",
+    registrationDeadline: "",
     lateRegistrationFee: 50,
     allowLateRegistration: true,
   });
@@ -27,22 +27,24 @@ function EnrollmentControl() {
     endDate: "",
   });
 
-  const getNextAcademicYear = () => {
+  const getNextAcademicYear = useCallback(() => {
     const y = new Date().getFullYear();
     return `${y}-${y + 1}`;
-  };
-  const getDefaultDatesForSemester = (semester, yearRange) => {
-    const [s, e] = yearRange.split("-").map(Number);
-    return (
-      {
-        "1ST Semester": { startDate: `${s}-06-01`, endDate: `${s}-10-31` },
-        "2ND Semester": { startDate: `${s}-11-01`, endDate: `${e}-03-31` },
-        "Summer Class": { startDate: `${e}-04-01`, endDate: `${e}-05-31` },
-      }[semester] || { startDate: `${s}-06-01`, endDate: `${e}-05-31` }
-    );
-  };
+  }, []);
 
-  const handleOpenAddYearModal = () => {
+  const getDefaultDatesForSemester = useCallback((semester, yearRange) => {
+    const [s, e] = yearRange.split("-").map(Number);
+    const dateMap = {
+      "1ST Semester": { startDate: `${s}-06-01`, endDate: `${s}-10-31` },
+      "2ND Semester": { startDate: `${s}-11-01`, endDate: `${e}-03-31` },
+      "Summer Class": { startDate: `${e}-04-01`, endDate: `${e}-05-31` },
+    };
+    return (
+      dateMap[semester] || { startDate: `${s}-06-01`, endDate: `${e}-05-31` }
+    );
+  }, []);
+
+  const handleOpenAddYearModal = useCallback(() => {
     const nextYear = getNextAcademicYear();
     const defaultDates = getDefaultDatesForSemester("1ST Semester", nextYear);
     setNewYear({
@@ -52,79 +54,115 @@ function EnrollmentControl() {
       endDate: defaultDates.endDate,
     });
     setShowAddYearModal(true);
-  };
+  }, [getNextAcademicYear, getDefaultDatesForSemester]);
 
-  const handleSemesterChange = (e) => {
-    const semester = e.target.value;
-    const defaultDates = getDefaultDatesForSemester(semester, newYear.year);
-    setNewYear({
-      ...newYear,
-      semester,
-      startDate: defaultDates.startDate,
-      endDate: defaultDates.endDate,
-    });
-  };
+  const handleSemesterChange = useCallback(
+    (e) => {
+      const semester = e.target.value;
+      setNewYear((prev) => {
+        const defaultDates = getDefaultDatesForSemester(semester, prev.year);
+        return {
+          ...prev,
+          semester,
+          startDate: defaultDates.startDate,
+          endDate: defaultDates.endDate,
+        };
+      });
+    },
+    [getDefaultDatesForSemester],
+  );
 
-  const handleToggleEnrollment = () =>
+  const handleToggleEnrollment = useCallback(() => {
+    if (!activeYear) {
+      alert("Please add and activate an academic year first");
+      return;
+    }
     enrollmentOpen ? setShowConfirmDialog(true) : setEnrollmentOpen(true);
-  const confirmCloseEnrollment = () => {
+  }, [enrollmentOpen, activeYear]);
+
+  const confirmCloseEnrollment = useCallback(() => {
     setEnrollmentOpen(false);
     setShowConfirmDialog(false);
-  };
+  }, []);
 
-  const handleActivateYear = (yearId) => {
-    const updatedYears = academicYears.map((y) => ({
-      ...y,
-      status: y.id === yearId ? "active" : "inactive",
-    }));
-    setAcademicYears(updatedYears);
-    const activated = updatedYears.find((y) => y.id === yearId);
-    if (activated) {
-      setActiveYear(activated.year);
-      setScheduleData({
-        ...scheduleData,
-        startDate: activated.startDate,
-        endDate: activated.endDate,
-      });
-    }
-  };
+  const handleActivateYear = useCallback((yearId) => {
+    setAcademicYears((prev) => {
+      const updatedYears = prev.map((y) => ({
+        ...y,
+        status: y.id === yearId ? "active" : "inactive",
+      }));
 
-  const handleAddAcademicYear = () => {
-    if (
-      !newYear.semester ||
-      !newYear.year ||
-      !newYear.startDate ||
-      !newYear.endDate
-    )
-      return alert("Please fill all fields");
-    if (!/^\d{4}-\d{4}$/.test(newYear.year))
-      return alert("Please use format YYYY-YYYY (e.g., 2024-2025)");
-    if (new Date(newYear.endDate) <= new Date(newYear.startDate))
-      return alert("End date must be after start date");
+      const activated = updatedYears.find((y) => y.id === yearId);
+      if (activated) {
+        setActiveYear(activated.year);
+        setScheduleData((prevData) => ({
+          ...prevData,
+          startDate: activated.startDate,
+          endDate: activated.endDate,
+        }));
+        setEnrollmentOpen(false); // Reset enrollment when changing active year
+      }
+
+      return updatedYears;
+    });
+  }, []);
+
+  const validateAcademicYear = useCallback(
+    (yearData) => {
+      const { semester, year, startDate, endDate } = yearData;
+
+      if (!semester || !year || !startDate || !endDate) {
+        alert("Please fill all fields");
+        return false;
+      }
+
+      if (!/^\d{4}-\d{4}$/.test(year)) {
+        alert("Please use format YYYY-YYYY (e.g., 2024-2025)");
+        return false;
+      }
+
+      if (new Date(endDate) <= new Date(startDate)) {
+        alert("End date must be after start date");
+        return false;
+      }
+
+      const fullYearName = `${semester} ${year}`;
+      if (academicYears.some((y) => y.year === fullYearName)) {
+        alert("This academic year already exists");
+        return false;
+      }
+
+      return true;
+    },
+    [academicYears],
+  );
+
+  const handleAddAcademicYear = useCallback(() => {
+    if (!validateAcademicYear(newYear)) return;
 
     const fullYearName = `${newYear.semester} ${newYear.year}`;
-    if (academicYears.some((y) => y.year === fullYearName))
-      return alert("This academic year already exists");
-
     const isFirstYear = !academicYears.length;
+
     const newYearObj = {
-      id: academicYears.length + 1,
+      id: Date.now(), // Better than incremental IDs
       year: fullYearName,
       status: isFirstYear ? "active" : "inactive",
       startDate: newYear.startDate,
       endDate: newYear.endDate,
     };
 
-    setAcademicYears([newYearObj, ...academicYears]);
+    setAcademicYears((prev) => [newYearObj, ...prev]);
+
     if (isFirstYear) {
       setActiveYear(fullYearName);
-      setScheduleData({
-        ...scheduleData,
+      setScheduleData((prev) => ({
+        ...prev,
         startDate: newYear.startDate,
         endDate: newYear.endDate,
-      });
+      }));
     }
 
+    // Reset form
     setNewYear({
       semester: "1ST Semester",
       year: "",
@@ -132,26 +170,199 @@ function EnrollmentControl() {
       endDate: "",
     });
     setShowAddYearModal(false);
-  };
+  }, [newYear, academicYears.length, validateAcademicYear]);
 
-  const getScheduleStatus = () => {
-    const today = new Date(),
-      start = new Date(scheduleData.startDate),
-      end = new Date(scheduleData.endDate);
+  const getScheduleStatus = useMemo(() => {
+    if (!scheduleData.startDate || !scheduleData.endDate) return "inactive";
+
+    const today = new Date();
+    const start = new Date(scheduleData.startDate);
+    const end = new Date(scheduleData.endDate);
+
     return today < start ? "upcoming" : today > end ? "expired" : "active";
-  };
+  }, [scheduleData.startDate, scheduleData.endDate]);
 
-  const formatDate = (date) =>
-    date
-      ? new Date(date).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })
-      : "N/A";
-  const scheduleStatus = getScheduleStatus();
+  const formatDate = useCallback((date) => {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }, []);
+
   const inputClasses =
     "w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 hover:border-gray-400";
+
+  const EnrollmentStatusCard = useMemo(
+    () => (
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Enrollment Status
+            </h3>
+            <p className="text-gray-600">
+              Control enrollment availability for students
+            </p>
+          </div>
+          {activeYear && (
+            <StatusBadge status={enrollmentOpen ? "open" : "closed"} />
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Academic Year Card */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center space-x-3 mb-3">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              <h4 className="font-medium text-gray-900">
+                Active Academic Year
+              </h4>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-gray-900">
+                {activeYear || "No active year"}
+              </span>
+              {activeYear && (
+                <span className="text-sm text-blue-700 bg-blue-100 px-2 py-1 rounded">
+                  Active
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              Current active semester for enrollment
+            </p>
+          </div>
+
+          {/* Enrollment Period Card */}
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="flex items-center space-x-3 mb-3">
+              <Clock className="w-5 h-5 text-gray-600" />
+              <h4 className="font-medium text-gray-900">Enrollment Period</h4>
+            </div>
+            {activeYear ? (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Start Date:</span>
+                  <span className="font-medium">
+                    {formatDate(scheduleData.startDate)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">End Date:</span>
+                  <span className="font-medium">
+                    {formatDate(scheduleData.endDate)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Status:</span>
+                  <StatusBadge status={getScheduleStatus} size="sm" />
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-center py-4">
+                <p className="text-gray-500 text-sm">
+                  No Enrollment Period Set Yet
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="font-medium text-gray-900">
+                Enrollment is currently {enrollmentOpen ? "open" : "closed"}
+              </h4>
+              <p className="text-sm text-gray-600">
+                {enrollmentOpen
+                  ? "Students can submit applications and upload documents"
+                  : activeYear
+                    ? "New applications are not being accepted"
+                    : "Add an academic year to begin enrollment"}
+              </p>
+            </div>
+            {activeYear && (
+              <PrimaryButton
+                onClick={handleToggleEnrollment}
+                icon={enrollmentOpen ? Lock : Unlock}
+                className="w-full sm:w-auto"
+              >
+                {enrollmentOpen ? "Close Enrollment" : "Open Enrollment"}
+              </PrimaryButton>
+            )}
+          </div>
+        </div>
+      </Card>
+    ),
+    [
+      activeYear,
+      enrollmentOpen,
+      scheduleData,
+      getScheduleStatus,
+      formatDate,
+      handleToggleEnrollment,
+    ],
+  );
+
+  const RecentAcademicYearsCard = useMemo(() => {
+    if (!academicYears.length) return null;
+
+    return (
+      <Card className="mt-6">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Recent Academic Years
+          </h3>
+          <div className="space-y-3">
+            {academicYears.slice(0, 3).map((year) => (
+              <div
+                key={year.id}
+                className={`p-4 border rounded-lg transition-all cursor-pointer hover:shadow-md ${
+                  year.status === "active"
+                    ? "border-blue-300 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+                onClick={() =>
+                  year.status !== "active" && handleActivateYear(year.id)
+                }
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) =>
+                  e.key === "Enter" &&
+                  year.status !== "active" &&
+                  handleActivateYear(year.id)
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900">{year.year}</span>
+                  <StatusBadge
+                    status={year.status === "active" ? "active" : "inactive"}
+                    size="sm"
+                  />
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {formatDate(year.startDate)} - {formatDate(year.endDate)}
+                </div>
+                {year.status !== "active" && (
+                  <p className="text-xs text-blue-600 mt-2">
+                    Click to activate
+                  </p>
+                )}
+              </div>
+            ))}
+            {academicYears.length > 3 && (
+              <p className="text-sm text-gray-500 text-center pt-2">
+                + {academicYears.length - 3} more academic years
+              </p>
+            )}
+          </div>
+        </div>
+      </Card>
+    );
+  }, [academicYears, formatDate, handleActivateYear]);
 
   return (
     <div>
@@ -175,154 +386,10 @@ function EnrollmentControl() {
 
       <div className="grid grid-cols-1 gap-6">
         <div className="space-y-6">
-          <Card>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Enrollment Status
-                </h3>
-                <p className="text-gray-600">
-                  Control enrollment availability for students
-                </p>
-              </div>
-              <StatusBadge status={enrollmentOpen ? "open" : "closed"} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                {
-                  bg: "bg-blue-50",
-                  icon: Calendar,
-                  color: "text-blue-600",
-                  title: "Active Academic Year",
-                  value: activeYear || "No active year",
-                  badge: activeYear && "Active",
-                },
-                {
-                  bg: "bg-gray-50",
-                  icon: Clock,
-                  color: "text-gray-600",
-                  title: "Enrollment Period",
-                  value: activeYear ? (
-                    <div className="space-y-2">
-                      {["Start Date", "End Date", "Status"].map((label, i) => (
-                        <div
-                          key={label}
-                          className="flex justify-between text-sm"
-                        >
-                          <span className="text-gray-600">{label}:</span>
-                          <span className="font-medium">
-                            {i === 0 ? (
-                              formatDate(scheduleData.startDate)
-                            ) : i === 1 ? (
-                              formatDate(scheduleData.endDate)
-                            ) : (
-                              <StatusBadge status={scheduleStatus} size="sm" />
-                            )}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex justify-center py-4">
-                      <p className="text-gray-500 text-sm">
-                        No Enrollment Period Set Yet
-                      </p>
-                    </div>
-                  ),
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className={`p-4 ${item.bg} border border-${item.bg === "bg-blue-50" ? "blue-200" : "gray-200"} rounded-lg`}
-                >
-                  <div className="flex items-center space-x-3 mb-3">
-                    <item.icon className={`w-5 h-5 ${item.color}`} />
-                    <h4 className="font-medium text-gray-900">{item.title}</h4>
-                  </div>
-                  {i === 0 ? (
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-gray-900">
-                        {item.value}
-                      </span>
-                      {item.badge && (
-                        <span className="text-sm text-blue-700 bg-blue-100 px-2 py-1 rounded">
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    item.value
-                  )}
-                  {i === 0 && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      Current active semester for enrollment
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900">
-                    Enrollment is currently {enrollmentOpen ? "open" : "closed"}
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {enrollmentOpen
-                      ? "Students can submit applications and upload documents"
-                      : "New applications are not being accepted"}
-                  </p>
-                </div>
-                <PrimaryButton
-                  onClick={handleToggleEnrollment}
-                  icon={enrollmentOpen ? Lock : Unlock}
-                  className="w-full sm:w-auto"
-                >
-                  {enrollmentOpen ? "Close Enrollment" : "Open Enrollment"}
-                </PrimaryButton>
-              </div>
-            </div>
-          </Card>
+          {EnrollmentStatusCard}
+          {RecentAcademicYearsCard}
         </div>
       </div>
-
-      {academicYears.length > 0 && (
-        <Card className="mt-6">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Recent Academic Years
-            </h3>
-            <div className="space-y-3">
-              {academicYears.slice(0, 3).map((year) => (
-                <div
-                  key={year.id}
-                  className={`p-4 border rounded-lg ${year.status === "active" ? "border-blue-300 bg-blue-50" : "border-gray-200"}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">
-                      {year.year}
-                    </span>
-                    <StatusBadge
-                      status={year.status === "active" ? "active" : "inactive"}
-                      size="sm"
-                    />
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {formatDate(year.startDate)} - {formatDate(year.endDate)}
-                  </div>
-                </div>
-              ))}
-              {academicYears.length > 3 && (
-                <p className="text-sm text-gray-500 text-center pt-2">
-                  + {academicYears.length - 3} more academic years
-                </p>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
 
       <Modal
         isOpen={showAddYearModal}
@@ -363,7 +430,7 @@ function EnrollmentControl() {
                       strokeLinejoin="round"
                       strokeWidth="2"
                       d="M19 9l-7 7-7-7"
-                    ></path>
+                    />
                   </svg>
                 </div>
               </div>
@@ -375,7 +442,7 @@ function EnrollmentControl() {
                   type={field === "year" ? "text" : "date"}
                   value={newYear[field]}
                   onChange={(e) =>
-                    setNewYear({ ...newYear, [field]: e.target.value })
+                    setNewYear((prev) => ({ ...prev, [field]: e.target.value }))
                   }
                   placeholder={field === "year" ? "2024-2025" : ""}
                   className={inputClasses}

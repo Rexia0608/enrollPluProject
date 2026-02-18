@@ -20,9 +20,6 @@ export const MaintenanceProvider = ({ children }) => {
         headers: user?.token ? { Authorization: `Bearer ${user.token}` } : {},
       });
 
-      // Check what your API actually returns
-      console.log("Maintenance API response:", response.data);
-
       // If your API returns an object with isActive property
       if (response.data && typeof response.data === "object") {
         setIsMaintenanceMode(response.data.isActive === true);

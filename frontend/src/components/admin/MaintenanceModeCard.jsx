@@ -52,7 +52,6 @@ function MaintenanceModeCard() {
       });
 
       const data = response.data;
-      console.log("Response from server:", data); // Add this to debug
 
       // Update local state with the response
       // Change from data.maintenanceMode to data.isActive
@@ -226,11 +225,9 @@ function MaintenanceModeCard() {
       <ConfirmDialog
         isOpen={showConfirmDialog}
         onClose={() => {
-          console.log("Closing dialog");
           setShowConfirmDialog(false);
         }}
         onConfirm={() => {
-          console.log("onConfirm triggered in ConfirmDialog");
           confirmActivateMaintenance();
         }}
         title="Enable Maintenance Mode?"
