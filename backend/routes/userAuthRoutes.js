@@ -9,6 +9,7 @@ import ValidationHandler from "../middleware/ValidationHandler.js";
 import OtpVaildation from "../middleware/OtpVaildation.js";
 import ResendOtpVadation from "../middleware/ResendOtpVadation.js";
 import loginValidation from "../middleware/LoginValidation.js";
+import ValidationHandler from "../middleware/ValidationHandler.js";
 
 const router = express.Router();
 
