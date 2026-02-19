@@ -10,8 +10,8 @@ const OTP_LENGTH = 4;
 const REDIRECT_DELAY = 3000;
 const RESEND_COOLDOWN = 30; // seconds
 const SUBMIT_COOLDOWN = 2000; // milliseconds
-const API_BASE_URL_RESEND = "http://localhost:3000/auth/resend-otp";
-const API_BASE_URL_VERIFY = "http://localhost:3000/auth/verify-otp";
+const API_BASE_URL_RESEND = "http://localhost:3000/enrollplus/resend-otp";
+const API_BASE_URL_VERIFY = "http://localhost:3000/enrollplus/verify-otp";
 
 // Email masking utility
 const maskEmailSmart = (email) => {

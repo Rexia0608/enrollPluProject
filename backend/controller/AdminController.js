@@ -3,93 +3,12 @@ import {
   maintenanceCheckerModel,
   maintenanceModel,
   maintenanceMessageModel,
-} from "../models/maintenanceModel.js";
+} from "../services/maintenanceServices.js";
+import { getAllUsersList } from "../models/AdminModel.js";
 
-const getUserList = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
-    // Dummy data for testing
-    const users = [
-      {
-        id: 1,
-        name: "John Smith",
-        email: "john.smith@example.com",
-        role: "student",
-        status: "active",
-        joinedDate: "2024-01-15",
-        lastLogin: "2024-01-18",
-        studentId: "S2024001",
-      },
-      {
-        id: 2,
-        name: "Jane Doe",
-        email: "jane.doe@example.com",
-        role: "faculty",
-        status: "active",
-        joinedDate: "2023-08-20",
-        lastLogin: "2024-01-18",
-        facultyId: "F2023001",
-      },
-      {
-        id: 3,
-        name: "Robert Johnson",
-        email: "robert.j@example.com",
-        role: "student",
-        status: "inactive",
-        joinedDate: "2024-01-10",
-        lastLogin: "2024-01-12",
-        studentId: "S2024002",
-      },
-      {
-        id: 4,
-        name: "Sarah Williams",
-        email: "sarah.w@example.com",
-        role: "admin",
-        status: "active",
-        joinedDate: "2023-09-15",
-        lastLogin: "2024-01-18",
-        adminId: "A2023001",
-      },
-      {
-        id: 5,
-        name: "Michael Brown",
-        email: "michael.b@example.com",
-        role: "student",
-        status: "suspended",
-        joinedDate: "2024-01-05",
-        lastLogin: "2024-01-08",
-        studentId: "S2024003",
-      },
-      {
-        id: 6,
-        name: "Emily Davis",
-        email: "emily.d@example.com",
-        role: "faculty",
-        status: "active",
-        joinedDate: "2023-10-10",
-        lastLogin: "2024-01-18",
-        facultyId: "F2023002",
-      },
-      {
-        id: 7,
-        name: "David Wilson",
-        email: "david.w@example.com",
-        role: "student",
-        status: "pending",
-        joinedDate: "2024-01-16",
-        lastLogin: "2024-01-16",
-        studentId: "S2024004",
-      },
-      {
-        id: 8,
-        name: "Lisa Taylor",
-        email: "lisa.t@example.com",
-        role: "faculty",
-        status: "inactive",
-        joinedDate: "2023-11-05",
-        lastLogin: "2023-12-20",
-        facultyId: "F2023003",
-      },
-    ];
+    const users = await getAllUsersList();
 
     // Return JSON response
     res.status(200).json(users);
@@ -234,7 +153,7 @@ const getMaintenanceMessege = async (req, res) => {
 };
 
 export {
-  getUserList,
+  getAllUsers,
   getCourseList,
   overView,
   checkMaintenance,

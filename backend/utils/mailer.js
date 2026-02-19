@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
 
-export const sendOTPEmail = async (type, to, code) => {
+export const sendEmail = async (type, to, code) => {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,

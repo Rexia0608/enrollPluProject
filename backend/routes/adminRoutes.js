@@ -1,6 +1,6 @@
 import express from "express";
 import {
-  getUserList,
+  getAllUsers,
   getCourseList,
   overView,
   checkMaintenance,
@@ -11,7 +11,7 @@ import { setAnnouncement, getStats } from "../services/announcementServices.js";
 
 const router = express.Router();
 
-router.get("/usersList", getUserList);
+router.get("/usersList", getAllUsers);
 router.get("/courseList", getCourseList);
 router.get("/overView", overView);
 router.get("/maintenance", checkMaintenance);

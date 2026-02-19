@@ -1,6 +1,6 @@
 import db from "../config/db.js";
 import bcrypt from "bcrypt";
-import { sendOTPEmail } from "../utils/mailer.js";
+import { sendEmail } from "../utils/mailer.js";
 import authCodeGenerator from "../utils/AuthCodeGenerator.js";
 import jwtGenerator from "../utils/jwtGenerator.js";
 
@@ -28,7 +28,7 @@ const registerUserModel = async (data) => {
     const hashPassword = await bcrypt.hash(data.password, 10);
     const credQuery = `
       INSERT INTO credentials (
-        user_id, email, password, email_otp, otp_expire_at, is_verified
+        user_id, email, password, email_otp, otp_expires_at, is_verified
       )
       VALUES ($1, $2, $3, $4, $5, false)
     `;
@@ -41,7 +41,7 @@ const registerUserModel = async (data) => {
     ]);
 
     // 4️⃣ Send OTP
-    await sendOTPEmail("sending_OTP", data.email, otp);
+    await sendEmail("sending_OTP", data.email, otp);
     await firstUserAdminSetRole(userId);
 
     return {
@@ -99,9 +99,8 @@ const checkIfTheUserExist = async (email) => {
     credentials.email,
     credentials.password,
     credentials.login_attempts,
-    credentials.last_login,
     credentials.email_otp,
-    credentials.otp_expire_at,
+    credentials.otp_expires_at,
     credentials.is_verified
 FROM credentials
 INNER JOIN users ON credentials.user_id = users.id
@@ -112,6 +111,7 @@ WHERE credentials.email = $1;`;
 
 const firstUserAdminSetRole = async (userId) => {
   try {
+    console.log(userId);
     const result = await db.query(`SELECT COUNT(*) AS total_users FROM users;`);
 
     const totalUsers = parseInt(result.rows[0].total_users, 10);

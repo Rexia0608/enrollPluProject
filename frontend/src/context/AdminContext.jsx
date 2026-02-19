@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import axios from "axios";
 
 const AdminContext = createContext(null);
 const API_BASE_URL_COURSE = "http://localhost:3000/admin/courseList";
@@ -13,6 +14,11 @@ export const AdminProvider = ({ children }) => {
   const [overView, setOverView] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Create axios instance with auth header
+  const getAuthHeaders = () => ({
+    headers: { Authorization: `Bearer ${user?.token}` },
+  });
+
   // Fetch admin data when user is admin
   useEffect(() => {
     if (!user || user.role !== "admin") return;
@@ -21,25 +27,22 @@ export const AdminProvider = ({ children }) => {
       setLoading(true);
 
       try {
-        const initialCoursesRes = await fetch(`${API_BASE_URL_COURSE}`, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        const initialCoursesData = await initialCoursesRes.json();
-        setInitialCourses(initialCoursesData);
+        const [initialCoursesRes, userListRes, overViewRes] = await Promise.all(
+          [
+            axios.get(API_BASE_URL_COURSE, getAuthHeaders()),
+            axios.get(API_BASE_URL_USER, getAuthHeaders()),
+            axios.get(API_BASE_URL_OVERVIEW, getAuthHeaders()),
+          ],
+        );
 
-        const userListRes = await fetch(`${API_BASE_URL_USER}`, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        const userListResData = await userListRes.json();
-        setUserList(userListResData);
-
-        const overViewRes = await fetch(`${API_BASE_URL_OVERVIEW}`, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        const overViewData = await overViewRes.json();
-        setOverView(overViewData);
+        setInitialCourses(initialCoursesRes.data);
+        setUserList(userListRes.data);
+        setOverView(overViewRes.data);
       } catch (err) {
-        console.error("Admin data fetch error", err);
+        console.error(
+          "Admin data fetch error",
+          err.response?.data || err.message || err,
+        );
       } finally {
         setLoading(false);
       }
@@ -52,17 +55,26 @@ export const AdminProvider = ({ children }) => {
   useEffect(() => {
     if (!user) {
       setInitialCourses([]);
+      setUserList([]);
+      setOverView([]);
     }
   }, [user]);
 
   // Functions to mutate data
   const refreshUsers = async () => {
     if (!user) return;
-    const res = await fetch("/api/admin/users", {
-      headers: { Authorization: `Bearer ${user.token}` },
-    });
-    setUsers(await res.json());
+    try {
+      const res = await axios.get(API_BASE_URL_USER, getAuthHeaders());
+      setUserList(res.data);
+    } catch (err) {
+      console.error(
+        "Error refreshing users",
+        err.response?.data || err.message || err,
+      );
+    }
   };
+
+  console.log(userList);
 
   return (
     <AdminContext.Provider

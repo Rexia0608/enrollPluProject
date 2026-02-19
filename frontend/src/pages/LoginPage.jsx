@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 // Constants
-const API_BASE_URL = "http://localhost:3000/auth/login";
+const API_BASE_URL = "http://localhost:3000/enrollplus/login";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +18,7 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
+  const [isLoading, setIsLoading] = useState(false); // New state for button loading/disabled
 
   // 🔐 AUTH CONTEXT
   const { login } = useAuth();
@@ -33,6 +34,9 @@ const LoginPage = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
 
+    // Prevent multiple submissions
+    if (isLoading) return;
+
     const { notValid } = await signInValidation(inputs);
     setInvalid(notValid);
 
@@ -42,6 +46,9 @@ const LoginPage = () => {
     }
 
     try {
+      // Disable button
+      setIsLoading(true);
+
       const response = await axios.post(API_BASE_URL, inputs);
 
       // Correctly destructure from response.data.response
@@ -59,12 +66,17 @@ const LoginPage = () => {
 
       toast("Login successful!", { type: "success" });
 
-      // Redirect by role
-      if (user.role === "admin") navigate("/admin/dashboard");
-      else if (user.role === "faculty") navigate("/faculty/dashboard");
-      else navigate("/student/dashboard");
+      // Redirect by role after toast
+      setTimeout(() => {
+        if (user.role === "admin") navigate("/admin/dashboard");
+        else if (user.role === "faculty") navigate("/faculty/dashboard");
+        else navigate("/student/dashboard");
+      }, 1500);
     } catch (err) {
-      if (err.response?.data?.message) {
+      if (err.response?.data?.message === "Email is not yet verified.") {
+        toast("Email not verified. Redirecting to verification...", {
+          type: "info",
+        });
         setTimeout(() => {
           navigate("/email-validation", {
             state: {
@@ -72,13 +84,17 @@ const LoginPage = () => {
             },
           });
         }, 1500);
+      } else {
+        toast(
+          err.response?.data?.message ||
+            "Login failed. Please check your credentials.",
+          { type: "error" },
+        );
       }
-      toast(
-        err.response?.data?.message ||
-          "Login failed. Please check your credentials.",
-        { type: "error" },
-      );
-      console.log(err.response?.data?.message);
+    } finally {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 4500);
     }
   };
 
@@ -200,6 +216,7 @@ const LoginPage = () => {
                     placeholder="Enter your email"
                     className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all border-gray-300"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <p className="text-xs text-gray-500">
@@ -226,11 +243,13 @@ const LoginPage = () => {
                     placeholder="Enter your password"
                     className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all border-gray-300"
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
@@ -252,6 +271,7 @@ const LoginPage = () => {
                   id="remember-me"
                   type="checkbox"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  disabled={isLoading}
                 />
                 <label
                   htmlFor="remember-me"
@@ -264,9 +284,40 @@ const LoginPage = () => {
               {/* Submit Button */}
               <button
                 onClick={onSubmit}
-                className="w-full py-3.5 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm transition-all duration-20 bg-blue-600 text-white hover:bg-blue-700"
+                disabled={isLoading}
+                className={`w-full py-3.5 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm transition-all duration-200 ${
+                  isLoading
+                    ? "bg-blue-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
               >
-                Sign In
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Signing In...
+                  </span>
+                ) : (
+                  "Sign In"
+                )}
               </button>
             </form>
 

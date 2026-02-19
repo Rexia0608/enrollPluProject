@@ -25,63 +25,30 @@ const ITEMS_PER_PAGE = 10;
 
 function EditUserForm({ user, onSave, onCancel }) {
   const [formData, setFormData] = useState({
-    name: user?.name || "",
+    first_name: user?.first_name || "",
+    last_name: user?.last_name || "",
     email: user?.email || "",
     role: user?.role || "student",
-    status: user?.status || "active",
-    studentId: user?.studentId || "",
-    facultyId: user?.facultyId || "",
-    adminId: user?.adminId || "",
+    status: user?.status === true ? "active" : "inactive",
     phone: user?.phone || "",
     department: user?.department || "",
   });
 
-  useEffect(() => {
-    setFormData((prev) => ({
-      ...prev,
-      studentId: prev.role === "student" ? prev.studentId : "",
-      facultyId: prev.role === "faculty" ? prev.facultyId : "",
-      adminId: prev.role === "admin" ? prev.adminId : "",
-    }));
-  }, [formData.role]);
-
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    // Convert status back to boolean for API
+    const submitData = {
+      ...formData,
+      status: formData.status === "active",
+    };
+    onSave(submitData);
   };
 
   const inputClasses =
     "w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition";
-  const fields = [
-    {
-      label: "Full Name",
-      name: "name",
-      type: "text",
-      placeholder: "John Doe",
-      required: true,
-    },
-    {
-      label: "Email Address",
-      name: "email",
-      type: "email",
-      placeholder: "john@example.com",
-      required: true,
-    },
-    {
-      label: "Phone Number",
-      name: "phone",
-      type: "tel",
-      placeholder: "+1 234 567 8900",
-    },
-    {
-      label: "Department",
-      name: "department",
-      type: "text",
-      placeholder: "Computer Science",
-    },
-  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -90,22 +57,74 @@ function EditUserForm({ user, onSave, onCancel }) {
           Personal Information
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fields.map((field) => (
-            <div key={field.name}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {field.label}
-              </label>
-              <input
-                type={field.type}
-                name={field.name}
-                value={formData[field.name]}
-                onChange={handleChange}
-                required={field.required}
-                className={inputClasses}
-                placeholder={field.placeholder}
-              />
-            </div>
-          ))}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              First Name
+            </label>
+            <input
+              type="text"
+              name="first_name"
+              value={formData.first_name}
+              onChange={handleChange}
+              required
+              className={inputClasses}
+              placeholder="John"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Last Name
+            </label>
+            <input
+              type="text"
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleChange}
+              required
+              className={inputClasses}
+              placeholder="Doe"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className={inputClasses}
+              placeholder="john@example.com"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className={inputClasses}
+              placeholder="+1 234 567 8900"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Department
+            </label>
+            <input
+              type="text"
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              className={inputClasses}
+              placeholder="Computer Science"
+            />
+          </div>
         </div>
       </div>
 
@@ -114,86 +133,40 @@ function EditUserForm({ user, onSave, onCancel }) {
           Account Settings
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {["role", "status"].map((field) => (
-            <div key={field}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {field.charAt(0).toUpperCase() + field.slice(1)}
-              </label>
-              <select
-                name={field}
-                value={formData[field]}
-                onChange={handleChange}
-                className={`${inputClasses} bg-white`}
-              >
-                {field === "role"
-                  ? ["student", "faculty", "admin"].map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                      </option>
-                    ))
-                  : ["active", "inactive", "pending", "suspended"].map(
-                      (opt) => (
-                        <option key={opt} value={opt}>
-                          {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                        </option>
-                      ),
-                    )}
-              </select>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="text-sm font-medium text-gray-900 mb-4">
-          Identification
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {formData.role === "student" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Student ID
-              </label>
-              <input
-                type="text"
-                name="studentId"
-                value={formData.studentId}
-                onChange={handleChange}
-                className={inputClasses}
-                placeholder="STU2024001"
-              />
-            </div>
-          )}
-          {formData.role === "faculty" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Faculty ID
-              </label>
-              <input
-                type="text"
-                name="facultyId"
-                value={formData.facultyId}
-                onChange={handleChange}
-                className={inputClasses}
-                placeholder="FAC2024001"
-              />
-            </div>
-          )}
-          {formData.role === "admin" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Admin ID
-              </label>
-              <input
-                type="text"
-                name="adminId"
-                value={formData.adminId}
-                onChange={handleChange}
-                className={inputClasses}
-                placeholder="ADM2024001"
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Role
+            </label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className={`${inputClasses} bg-white`}
+            >
+              {["student", "faculty", "admin"].map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className={`${inputClasses} bg-white`}
+            >
+              {["active", "inactive"].map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -218,7 +191,7 @@ function EditUserForm({ user, onSave, onCancel }) {
 }
 
 function UserManagement() {
-  const { userList } = useAdmin();
+  const { userList, refreshUsers } = useAdmin();
   const [users, setUsers] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -230,7 +203,37 @@ function UserManagement() {
     direction: "ascending",
   });
 
-  useEffect(() => setUsers(userList), [userList]);
+  // Transform userList data to match component expectations
+  useEffect(() => {
+    if (userList && userList.length > 0) {
+      const transformedUsers = userList.map((user) => ({
+        id: user.id,
+        // Create full name from first_name and last_name
+        name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+        // Convert boolean status to string
+        status: user.status === true ? "active" : "inactive",
+        // Use created_at for joined date (since lastLogin might not exist)
+        lastLogin: user.lastLogin || user.created_at,
+        joinedDate: user.created_at,
+        // Include other fields if they exist
+        phone: user.phone || "",
+        department: user.department || "",
+        // For display ID - use the actual UUID as fallback
+        displayId:
+          user.studentId ||
+          user.facultyId ||
+          user.adminId ||
+          user.id.slice(0, 8),
+      }));
+      setUsers(transformedUsers);
+    } else {
+      setUsers([]);
+    }
+  }, [userList]);
 
   const handleSort = (key) =>
     setSortConfig({
@@ -244,12 +247,21 @@ function UserManagement() {
   const getSortedUsers = () => {
     if (!sortConfig.key) return [...users];
     return [...users].sort((a, b) => {
-      const aVal = a[sortConfig.key],
-        bVal = b[sortConfig.key];
-      if (sortConfig.key.includes("Date") || sortConfig.key.includes("date"))
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+
+      if (sortConfig.key === "lastLogin" || sortConfig.key === "joinedDate") {
         return sortConfig.direction === "ascending"
           ? new Date(aVal) - new Date(bVal)
           : new Date(bVal) - new Date(aVal);
+      }
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortConfig.direction === "ascending"
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      }
+
       return sortConfig.direction === "ascending"
         ? aVal < bVal
           ? -1
@@ -268,53 +280,106 @@ function UserManagement() {
     (user) =>
       (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        [user.studentId, user.facultyId, user.adminId].some((id) =>
-          id?.toLowerCase().includes(searchTerm.toLowerCase()),
-        )) &&
+        user.displayId.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (statusFilter === "all" || user.status === statusFilter) &&
       (roleFilter === "all" || user.role === roleFilter),
   );
 
-  const handleStatusChange = (id, status) =>
-    setUsers(users.map((u) => (u.id === id ? { ...u, status } : u)));
-  const handleResetPassword = (id) =>
-    alert(`Password reset link sent for user ID: ${id}`);
-  const handleDeleteUser = (id) =>
-    window.confirm("Are you sure you want to delete this user?") &&
-    setUsers(users.filter((u) => u.id !== id));
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      // Find the original user data
+      const originalUser = userList.find((u) => u.id === id);
+      if (!originalUser) return;
+
+      // Convert string status back to boolean for API
+      const updatedStatus = newStatus === "active";
+
+      // Here you would make an API call to update the status
+      // await axios.patch(`http://localhost:3000/admin/users/${id}`,
+      //   { status: updatedStatus },
+      //   getAuthHeaders()
+      // );
+
+      // Update local state optimistically
+      setUsers(
+        users.map((u) => (u.id === id ? { ...u, status: newStatus } : u)),
+      );
+
+      // Refresh users from API to ensure sync
+      await refreshUsers();
+    } catch (err) {
+      console.error("Error updating status", err);
+      // Revert on error
+      refreshUsers();
+    }
+  };
+
+  const handleResetPassword = (id) => {
+    // Implement password reset API call
+    alert(`Password reset link would be sent for user ID: ${id}`);
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        // Here you would make an API call to delete the user
+        // await axios.delete(`http://localhost:3000/admin/users/${id}`, getAuthHeaders());
+
+        // Update local state
+        setUsers(users.filter((u) => u.id !== id));
+
+        // Refresh users from API
+        await refreshUsers();
+      } catch (err) {
+        console.error("Error deleting user", err);
+        refreshUsers();
+      }
+    }
+  };
+
   const handleEditClick = (user) => {
-    setSelectedUser(user);
+    // Find original user data from userList
+    const originalUser = userList.find((u) => u.id === user.id);
+    setSelectedUser(originalUser);
     setIsEditModalOpen(true);
   };
-  const handleSaveUser = (data) => {
-    setUsers(
-      users.map((u) =>
-        u.id === selectedUser.id
-          ? {
-              ...u,
-              ...data,
-              id: u.id,
-              lastLogin: u.lastLogin,
-              joinedDate: u.joinedDate,
-            }
-          : u,
-      ),
-    );
-    setIsEditModalOpen(false);
-    setSelectedUser(null);
+
+  const handleSaveUser = async (data) => {
+    try {
+      // Here you would make an API call to update the user
+      // await axios.put(`http://localhost:3000/admin/users/${selectedUser.id}`,
+      //   data,
+      //   getAuthHeaders()
+      // );
+
+      // Refresh users from API to get updated data
+      await refreshUsers();
+
+      setIsEditModalOpen(false);
+      setSelectedUser(null);
+    } catch (err) {
+      console.error("Error saving user", err);
+    }
   };
-  const getRoleColor = (role) =>
-    (({
+
+  const getRoleColor = (role) => {
+    const colors = {
       admin: "bg-red-100 text-red-800",
       faculty: "bg-green-100 text-green-800",
       student: "bg-blue-100 text-blue-800",
-    })[role] || "bg-gray-100 text-gray-800") + " border border-gray-200";
+    };
+    return (
+      (colors[role] || "bg-gray-100 text-gray-800") + " border border-gray-200"
+    );
+  };
+
   const getRoleIcon = (role) =>
     role === "admin" ? (
       <Shield className="w-3.5 h-3.5" />
     ) : (
       <Users className="w-3.5 h-3.5" />
     );
+
   const formatDate = (date) =>
     date
       ? new Date(date).toLocaleDateString("en-US", {
@@ -368,7 +433,7 @@ function UserManagement() {
                       </div>
                       <div className="text-sm text-gray-600">{user.email}</div>
                       <div className="text-xs text-gray-500 mt-1">
-                        ID: {user.studentId || user.facultyId || user.adminId}
+                        ID: {user.displayId}
                       </div>
                     </div>
                   </div>
@@ -492,19 +557,13 @@ function UserManagement() {
                 {
                   value: roleFilter,
                   setter: setRoleFilter,
-                  options: ["all", "faculty", "student"],
+                  options: ["all", "admin", "faculty", "student"],
                   label: "All Roles",
                 },
                 {
                   value: statusFilter,
                   setter: setStatusFilter,
-                  options: [
-                    "all",
-                    "active",
-                    "inactive",
-                    "pending",
-                    "suspended",
-                  ],
+                  options: ["all", "active", "inactive"],
                   label: "All Status",
                 },
               ].map((filter, i) => (
@@ -613,7 +672,7 @@ function UserManagement() {
           setIsEditModalOpen(false);
           setSelectedUser(null);
         }}
-        title={`Edit User: ${selectedUser?.name}`}
+        title={`Edit User: ${selectedUser?.first_name} ${selectedUser?.last_name}`}
         size="lg"
         closeOnBackdropClick
         closeOnEsc
