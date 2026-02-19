@@ -4,10 +4,8 @@ import {
   maintenanceModel,
   maintenanceMessageModel,
 } from "../services/maintenanceServices.js";
-<<<<<<< HEAD
+
 import { getAllUsersList } from "../models/AdminModel.js";
-=======
->>>>>>> 5c8dcd30dd49ebb5e6fa159bd13d4ea17ad7129c
 
 const getAllUsers = async (req, res) => {
   try {
