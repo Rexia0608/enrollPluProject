@@ -5,42 +5,24 @@ import {
   maintenanceMessageModel,
 } from "../services/maintenanceServices.js";
 
-import { getAllUsersList } from "../models/AdminModel.js";
+import { getAllUsersList, getAllCoursesList } from "../models/AdminModel.js";
 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await getAllUsersList();
-
+    const result = await getAllUsersList();
     // Return JSON response
-    res.status(200).json(users);
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error in getUserList:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-const getCourseList = async (req, res) => {
+const getCourses = async (req, res) => {
   try {
-    const initialCourses = [
-      {
-        id: 1,
-        code: "BSCS",
-        name: "Bachelor of Science in Computer Science",
-        type: "4 years Course",
-        tuition_fee: 12333,
-        status: "active",
-      },
-      {
-        id: 2,
-        code: "CSS",
-        name: "Computer System Servicing NC II",
-        type: "Short Course",
-        tuition_fee: 12333,
-        status: "active",
-      },
-    ];
-
-    res.status(200).json(initialCourses);
+    const result = await getAllCoursesList();
+    console.log(result);
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error in getUserList:", error);
     res.status(500).json({ message: "Server error" });
@@ -90,13 +72,11 @@ const setMaintenance = async (req, res) => {
   try {
     const { maintenanceMode, message } = req.body;
 
-    // Pass the parameters as an object to the model
     const maintenance = await maintenanceModel({
-      isActive: maintenanceMode, // Map maintenanceMode to isActive
+      isActive: maintenanceMode,
       message: message,
     });
 
-    // Return the updated maintenance state
     res.status(200).json(maintenance);
   } catch (error) {
     console.error("Error in setMaintenance:", error);
@@ -126,7 +106,7 @@ const getMaintenanceMessege = async (req, res) => {
 
 export {
   getAllUsers,
-  getCourseList,
+  getCourses,
   overView,
   checkMaintenance,
   setMaintenance,

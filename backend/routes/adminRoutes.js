@@ -1,7 +1,7 @@
 import express from "express";
 import {
   getAllUsers,
-  getCourseList,
+  getCourses,
   overView,
   checkMaintenance,
   setMaintenance,
@@ -12,7 +12,7 @@ import { setAnnouncement, getStats } from "../services/announcementServices.js";
 const router = express.Router();
 
 router.get("/usersList", getAllUsers);
-router.get("/courseList", getCourseList);
+router.get("/courseList", getCourses);
 router.get("/overView", overView);
 router.get("/maintenance", checkMaintenance);
 router.get("/stats", getStats);

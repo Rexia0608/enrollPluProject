@@ -74,8 +74,6 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  console.log(userList);
-
   return (
     <AdminContext.Provider
       value={{

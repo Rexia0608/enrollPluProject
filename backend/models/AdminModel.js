@@ -22,4 +22,16 @@ INNER JOIN users
   }
 };
 
-export { getAllUsersList };
+const getAllCoursesList = async () => {
+  try {
+    const result = await db.query(`SELECT * FROM courses`);
+    return result.rows;
+  } catch (error) {
+    console.error("Error in getAllCoursesList:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+getAllCoursesList();
+
+export { getAllUsersList, getAllCoursesList };
