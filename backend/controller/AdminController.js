@@ -5,7 +5,13 @@ import {
   maintenanceMessageModel,
 } from "../services/maintenanceServices.js";
 
-import { getAllUsersList, getAllCoursesList } from "../models/AdminModel.js";
+import {
+  getAllUsersList,
+  getAllCoursesList,
+  updateCourses,
+  addNewCourses,
+  deleteCourses,
+} from "../models/AdminModel.js";
 
 const getAllUsers = async (req, res) => {
   try {
@@ -21,7 +27,6 @@ const getAllUsers = async (req, res) => {
 const getCourses = async (req, res) => {
   try {
     const result = await getAllCoursesList();
-    console.log(result);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error in getUserList:", error);
@@ -104,6 +109,63 @@ const getMaintenanceMessege = async (req, res) => {
   }
 };
 
+const editCourses = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const data = req.body;
+
+    const result = await updateCourses(id, data);
+
+    if (!result) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.status(200).json({
+      message: "Course updated successfully",
+      course: result,
+    });
+  } catch (error) {
+    console.error("Error in editCourses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const addNewCourse = async (req, res) => {
+  try {
+    const result = await addNewCourses(req.body);
+
+    if (!result) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.status(200).json({
+      message: "New Course added successfully",
+      course: result,
+    });
+  } catch (error) {
+    console.error("Error in addNewCourses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deleteCourse = async (req, res) => {
+  try {
+    const result = await deleteCourses(req.params.id);
+
+    if (!result) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.status(200).json({
+      message: "Course deleted successfully",
+      course: result,
+    });
+  } catch (error) {
+    console.error("Error in editCourses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   getAllUsers,
   getCourses,
@@ -111,4 +173,7 @@ export {
   checkMaintenance,
   setMaintenance,
   getMaintenanceMessege,
+  addNewCourse,
+  editCourses,
+  deleteCourse,
 };

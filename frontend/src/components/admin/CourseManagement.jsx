@@ -10,13 +10,16 @@ import {
   ChevronUp,
   ChevronDown,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import StatusBadge from "../ui/StatusBadge";
 import Modal from "../ui/Modal";
 import Pagination from "../ui/Pagination";
+import { toast } from "react-toastify";
 import { useAdmin } from "../../context/AdminContext";
+import axios from "axios";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -181,10 +184,59 @@ const CourseForm = ({
   </form>
 );
 
+// Delete Confirmation Modal Component
+const DeleteConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  courseName,
+}) => (
+  <Modal
+    isOpen={isOpen}
+    onClose={onClose}
+    title="Delete Course"
+    size="sm"
+    closeOnBackdropClick
+    closeOnEsc
+  >
+    <div className="p-6">
+      <div className="flex items-center justify-center mb-4 text-red-600">
+        <AlertTriangle className="w-12 h-12" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
+        Confirm Deletion
+      </h3>
+      <p className="text-sm text-gray-500 text-center mb-6">
+        Are you sure you want to delete{" "}
+        <span className="font-semibold text-gray-700">{courseName}</span>? This
+        action cannot be undone.
+      </p>
+      <div className="flex justify-center space-x-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+        >
+          Delete Course
+        </button>
+      </div>
+    </div>
+  </Modal>
+);
+
 function CourseManagement() {
   const { initialCourses } = useAdmin();
   const [courses, setCourses] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState(null);
   const [currentCourse, setCurrentCourse] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -253,6 +305,7 @@ function CourseManagement() {
     });
     setIsModalOpen(true);
   };
+
   const handleEdit = (course) => {
     setCurrentCourse(course);
     setFormData({
@@ -264,9 +317,38 @@ function CourseManagement() {
     });
     setIsModalOpen(true);
   };
-  const handleDelete = (id) =>
-    window.confirm("Are you sure you want to delete this course?") &&
-    setCourses(courses.filter((c) => c.id !== id));
+
+  const handleDeleteClick = (id) => {
+    const course = courses.find((c) => c.id === id);
+    setCourseToDelete(course);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (courseToDelete) {
+      try {
+        // Make API call to delete the course
+        await axios.delete(
+          `http://localhost:3000/admin/deleteCourse/${courseToDelete.id}`,
+        );
+
+        // Update local state after successful deletion
+        setCourses(courses.filter((c) => c.id !== courseToDelete.id));
+        setIsDeleteModalOpen(false);
+        setCourseToDelete(null);
+        toast.success("Course deleted successfully");
+      } catch (error) {
+        console.error("Error deleting course:", error);
+        toast.error("Failed to delete course");
+      }
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setCourseToDelete(null);
+  };
+
   const handleToggleStatus = (id) =>
     setCourses(
       courses.map((c) =>
@@ -275,27 +357,49 @@ function CourseManagement() {
           : c,
       ),
     );
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setCourses(
-      currentCourse
-        ? courses.map((c) =>
-            c.id === currentCourse.id ? { ...c, ...formData } : c,
-          )
-        : [
-            ...courses,
-            {
-              id: courses.length
-                ? Math.max(...courses.map((c) => c.id)) + 1
-                : 1,
-              ...formData,
-            },
-          ],
-    );
-    handleCloseModal();
+    let response;
+
+    try {
+      const operation = currentCourse ? "update" : "create";
+
+      switch (operation) {
+        case "update":
+          response = await axios.put(
+            `http://localhost:3000/admin/editCourse/${currentCourse.id}`,
+            formData,
+          );
+          toast.success("Course updated successfully");
+          break;
+
+        case "create":
+          response = await axios.post(
+            "http://localhost:3000/admin/addCourse",
+            formData,
+          );
+          toast.success("Course added successfully");
+          break;
+
+        default:
+          break;
+      }
+
+      // Reload courses from DB
+      const res = await axios.get("http://localhost:3000/admin/courseList");
+      setCourses(res.data);
+
+      handleCloseModal();
+    } catch (error) {
+      console.error(error);
+      toast.error("Operation failed");
+    }
   };
+
   const handleInputChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setCurrentCourse(null);
@@ -307,6 +411,7 @@ function CourseManagement() {
       status: "active",
     });
   };
+
   const formatCurrency = (amount) =>
     amount
       ? new Intl.NumberFormat("en-US", {
@@ -389,7 +494,7 @@ function CourseManagement() {
                       },
                       {
                         icon: Trash2,
-                        onClick: () => handleDelete(course.id),
+                        onClick: () => handleDeleteClick(course.id),
                         color: "red",
                         title: "Delete",
                       },
@@ -459,6 +564,13 @@ function CourseManagement() {
           isEditing={!!currentCourse}
         />
       </Modal>
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        courseName={courseToDelete?.name || "this course"}
+      />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
         <div>

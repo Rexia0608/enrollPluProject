@@ -6,6 +6,9 @@ import {
   checkMaintenance,
   setMaintenance,
   getMaintenanceMessege,
+  addNewCourse,
+  editCourses,
+  deleteCourse,
 } from "../controller/AdminController.js";
 import { setAnnouncement, getStats } from "../services/announcementServices.js";
 
@@ -19,7 +22,11 @@ router.get("/stats", getStats);
 router.get("/maintenance-messege", getMaintenanceMessege);
 
 router.put("/maintenance", setMaintenance);
+router.put("/editCourse/:id", editCourses);
 
+router.post("/addCourse", addNewCourse);
 router.post("/announcement", setAnnouncement);
+
+router.delete("/deleteCourse/:id", deleteCourse);
 
 export default router;

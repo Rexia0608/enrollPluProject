@@ -1,6 +1,8 @@
 // pages/AdminDashboard.jsx
 import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import AppHeader from "../components/layout/AppHeader";
 import Sidebar from "../components/layout/Sidebar";
 import MobileNav from "../components/layout/MobileNav";
@@ -45,7 +47,7 @@ function AdminDashboard() {
           </DashboardContainer>
         </main>
       </div>
-
+      <ToastContainer />
       <MobileNav role="admin" />
     </div>
   );
