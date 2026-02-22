@@ -109,10 +109,40 @@ const deleteCourses = async (id) => {
   }
 };
 
+const switchStatusMode = async (id, data) => {
+  try {
+    console.log("Switching status for user:", id, data);
+
+    const result = await db.query(
+      `
+      UPDATE users 
+      SET 
+        status = $1,
+        updated_at = NOW()
+      WHERE id = $2
+      RETURNING *;
+      `,
+      [data.status, id],
+    );
+
+    // Check if user was found and updated
+    if (result.rows.length === 0) {
+      throw new Error("User not found");
+    }
+
+    console.log("Status updated successfully:", result.rows[0]);
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error in switchStatusMode:", error);
+    throw error;
+  }
+};
+
 export {
   getAllUsersList,
   getAllCoursesList,
   updateCourses,
   addNewCourses,
   deleteCourses,
+  switchStatusMode,
 };

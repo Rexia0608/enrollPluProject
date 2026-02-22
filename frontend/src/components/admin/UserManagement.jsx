@@ -15,11 +15,13 @@ import {
   X,
   Save,
 } from "lucide-react";
+import axios from "axios";
 import Card from "../ui/Card";
 import StatusBadge from "../ui/StatusBadge";
 import Pagination from "../ui/Pagination";
 import Modal from "../ui/Modal";
 import { useAdmin } from "../../context/AdminContext";
+import { toast } from "react-toastify";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -191,7 +193,7 @@ function EditUserForm({ user, onSave, onCancel }) {
 }
 
 function UserManagement() {
-  const { userList, refreshUsers } = useAdmin();
+  const { userList, refreshUsers, getAuthHeaders } = useAdmin();
   const [users, setUsers] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -294,45 +296,65 @@ function UserManagement() {
       // Convert string status back to boolean for API
       const updatedStatus = newStatus === "active";
 
-      // Here you would make an API call to update the status
-      // await axios.patch(`http://localhost:3000/admin/users/${id}`,
-      //   { status: updatedStatus },
-      //   getAuthHeaders()
-      // );
+      // Make API call to update the status
+      await axios.patch(
+        `http://localhost:3000/admin/switchStatus/${id}`,
+        { status: updatedStatus },
+        getAuthHeaders(),
+      );
 
       // Update local state optimistically
       setUsers(
         users.map((u) => (u.id === id ? { ...u, status: newStatus } : u)),
       );
 
+      toast.success(`User status updated to ${newStatus}`);
+
       // Refresh users from API to ensure sync
       await refreshUsers();
     } catch (err) {
       console.error("Error updating status", err);
-      // Revert on error
-      refreshUsers();
+      toast.error("Failed to update user status");
+      // Revert on error by refreshing
+      await refreshUsers();
     }
   };
 
-  const handleResetPassword = (id) => {
-    // Implement password reset API call
-    alert(`Password reset link would be sent for user ID: ${id}`);
+  const handleResetPassword = async (id) => {
+    try {
+      // Make API call to reset password
+      await axios.post(
+        `http://localhost:3000/admin/resetPassword/${id}`,
+        {},
+        getAuthHeaders(),
+      );
+      toast.success(`Password reset link sent to user`);
+    } catch (err) {
+      console.error("Error resetting password", err);
+      toast.error("Failed to send password reset link");
+    }
   };
 
   const handleDeleteUser = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        // Here you would make an API call to delete the user
-        // await axios.delete(`http://localhost:3000/admin/users/${id}`, getAuthHeaders());
+        // Make API call to delete the user
+        await axios.delete(
+          `http://localhost:3000/admin/deleteUser/${id}`,
+          getAuthHeaders(),
+        );
 
         // Update local state
         setUsers(users.filter((u) => u.id !== id));
+
+        toast.success("User deleted successfully");
 
         // Refresh users from API
         await refreshUsers();
       } catch (err) {
         console.error("Error deleting user", err);
-        refreshUsers();
+        toast.error("Failed to delete user");
+        await refreshUsers();
       }
     }
   };
@@ -346,11 +368,14 @@ function UserManagement() {
 
   const handleSaveUser = async (data) => {
     try {
-      // Here you would make an API call to update the user
-      // await axios.put(`http://localhost:3000/admin/users/${selectedUser.id}`,
-      //   data,
-      //   getAuthHeaders()
-      // );
+      // Make API call to update the user
+      await axios.put(
+        `http://localhost:3000/admin/editUser/${selectedUser.id}`,
+        data,
+        getAuthHeaders(),
+      );
+
+      toast.success("User updated successfully");
 
       // Refresh users from API to get updated data
       await refreshUsers();
@@ -359,6 +384,7 @@ function UserManagement() {
       setSelectedUser(null);
     } catch (err) {
       console.error("Error saving user", err);
+      toast.error("Failed to update user");
     }
   };
 

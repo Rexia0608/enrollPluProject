@@ -11,6 +11,7 @@ import {
   updateCourses,
   addNewCourses,
   deleteCourses,
+  switchStatusMode,
 } from "../models/AdminModel.js";
 
 const getAllUsers = async (req, res) => {
@@ -166,6 +167,24 @@ const deleteCourse = async (req, res) => {
   }
 };
 
+const switchStatus = async (req, res) => {
+  try {
+    const result = await switchStatusMode(req.params.id, req.body);
+
+    if (!result) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    return res.status(200).json({
+      message: "Status updated successfully",
+      course: result,
+    });
+  } catch (error) {
+    console.error("Error in switchStatus:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   getAllUsers,
   getCourses,
@@ -176,4 +195,5 @@ export {
   addNewCourse,
   editCourses,
   deleteCourse,
+  switchStatus,
 };

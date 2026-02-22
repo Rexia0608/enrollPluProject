@@ -74,6 +74,8 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // In your AdminContext.js, update the return statement:
+
   return (
     <AdminContext.Provider
       value={{
@@ -82,6 +84,7 @@ export const AdminProvider = ({ children }) => {
         loading,
         overView,
         refreshUsers,
+        getAuthHeaders, // Add this line to expose the function
       }}
     >
       {children}

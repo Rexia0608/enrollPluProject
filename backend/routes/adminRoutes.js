@@ -9,6 +9,7 @@ import {
   addNewCourse,
   editCourses,
   deleteCourse,
+  switchStatus,
 } from "../controller/AdminController.js";
 import { setAnnouncement, getStats } from "../services/announcementServices.js";
 
@@ -28,5 +29,7 @@ router.post("/addCourse", addNewCourse);
 router.post("/announcement", setAnnouncement);
 
 router.delete("/deleteCourse/:id", deleteCourse);
+
+router.patch("/switchStatus/:id", switchStatus);
 
 export default router;
