@@ -4,13 +4,13 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Eye,
-  EyeOff,
   Search,
   ChevronUp,
   ChevronDown,
   X,
   AlertTriangle,
+  AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
@@ -19,6 +19,7 @@ import Modal from "../ui/Modal";
 import Pagination from "../ui/Pagination";
 import { toast } from "react-toastify";
 import { useAdmin } from "../../context/AdminContext";
+import validateCourse from "../../utils/courseValidation";
 import axios from "axios";
 
 const ITEMS_PER_PAGE = 5;
@@ -26,77 +27,165 @@ const ITEMS_PER_PAGE = 5;
 const CourseForm = ({
   formData,
   onInputChange,
+  onBlur,
   onSubmit,
   onCancel,
   isEditing,
+  errors,
+  touched,
 }) => (
   <form onSubmit={onSubmit} className="space-y-6">
     <div className="space-y-5">
-      {["code", "name"].map((field) => (
-        <div key={field} className="relative">
+      {/* Course Code Field */}
+      <div className="relative">
+        <div className="relative">
           <input
             type="text"
-            name={field}
-            value={formData[field]}
+            name="code"
+            value={formData.code}
             onChange={onInputChange}
-            className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 placeholder:text-gray-400 hover:border-gray-400"
+            onBlur={onBlur}
+            className={`w-full border ${
+              errors.code
+                ? "border-red-500 bg-red-50/50"
+                : touched.code && !errors.code && formData.code
+                  ? "border-green-500 bg-green-50/50"
+                  : "border-gray-300"
+            } rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 placeholder:text-gray-400 hover:border-gray-400 pr-10`}
             required
-            placeholder={`${field === "code" ? "Course Code" : "Course Name"} *`}
+            placeholder="Course Code *"
           />
-          <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
-            {field === "code" ? "Course Code" : "Course Name"}
-          </div>
+          {touched.code && formData.code && (
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              {errors.code ? (
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              ) : (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+          )}
         </div>
-      ))}
+        <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
+          Course Code
+        </div>
+        {errors.code && (
+          <p className="text-red-500 text-xs mt-1 ml-1 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            {errors.code}
+          </p>
+        )}
+      </div>
 
+      {/* Course Name Field */}
       <div className="relative">
-        <label className="block text-xs font-medium text-gray-500 mb-1.5">
-          Course Type *
-        </label>
         <div className="relative">
-          <select
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={onInputChange}
+            onBlur={onBlur}
+            className={`w-full border ${
+              errors.name
+                ? "border-red-500 bg-red-50/50"
+                : touched.name && !errors.name && formData.name
+                  ? "border-green-500 bg-green-50/50"
+                  : "border-gray-300"
+            } rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 placeholder:text-gray-400 hover:border-gray-400 pr-10`}
+            required
+            placeholder="Course Name *"
+          />
+          {touched.name && formData.name && (
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              {errors.name ? (
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              ) : (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+          )}
+        </div>
+        <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
+          Course Name
+        </div>
+        {errors.name && (
+          <p className="text-red-500 text-xs mt-1 ml-1 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            {errors.name}
+          </p>
+        )}
+      </div>
+
+      {/* Course Type Field */}
+      <div className="relative">
+        <div className="relative">
+          <input
+            type="text"
             name="type"
             value={formData.type}
             onChange={onInputChange}
-            className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 appearance-none bg-white hover:border-gray-400"
+            onBlur={onBlur}
+            className={`w-full border ${
+              errors.type
+                ? "border-red-500 bg-red-50/50"
+                : touched.type && !errors.type && formData.type
+                  ? "border-green-500 bg-green-50/50"
+                  : "border-gray-300"
+            } rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 placeholder:text-gray-400 hover:border-gray-400 pr-10`}
             required
-          >
-            <option value="">Select Course Type</option>
-            {[
-              "4 years Course",
-              "2 years Course",
-              "Short Course",
-              "1 year Course",
-              "Summer Class Course",
-              "Certificate Course",
-            ].map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg
-              className="w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 9l-7 7-7-7"
-              ></path>
-            </svg>
-          </div>
+            placeholder="Select Course Type"
+            list="courseTypes"
+          />
+          {touched.type && formData.type && (
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              {errors.type ? (
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              ) : (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+          )}
         </div>
+        <datalist id="courseTypes">
+          {[
+            "4 years Course",
+            "2 years Course",
+            "Short Course",
+            "1 year Course",
+            "Summer Class Course",
+            "Certificate Course",
+          ].map((type) => (
+            <option key={type} value={type} />
+          ))}
+        </datalist>
+        <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
+          Course Type
+        </div>
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M19 9l-7 7-7-7"
+            ></path>
+          </svg>
+        </div>
+        {errors.type && (
+          <p className="text-red-500 text-xs mt-1 ml-1 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            {errors.type}
+          </p>
+        )}
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1.5">
-          Tuition Fee (₱)
-        </label>
+      {/* Tuition Fee Field */}
+      <div className="relative">
         <div className="relative">
           <input
             type="number"
@@ -105,51 +194,105 @@ const CourseForm = ({
             step="100"
             value={formData.tuition_fee}
             onChange={onInputChange}
-            className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 hover:border-gray-400 scheme-light"
+            onBlur={onBlur}
+            className={`w-full border ${
+              errors.tuition_fee
+                ? "border-red-500 bg-red-50/50"
+                : touched.tuition_fee &&
+                    !errors.tuition_fee &&
+                    formData.tuition_fee
+                  ? "border-green-500 bg-green-50/50"
+                  : "border-gray-300"
+            } rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 hover:border-gray-400 scheme-light pr-10`}
             placeholder="Enter tuition fee"
           />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <span className="text-gray-400">₱</span>
-          </div>
+          {touched.tuition_fee && formData.tuition_fee && (
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              {errors.tuition_fee ? (
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              ) : (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+          )}
         </div>
+        <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
+          Tuition Fee (₱)
+        </div>
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+          <span className="text-gray-400">₱</span>
+        </div>
+        {errors.tuition_fee && (
+          <p className="text-red-500 text-xs mt-1 ml-1 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            {errors.tuition_fee}
+          </p>
+        )}
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1.5">
+      {/* Status Field */}
+      <div className="relative">
+        <select
+          name="status"
+          value={formData.status}
+          onChange={onInputChange}
+          onBlur={onBlur}
+          className={`w-full border ${
+            errors.status
+              ? "border-red-500 bg-red-50/50"
+              : touched.status && !errors.status
+                ? "border-green-500 bg-green-50/50"
+                : "border-gray-300"
+          } rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 appearance-none bg-white hover:border-gray-400`}
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <div className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-500 font-medium">
           Status
-        </label>
-        <div className="relative">
-          <select
-            name="status"
-            value={formData.status}
-            onChange={onInputChange}
-            className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-sm focus:ring-3 focus:ring-blue-500/30 focus:border-blue-500 focus:shadow-lg outline-none transition-all duration-200 appearance-none bg-white hover:border-gray-400"
+        </div>
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <option value="active" className="text-green-600">
-              Active
-            </option>
-            <option value="inactive" className="text-red-600">
-              Inactive
-            </option>
-          </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg
-              className="w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 9l-7 7-7-7"
-              ></path>
-            </svg>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M19 9l-7 7-7-7"
+            ></path>
+          </svg>
+        </div>
+        {errors.status && (
+          <p className="text-red-500 text-xs mt-1 ml-1 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            {errors.status}
+          </p>
+        )}
+      </div>
+    </div>
+
+    {/* Validation Summary */}
+    {Object.keys(errors).length > 0 && (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="text-sm font-medium text-red-800">
+              Please fix the following errors:
+            </h4>
+            <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
+              {Object.values(errors).map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
-    </div>
+    )}
 
     <div className="flex justify-end space-x-3 pt-2">
       <button
@@ -161,7 +304,12 @@ const CourseForm = ({
       </button>
       <button
         type="submit"
-        className="px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-xl text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 focus:outline-none focus:ring-3 focus:ring-blue-500/40 shadow-sm hover:shadow-md active:scale-[0.98]"
+        disabled={Object.keys(errors).length > 0}
+        className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-3 focus:ring-blue-500/40 shadow-sm hover:shadow-md active:scale-[0.98] ${
+          Object.keys(errors).length > 0
+            ? "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
+            : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
+        }`}
       >
         <span className="flex items-center">
           <svg
@@ -251,8 +399,20 @@ function CourseManagement() {
     tuition_fee: "",
     status: "active",
   });
+  const [formErrors, setFormErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
 
-  useEffect(() => setCourses(initialCourses), [initialCourses]);
+  useEffect(() => {
+    setCourses(initialCourses);
+  }, [initialCourses]);
+
+  // Real-time validation
+  useEffect(() => {
+    if (Object.keys(touchedFields).length > 0) {
+      const { errors } = validateCourse(formData, courses, currentCourse?.id);
+      setFormErrors(errors);
+    }
+  }, [formData, courses, currentCourse, touchedFields]);
 
   const handleSort = (key) =>
     setSortConfig({
@@ -266,23 +426,18 @@ function CourseManagement() {
   const getSortedCourses = () => {
     if (!sortConfig.key) return [...courses];
     return [...courses].sort((a, b) => {
-      const aVal = a[sortConfig.key],
-        bVal = b[sortConfig.key];
-      if (sortConfig.key === "tuition_fee")
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (sortConfig.key === "tuition_fee") {
         return sortConfig.direction === "ascending"
           ? (aVal || 0) - (bVal || 0)
           : (bVal || 0) - (aVal || 0);
+      }
+      const aStr = String(aVal || "").toLowerCase();
+      const bStr = String(bVal || "").toLowerCase();
       return sortConfig.direction === "ascending"
-        ? aVal < bVal
-          ? -1
-          : aVal > bVal
-            ? 1
-            : 0
-        : aVal > bVal
-          ? -1
-          : aVal < bVal
-            ? 1
-            : 0;
+        ? aStr.localeCompare(bStr)
+        : bStr.localeCompare(aStr);
     });
   };
 
@@ -303,6 +458,8 @@ function CourseManagement() {
       tuition_fee: "",
       status: "active",
     });
+    setFormErrors({});
+    setTouchedFields({});
     setIsModalOpen(true);
   };
 
@@ -315,6 +472,8 @@ function CourseManagement() {
       tuition_fee: course.tuition_fee || "",
       status: course.status || "active",
     });
+    setFormErrors({});
+    setTouchedFields({});
     setIsModalOpen(true);
   };
 
@@ -327,12 +486,10 @@ function CourseManagement() {
   const handleConfirmDelete = async () => {
     if (courseToDelete) {
       try {
-        // Make API call to delete the course
         await axios.delete(
           `http://localhost:3000/admin/deleteCourse/${courseToDelete.id}`,
         );
 
-        // Update local state after successful deletion
         setCourses(courses.filter((c) => c.id !== courseToDelete.id));
         setIsDeleteModalOpen(false);
         setCourseToDelete(null);
@@ -349,25 +506,38 @@ function CourseManagement() {
     setCourseToDelete(null);
   };
 
-  const handleToggleStatus = (id) =>
-    setCourses(
-      courses.map((c) =>
-        c.id === id
-          ? { ...c, status: c.status === "active" ? "inactive" : "active" }
-          : c,
-      ),
-    );
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    let response;
+
+    // Mark all fields as touched
+    const allTouched = Object.keys(formData).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {});
+    setTouchedFields(allTouched);
+
+    // Validate with duplicate checking
+    const { errors, isValid } = validateCourse(
+      formData,
+      courses,
+      currentCourse?.id,
+    );
+    setFormErrors(errors);
+
+    if (!isValid) {
+      // Show all validation errors as toasts
+      Object.values(errors).forEach((error) => {
+        toast.error(error);
+      });
+      return;
+    }
 
     try {
       const operation = currentCourse ? "update" : "create";
 
       switch (operation) {
         case "update":
-          response = await axios.put(
+          await axios.put(
             `http://localhost:3000/admin/editCourse/${currentCourse.id}`,
             formData,
           );
@@ -375,10 +545,7 @@ function CourseManagement() {
           break;
 
         case "create":
-          response = await axios.post(
-            "http://localhost:3000/admin/addCourse",
-            formData,
-          );
+          await axios.post("http://localhost:3000/admin/addCourse", formData);
           toast.success("Course added successfully");
           break;
 
@@ -397,8 +564,18 @@ function CourseManagement() {
     }
   };
 
-  const handleInputChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    // Mark field as touched
+    setTouchedFields({ ...touchedFields, [name]: true });
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouchedFields({ ...touchedFields, [name]: true });
+  };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -410,6 +587,8 @@ function CourseManagement() {
       tuition_fee: "",
       status: "active",
     });
+    setFormErrors({});
+    setTouchedFields({});
   };
 
   const formatCurrency = (amount) =>
@@ -484,15 +663,6 @@ function CourseManagement() {
                         title: "Edit",
                       },
                       {
-                        icon: course.status === "active" ? EyeOff : Eye,
-                        onClick: () => handleToggleStatus(course.id),
-                        color: "yellow",
-                        title:
-                          course.status === "active"
-                            ? "Deactivate"
-                            : "Activate",
-                      },
-                      {
                         icon: Trash2,
                         onClick: () => handleDeleteClick(course.id),
                         color: "red",
@@ -559,9 +729,12 @@ function CourseManagement() {
         <CourseForm
           formData={formData}
           onInputChange={handleInputChange}
+          onBlur={handleBlur}
           onSubmit={handleSubmit}
           onCancel={handleCloseModal}
           isEditing={!!currentCourse}
+          errors={formErrors}
+          touched={touchedFields}
         />
       </Modal>
 
