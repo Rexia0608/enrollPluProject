@@ -279,7 +279,7 @@ const CourseForm = ({
     {Object.keys(errors).length > 0 && (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
           <div>
             <h4 className="text-sm font-medium text-red-800">
               Please fix the following errors:
@@ -308,7 +308,7 @@ const CourseForm = ({
         className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-3 focus:ring-blue-500/40 shadow-sm hover:shadow-md active:scale-[0.98] ${
           Object.keys(errors).length > 0
             ? "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
-            : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
+            : "bg-linear-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
         }`}
       >
         <span className="flex items-center">
