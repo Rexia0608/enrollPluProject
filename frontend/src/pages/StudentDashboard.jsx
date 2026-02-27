@@ -27,7 +27,7 @@ function StudentDashboard() {
           <DashboardContainer>
             <Routes>
               <Route index element={<StudentStatus />} />
-              <Route path="documents" element={<StudentDocuments />} />
+              <Route path="enrollement" element={<StudentDocuments />} />
 
               {/* 404 response when someone crawiling it will catch here */}
               <Route path="*" element={<NotFound />} />

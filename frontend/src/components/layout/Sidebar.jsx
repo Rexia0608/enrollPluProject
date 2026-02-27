@@ -61,7 +61,11 @@ function Sidebar({ role, isOpen = true }) {
 
   const studentItems = [
     { to: "/student/dashboard", icon: LayoutDashboard, label: "Status" },
-    { to: "/student/dashboard/documents", icon: FileText, label: "Documents" },
+    {
+      to: "/student/dashboard/enrollement",
+      icon: FileText,
+      label: "enrollement",
+    },
     { to: "/student/dashboard/payments", icon: CreditCard, label: "Payments" },
     {
       to: "/student/dashboard/notifications",
