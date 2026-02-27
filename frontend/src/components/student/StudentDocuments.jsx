@@ -55,6 +55,9 @@ const mockStudentData = {
   lastName: "Cruz",
   email: "juan.delacruz@example.com",
   studentId: "2024-12345",
+  // Mock student already has these in their profile
+  birthDate: "2000-01-15",
+  gender: "male",
 };
 
 // =============================================
@@ -486,13 +489,12 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
   const [studentEnrollment, setStudentEnrollment] = useState(null);
   const [enrollmentPeriod, setEnrollmentPeriod] = useState(null);
 
-  // Form state
+  // Form state - birthDate and gender removed (they come from student profile)
   const [studentType, setStudentType] = useState("");
   const [formData, setFormData] = useState({
     contactNumber: "",
     address: "",
-    birthDate: "",
-    gender: "",
+    yearLevel: "",
     course: "",
     academicYear: "",
     semester: "",
@@ -596,12 +598,11 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
       return true;
     }
 
-    // Validate required fields
+    // Validate required fields - birthDate and gender removed
     const requiredFields = [
       "contactNumber",
       "address",
-      "birthDate",
-      "gender",
+      "yearLevel",
       "course",
       "academicYear",
       "semester",
@@ -666,8 +667,7 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
       const allFields = [
         "contactNumber",
         "address",
-        "birthDate",
-        "gender",
+        "yearLevel",
         "course",
         "academicYear",
         "semester",
@@ -681,11 +681,13 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
     setSubmitting(true);
 
     try {
-      // Prepare profile data
+      // Prepare profile data - include birthDate and gender from studentData
       const profileData = {
         studentId: studentData.studentId,
         studentType,
         ...formData,
+        birthDate: studentData.birthDate, // From student profile
+        gender: studentData.gender, // From student profile
         fullName: `${studentData.firstName} ${studentData.middleName} ${studentData.lastName}`,
         email: studentData.email,
         submittedAt: new Date().toISOString(),
@@ -727,8 +729,7 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
       setFormData({
         contactNumber: "",
         address: "",
-        birthDate: "",
-        gender: "",
+        yearLevel: "",
         course: "",
         academicYear: enrollmentPeriod?.academicYear || "",
         semester: enrollmentPeriod?.semester || "",
@@ -854,17 +855,17 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
               <h4 className="font-medium text-green-800 mb-2">What's Next?</h4>
               <ul className="text-sm text-green-700 space-y-2">
                 <li className="flex items-start">
-                  <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
                   <span>You can now proceed to class registration</span>
                 </li>
                 <li className="flex items-start">
-                  <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
                   <span>
                     Check your email for important enrollment information
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
                   <span>View your class schedule and assigned subjects</span>
                 </li>
               </ul>
@@ -876,11 +877,11 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
               <h4 className="font-medium text-blue-800 mb-2">Next Steps:</h4>
               <ul className="text-sm text-blue-700 space-y-2">
                 <li className="flex items-start">
-                  <Clock className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <Clock className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
                   <span>Wait for the official enrollment confirmation</span>
                 </li>
                 <li className="flex items-start">
-                  <Clock className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <Clock className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
                   <span>You'll receive an email within 24-48 hours</span>
                 </li>
               </ul>
@@ -923,13 +924,13 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
           </span>
         </div>
 
-        {/* Student Information */}
+        {/* Student Information - Shows birthDate and gender from profile */}
         <div className="p-6 border-b border-gray-200 bg-gray-50">
           <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
             <User className="w-4 h-4 mr-2" />
             Student Information
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs text-gray-500">Full Name</label>
               <p className="font-medium text-gray-900">
@@ -947,6 +948,15 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
               <label className="block text-xs text-gray-500">Student ID</label>
               <p className="font-medium text-gray-900">
                 {studentData.studentId || "N/A"}
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500">
+                Birth Date / Gender
+              </label>
+              <p className="font-medium text-gray-900">
+                {new Date(studentData.birthDate).toLocaleDateString()} •{" "}
+                {studentData.gender}
               </p>
             </div>
           </div>
@@ -975,7 +985,7 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
             )}
           </div>
 
-          {/* Profiling Information */}
+          {/* Profiling Information - birthDate and gender fields removed */}
           {studentType && (
             <div className="space-y-4">
               <h3 className="text-md font-medium text-gray-900 border-b pb-2">
@@ -1011,50 +1021,29 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date of Birth <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="date"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                      className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                        touched.birthDate && errors.birthDate
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                    />
-                  </div>
-                  {touched.birthDate && errors.birthDate && (
-                    <p className="mt-1 text-xs text-red-600">
-                      {errors.birthDate}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Gender <span className="text-red-500">*</span>
+                    Upcoming Year Level <span className="text-red-500">*</span>
                   </label>
                   <select
-                    name="gender"
-                    value={formData.gender}
+                    name="yearLevel"
+                    value={formData.yearLevel}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                      touched.gender && errors.gender
+                      touched.yearLevel && errors.yearLevel
                         ? "border-red-500"
                         : "border-gray-300"
                     }`}
                   >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value="">Select Level</option>
+                    <option value="First Year">First Year</option>
+                    <option value="Second Year">Second Year</option>
+                    <option value="Third Year">Third Year</option>
+                    <option value="Fourth Year">Fourth Year</option>
+                    <option value="Fifth Year">Fifth Year</option>
                   </select>
-                  {touched.gender && errors.gender && (
-                    <p className="mt-1 text-xs text-red-600">{errors.gender}</p>
+                  {touched.yearLevel && errors.yearLevel && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.yearLevel}
+                    </p>
                   )}
                 </div>
 
