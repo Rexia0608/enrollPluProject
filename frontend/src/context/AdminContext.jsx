@@ -92,8 +92,6 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  console.log(academicYear);
-
   return (
     <AdminContext.Provider
       value={{

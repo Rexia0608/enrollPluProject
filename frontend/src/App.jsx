@@ -3,6 +3,7 @@ import Views from "./view/views";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { AdminProvider } from "./context/AdminContext";
+import { StudentProvider } from "./context/StudentContext";
 import { MaintenanceProvider } from "./context/MaintenanceContext";
 
 function App() {
@@ -11,7 +12,9 @@ function App() {
       <AuthProvider>
         <MaintenanceProvider>
           <AdminProvider>
-            <Views />
+            <StudentProvider>
+              <Views />
+            </StudentProvider>
           </AdminProvider>
         </MaintenanceProvider>
       </AuthProvider>

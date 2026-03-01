@@ -105,6 +105,7 @@ FROM credentials
 INNER JOIN users ON credentials.user_id = users.id
 WHERE credentials.email = $1;`;
   const result = await db.query(query, [email]);
+  console.log(result.rows);
   return result.rows;
 };
 

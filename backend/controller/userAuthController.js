@@ -1,5 +1,9 @@
 import { verifyingOtpServices, resendOtp } from "../services/OtpServices.js";
-import { loginUserModel, registerUserModel } from "../models/usersAuthModel.js";
+import {
+  loginUserModel,
+  registerUserModel,
+  checkIfTheUserExist,
+} from "../models/usersAuthModel.js";
 
 const UserRegisterController = async (req, res) => {
   try {
@@ -92,7 +96,33 @@ const userAuthLoginController = async (req, res) => {
   }
 };
 
+const userAuthDetailCotnroller = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const response = await checkIfTheUserExist(email);
+    if (response.error) {
+      return res.status(400).json({
+        success: false,
+        message: response.error,
+      });
+    }
+
+    // Success
+    return res.status(200).json({
+      success: true,
+      response: response,
+    });
+  } catch (error) {
+    console.error("Controller error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export {
+  userAuthDetailCotnroller,
   userAuthController,
   userAuthResendOtpController,
   userAuthLoginController,
