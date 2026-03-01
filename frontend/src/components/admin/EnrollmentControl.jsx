@@ -467,7 +467,7 @@ export default function AcademicYearTable() {
 
       {/* Active Status Card - Shows the year with OPEN enrollment */}
       {activeYear && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-blue-100 rounded-full">
