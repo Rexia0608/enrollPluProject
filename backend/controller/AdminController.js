@@ -12,6 +12,9 @@ import {
   addNewCourses,
   deleteCourses,
   switchStatusMode,
+  switchStatusAcademicYear,
+  addAcademicYear,
+  getAcademicYearlist,
 } from "../models/AdminModel.js";
 
 const getAllUsers = async (req, res) => {
@@ -185,6 +188,58 @@ const switchStatus = async (req, res) => {
   }
 };
 
+const getAcademicYear = async (req, res) => {
+  try {
+    const result = await getAcademicYearlist();
+
+    res.status(200).json({
+      message: "Academic Year loaded successfully",
+      AcademicYear: result,
+    });
+  } catch (error) {
+    console.error("Error in setAcademicYear:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const setAcademicYear = async (req, res) => {
+  try {
+    const result = await addAcademicYear(req.body);
+
+    if (!result) {
+      return res.status(404).json({ message: "Academic Year not added" });
+    }
+
+    res.status(200).json({
+      message: "New Academic Year added successfully",
+      AcademicYear: result,
+    });
+  } catch (error) {
+    console.error("Error in setAcademicYear:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const setStatusAcademicYear = async (req, res) => {
+  try {
+    const result = await switchStatusAcademicYear(req.body, req.params.id);
+
+    if (!result) {
+      return res
+        .status(404)
+        .json({ message: "Academic Year are fail to updated" });
+    }
+
+    res.status(200).json({
+      message: "Academic Year updated status successfully",
+      AcademicYear: result,
+    });
+  } catch (error) {
+    console.error("Error in setStatusAcademicYear:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   getAllUsers,
   getCourses,
@@ -196,4 +251,7 @@ export {
   editCourses,
   deleteCourse,
   switchStatus,
+  setAcademicYear,
+  getAcademicYear,
+  setStatusAcademicYear,
 };

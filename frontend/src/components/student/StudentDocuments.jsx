@@ -757,7 +757,7 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
   if (!enrollmentPeriod?.isOpen) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+        <div className="bg-linear-to-r from-red-600 to-red-700 px-6 py-4">
           <h2 className="text-xl font-semibold text-white">
             Enrollment Status
           </h2>
@@ -814,7 +814,7 @@ function EnrollmentProfiling({ onSubmit, studentData = mockStudentData }) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div
-          className={`bg-gradient-to-r ${
+          className={`bg-linear-to-r ${
             studentEnrollment.status === "enrolled"
               ? "from-green-600 to-green-700"
               : studentEnrollment.status === "approved"

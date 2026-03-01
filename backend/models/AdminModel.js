@@ -111,8 +111,6 @@ const deleteCourses = async (id) => {
 
 const switchStatusMode = async (id, data) => {
   try {
-    console.log("Switching status for user:", id, data);
-
     const result = await db.query(
       `
       UPDATE users 
@@ -138,6 +136,124 @@ const switchStatusMode = async (id, data) => {
   }
 };
 
+const getAcademicYearlist = async () => {
+  try {
+    const result = await db.query(
+      `SELECT id, academic_year, semester, start_date, end_date, enrollment_open FROM academic_year`,
+    );
+    return result.rows;
+  } catch (error) {
+    console.error("Error in getAcademicYearlist:", error);
+    throw error;
+  }
+};
+
+// ADD new academic year
+const addAcademicYear = async (data) => {
+  try {
+    // Check for duplicates
+    const existing = await db.query(
+      `SELECT id 
+       FROM academic_year 
+       WHERE academic_year = $1 AND semester = $2`,
+      [data.academic_year, data.semester],
+    );
+
+    if (existing.rows.length > 0) {
+      throw new Error("Academic year and semester already exists.");
+    }
+
+    // Insert new academic year
+    const result = await db.query(
+      `INSERT INTO academic_year 
+       (academic_year, semester, start_date, end_date, enrollment_open)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [
+        data.academic_year,
+        data.semester,
+        data.start_date,
+        data.end_date,
+        data.enrollment_open ?? false,
+      ],
+    );
+
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error in addAcademicYear:", error);
+    throw error;
+  }
+};
+
+// UPDATE academic year
+const updateAcademicYear = async (id, data) => {
+  try {
+    // Check for duplicates (excluding current record)
+    const existing = await db.query(
+      `SELECT id 
+       FROM academic_year 
+       WHERE academic_year = $1 AND semester = $2 AND id != $3`,
+      [data.academic_year, data.semester, id],
+    );
+
+    if (existing.rows.length > 0) {
+      throw new Error("Academic year and semester already exists.");
+    }
+
+    const result = await db.query(
+      `UPDATE academic_year 
+       SET academic_year = $1, 
+           semester = $2, 
+           start_date = $3, 
+           end_date = $4,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5
+       RETURNING *`,
+      [data.academic_year, data.semester, data.start_date, data.end_date, id],
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error("Academic year not found");
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error in updateAcademicYear:", error);
+    throw error;
+  }
+};
+
+// TOGGLE ENROLLMENT STATUS
+const switchStatusAcademicYear = async (data, id) => {
+  try {
+    // If opening enrollment, close all others first (only one can be open)
+    if (data.enrollment_open === true) {
+      await db.query(
+        `UPDATE academic_year 
+         SET enrollment_open = false, updated_at = NOW()
+         WHERE id != $1;`,
+        [id],
+      );
+    }
+
+    // Update the target year's enrollment status
+    const result = await db.query(
+      `UPDATE academic_year
+       SET enrollment_open = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING *;`,
+      [data.enrollment_open, id],
+    );
+
+    if (result.rows.length === 0) throw new Error("Academic year not found");
+
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error in switchStatusAcademicYear:", error);
+    throw error;
+  }
+};
+
 export {
   getAllUsersList,
   getAllCoursesList,
@@ -145,4 +261,7 @@ export {
   addNewCourses,
   deleteCourses,
   switchStatusMode,
+  addAcademicYear,
+  getAcademicYearlist,
+  switchStatusAcademicYear,
 };

@@ -10,6 +10,9 @@ import {
   editCourses,
   deleteCourse,
   switchStatus,
+  setAcademicYear,
+  getAcademicYear,
+  setStatusAcademicYear,
 } from "../controller/AdminController.js";
 import { setAnnouncement, getStats } from "../services/announcementServices.js";
 
@@ -21,15 +24,18 @@ router.get("/overView", overView);
 router.get("/maintenance", checkMaintenance);
 router.get("/stats", getStats);
 router.get("/maintenance-messege", getMaintenanceMessege);
+router.get("/addAcademicYear", getAcademicYear);
 
 router.put("/maintenance", setMaintenance);
 router.put("/editCourse/:id", editCourses);
 
 router.post("/addCourse", addNewCourse);
 router.post("/announcement", setAnnouncement);
+router.post("/addAcademicYear", setAcademicYear);
 
 router.delete("/deleteCourse/:id", deleteCourse);
 
 router.patch("/switchStatus/:id", switchStatus);
+router.patch("/switchStatusAcademicYear/:id", setStatusAcademicYear);
 
 export default router;
