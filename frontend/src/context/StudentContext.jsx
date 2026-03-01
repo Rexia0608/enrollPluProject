@@ -23,10 +23,9 @@ export const StudentProvider = ({ children }) => {
 
     const fetchStudentData = async () => {
       setLoading(true);
-      setError(null); // Clear previous errors
+      setError(null);
 
       try {
-        // Parallel fetching for better performance
         const [coursesRes, enrollmentRes] = await Promise.all([
           axios.get(API_BASE_URL_COURSE, getAuthHeaders()),
           axios.get(API_URL_ENROLLMENT_OPEN, getAuthHeaders()),
@@ -55,7 +54,7 @@ export const StudentProvider = ({ children }) => {
   useEffect(() => {
     if (!user) {
       setInitialCourses([]);
-      setEnrollmentStatus(null); // Consistent: use null not undefined
+      setEnrollmentStatus(null);
       setError(null);
     }
   }, [user]);
@@ -64,8 +63,6 @@ export const StudentProvider = ({ children }) => {
   const isEnrollmentOpen = enrollmentStatus?.enrollment_open ?? false;
   const academicYear = enrollmentStatus?.academic_year || null;
   const semester = enrollmentStatus?.semester || null;
-
-  console.log(enrollmentStatus);
 
   return (
     <StudentContext.Provider

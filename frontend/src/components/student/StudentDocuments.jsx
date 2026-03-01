@@ -1,12 +1,13 @@
 // components/student/EnrollmentProfiling.jsx
 import React, { useState, useEffect } from "react";
+import LoadingPage from "../../pages/LoadingPage";
+import FailedLoadData from "../../pages/FailedLoadData";
 import {
   User,
   Mail,
   Phone,
   MapPin,
   BookOpen,
-  AlertCircle,
   CheckCircle,
   Upload,
   FileText,
@@ -127,6 +128,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     });
   }, [studentType]);
 
+  console.log(user);
+
   const checkExistingEnrollment = async () => {
     try {
       setCheckingEnrollment(true);
@@ -232,58 +235,47 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     setSubmitError(null);
 
     try {
-      // Prepare enrollment data
-      const enrollmentData = {
-        studentId: user?.id,
-        studentType,
-        contactNumber: formData.contactNumber,
-        address: formData.address,
-        yearLevel: formData.yearLevel,
-        course: formData.course,
-        academicYear,
-        semester,
-        fullName:
-          `${user?.firstName || ""} ${user?.middleName || ""} ${user?.lastName || ""}`.trim(),
-        email: user?.email,
-        birthDate: user?.birthDate,
-        gender: user?.gender,
-      };
+      // Create FormData to send both enrollment data AND files
+      const formData = new FormData();
 
-      // Submit enrollment
-      const response = await axios.post(
-        `${API_BASE}/enrollment`,
-        enrollmentData,
-        getAuthHeaders(),
+      // Add enrollment data fields
+      formData.append("studentId", user?.id);
+      formData.append("studentType", studentType);
+      formData.append("contactNumber", formData.contactNumber);
+      formData.append("address", formData.address);
+      formData.append("yearLevel", formData.yearLevel);
+      formData.append("course", formData.course);
+      formData.append("academicYear", academicYear);
+      formData.append("semester", semester);
+      formData.append(
+        "fullName",
+        `${user?.firstName || ""} ${user?.middleName || ""} ${user?.lastName || ""}`.trim(),
       );
+      formData.append("email", user?.email);
+      formData.append("birthDate", user?.birthDate);
+      formData.append("gender", user?.gender);
 
-      const enrollmentId = response.data?.id || response.data?.enrollmentId;
-
-      // Upload documents if applicable
-      if (
-        enrollmentId &&
-        (studentType === "new" || studentType === "transferee")
-      ) {
-        const formDataDocs = new FormData();
-        let hasDocuments = false;
-
+      // Add documents if applicable
+      if (studentType === "new" || studentType === "transferee") {
         Object.entries(documents).forEach(([key, doc]) => {
           if (doc.file) {
-            formDataDocs.append(key, doc.file);
-            hasDocuments = true;
+            formData.append(key, doc.file);
           }
         });
-
-        if (hasDocuments) {
-          formDataDocs.append("enrollmentId", enrollmentId);
-          await axios.post(`${API_BASE}/upload-documents`, formDataDocs, {
-            ...getAuthHeaders(),
-            headers: {
-              ...getAuthHeaders().headers,
-              "Content-Type": "multipart/form-data",
-            },
-          });
-        }
       }
+
+      // Single request with everything
+      const response = await axios.post(
+        `${API_BASE}/upload-documents`,
+        formData,
+        {
+          ...getAuthHeaders(),
+          headers: {
+            ...getAuthHeaders().headers,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
 
       setSubmitSuccess(true);
       await checkExistingEnrollment();
@@ -302,42 +294,19 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
   // Loading states
   if (contextLoading || checkingEnrollment) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-12">
-        <div className="flex flex-col items-center justify-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-          <p className="text-gray-600 font-medium">
-            Loading enrollment data...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   // Context error
   if (contextError) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg border border-red-200 p-8 text-center">
-        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-red-800 mb-2">
-          Failed to Load Data
-        </h3>
-        <p className="text-gray-600 mb-6">{contextError}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Retry
-        </button>
-      </div>
-    );
+    return <FailedLoadData />;
   }
 
   // Enrollment closed
   if (!isEnrollmentOpen) {
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
+        <div className="bg-linear-to-r from-red-600 to-red-700 px-6 py-5">
           <h2 className="text-xl font-semibold text-white flex items-center">
             <Lock className="w-5 h-5 mr-2" />
             Enrollment Closed
@@ -713,7 +682,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                   <div>
                     <span className="text-gray-500 block mb-1">Full Name</span>
                     <span className="font-semibold text-gray-900">
-                      {user?.firstName} {user?.middleName} {user?.lastName}
+                      {user?.name}
                     </span>
                   </div>
                   <div>
@@ -725,7 +694,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                   <div>
                     <span className="text-gray-500 block mb-1">Student ID</span>
                     <span className="font-semibold text-gray-900">
-                      {user?.studentId || "To be assigned"}
+                      {user?.id || "To be assigned"}
                     </span>
                   </div>
                   <div>
@@ -733,8 +702,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                       Birth Date / Gender
                     </span>
                     <span className="font-semibold text-gray-900">
-                      {user?.birthDate
-                        ? new Date(user.birthDate).toLocaleDateString()
+                      {user?.birthdate
+                        ? new Date(user.birthdate).toLocaleDateString()
                         : "N/A"}{" "}
                       • {user?.gender || "N/A"}
                     </span>
@@ -788,6 +757,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                     <option value="Third Year">Third Year</option>
                     <option value="Fourth Year">Fourth Year</option>
                     <option value="Fifth Year">Fifth Year</option>
+                    <option value="Other">Other</option>
                   </select>
                   {errors.yearLevel && (
                     <p className="mt-1 text-sm text-red-600">

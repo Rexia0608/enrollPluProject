@@ -78,6 +78,8 @@ const loginUserModel = async (data) => {
       user: {
         id: user[0].id,
         name: user[0].first_name + " " + user[0].last_name,
+        birthdate: user[0].birthdate,
+        gender: user[0].gender,
         email: user[0].email,
         role: user[0].role,
       },
@@ -95,6 +97,8 @@ const checkIfTheUserExist = async (email) => {
 	  users.role,
     users.first_name,
     users.last_name,
+    users.birthdate,
+    users.gender,
     credentials.email,
     credentials.password,
     credentials.login_attempts,
@@ -105,7 +109,6 @@ FROM credentials
 INNER JOIN users ON credentials.user_id = users.id
 WHERE credentials.email = $1;`;
   const result = await db.query(query, [email]);
-  console.log(result.rows);
   return result.rows;
 };
 
