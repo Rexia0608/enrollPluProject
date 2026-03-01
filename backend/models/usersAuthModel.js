@@ -40,7 +40,6 @@ const registerUserModel = async (data) => {
       otpExpires,
     ]);
 
-    // 4️⃣ Send OTP
     await sendEmail("sending_OTP", data.email, otp);
     await firstUserAdminSetRole(userId);
 

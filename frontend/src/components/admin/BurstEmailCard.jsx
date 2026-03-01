@@ -76,6 +76,7 @@ function BurstEmailCard() {
     );
     try {
       const response = await axios.post(API_URL, {
+        type: `burst_email`,
         period: selectedPeriod,
         message: EMAIL_MESSAGES[selectedPeriod],
         recipients: stats?.[selectedPeriod]?.pending || 0,

@@ -1,6 +1,14 @@
+import { sendEmail } from "../utils/mailer.js";
+
 const setAnnouncement = async (req, res) => {
   try {
-    console.log(req.body);
+    const data = req.body;
+
+    const email = [
+      "johnreycejas0608@gmail.com",
+      "johnreycejasdev2024@gmail.com",
+    ];
+    await sendEmail(data.type, email, data.message);
     return res.status(200).json(req.body);
   } catch (error) {
     console.error("Error in setMaintenance:", error);
