@@ -2,6 +2,7 @@ import {
   getAllCoursesList,
   getAcademicYearlist,
   createEnrollment,
+  documentsHandlerModel,
 } from "../models/StudentModel.js";
 
 const getCourses = async (req, res) => {
@@ -29,23 +30,9 @@ const getAcademicYear = async (req, res) => {
 
 const documentsHandler = async (req, res) => {
   try {
-    // Extract enrollment data from req.body (Multer parses text fields automatically)
-    const {
-      studentId,
-      studentType,
-      contactNumber,
-      address,
-      yearLevel,
-      course,
-      academicYear,
-      semester,
-      fullName,
-      email,
-      birthDate,
-      gender,
-    } = req.body;
-
     // Validate required fields
+    console.log(req.body);
+
     if (!studentId || !studentType || !course) {
       return res.status(400).json({
         message: "Missing required enrollment fields",
@@ -53,21 +40,7 @@ const documentsHandler = async (req, res) => {
     }
 
     // First: Create the enrollment record (you need to implement this)
-    const enrollmentResult = await createEnrollment({
-      studentId,
-      studentType,
-      contactNumber,
-      address,
-      yearLevel,
-      course,
-      academicYear,
-      semester,
-      fullName,
-      email,
-      birthDate,
-      gender,
-      status: "pending",
-    });
+    const enrollmentResult = await createEnrollment(req.body);
 
     const enrollmentId = enrollmentResult.id;
 

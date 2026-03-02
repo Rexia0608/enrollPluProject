@@ -406,7 +406,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className={`bg-gradient-to-r ${config.gradient} px-6 py-5`}>
+        <div className={`bg-linear-to-r ${config.gradient} px-6 py-5`}>
           <h2 className="text-xl font-semibold text-white flex items-center">
             <GraduationCap className="w-5 h-5 mr-2" />
             Enrollment Status
@@ -467,15 +467,15 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               </h4>
               <ul className="space-y-2 text-green-700">
                 <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 mr-2 shrink-0" />
                   View your class schedule and assigned subjects
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 mr-2 shrink-0" />
                   Check your email for important enrollment information
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 mr-2 shrink-0" />
                   Proceed to student portal for additional resources
                 </li>
               </ul>
@@ -525,7 +525,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
+      <div className="bg-linear-to-r from-blue-600 to-blue-700 px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-white flex items-center">
@@ -585,7 +585,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       {/* Error Banner */}
       {submitError && (
         <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
-          <AlertCircle className="w-5 h-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-red-600 mr-3 shrink-0 mt-0.5" />
           <div className="flex-1">
             <h4 className="font-semibold text-red-800">Submission Failed</h4>
             <p className="text-sm text-red-700 mt-1">{submitError}</p>
@@ -715,7 +715,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Contact Number <span className="text-red-500">*</span>
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -859,7 +859,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
               {studentType === "old" ? (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 flex items-start">
-                  <Info className="w-6 h-6 text-blue-600 mr-4 flex-shrink-0" />
+                  <Info className="w-6 h-6 text-blue-600 mr-4 shrink-0" />
                   <div>
                     <h4 className="font-semibold text-blue-900 mb-1">
                       No Documents Required

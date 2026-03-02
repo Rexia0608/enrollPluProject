@@ -28,13 +28,14 @@ const registerUserModel = async (data) => {
     const hashPassword = await bcrypt.hash(data.password, 10);
     const credQuery = `
       INSERT INTO credentials (
-        user_id, email, password, email_otp, otp_expires_at, is_verified
+        user_id, email, mobile_number, password, email_otp, otp_expires_at, is_verified
       )
-      VALUES ($1, $2, $3, $4, $5, false)
+      VALUES ($1, $2, $3, $4, $5, $6, false)
     `;
     await db.query(credQuery, [
       userId,
       data.email,
+      data.mNumber,
       hashPassword,
       otp,
       otpExpires,
@@ -122,6 +123,10 @@ const firstUserAdminSetRole = async (userId) => {
     const role = totalUsers === 1 ? "admin" : "student";
 
     await db.query(`UPDATE users SET role = $1 WHERE id = $2`, [role, userId]);
+    await db.query(`UPDATE users SET status = $1 WHERE id = $2`, [
+      true,
+      userId,
+    ]);
   } catch (error) {
     console.error("Register error:", error);
     throw error;

@@ -204,7 +204,7 @@ const AcademicYearForm = ({
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function AcademicYearTable() {
+export default function EnrollmentControl() {
   const { academicYear, refreshAcademicYears, getAuthHeaders } = useAdmin();
 
   // Local State
