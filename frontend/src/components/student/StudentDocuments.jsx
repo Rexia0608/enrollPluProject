@@ -1,4 +1,5 @@
-// components/student/EnrollmentProfiling.jsx
+// components/student/EnrollmentProfiling.jsx (updated with validation hook)
+
 import React, { useState, useEffect } from "react";
 import LoadingPage from "../../pages/LoadingPage";
 import FailedLoadData from "../../pages/FailedLoadData";
@@ -27,6 +28,11 @@ import {
 } from "lucide-react";
 import { useStudent } from "../../context/StudentContext";
 import { useAuth } from "../../context/AuthContext";
+import { useEnrollmentValidation } from "../../utils/useEnrollmentValidation";
+import {
+  getRequiredDocuments,
+  validateRequiredDocuments,
+} from "../../utils/documentValidation";
 import axios from "axios";
 
 const API_BASE = "http://localhost:3000/student";
@@ -35,13 +41,28 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   // Context data
   const { user } = useAuth();
   const {
-    initialCourses,
+    initialCourses = [], // Default to empty array if not available
     enrollmentStatus,
     loading: contextLoading,
     error: contextError,
     getAuthHeaders,
-    refreshData,
+    isEnrollmentOpen,
+    academicYear,
+    semester,
   } = useStudent();
+
+  // Validation hook
+  const {
+    errors,
+    touched,
+    setErrors,
+    setTouched,
+    validateStep,
+    handleBlur,
+    getError,
+    clearErrors,
+    resetValidation,
+  } = useEnrollmentValidation();
 
   // Local state
   const [activeStep, setActiveStep] = useState(1);
@@ -58,40 +79,14 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     address: "",
     yearLevel: "",
     course: "",
+    academicYear: academicYear || "",
+    semester: semester || "",
   });
 
   // Documents
-  const [documents, setDocuments] = useState({
-    form138: { file: null, required: false, label: "Form 138 / Report Card" },
-    birthCertificate: {
-      file: null,
-      required: false,
-      label: "Birth Certificate",
-    },
-    transcript: { file: null, required: false, label: "Transcript of Records" },
-    honorableDismissal: {
-      file: null,
-      required: false,
-      label: "Honorable Dismissal",
-    },
-  });
+  const [documents, setDocuments] = useState(getRequiredDocuments(""));
 
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-
-  // Derived values from context
-  const isEnrollmentOpen = enrollmentStatus?.enrollment_open ?? false;
-  const academicYear = enrollmentStatus?.academic_year;
-  const semester = enrollmentStatus?.semester;
-  const enrollmentStart = enrollmentStatus?.start_date;
-  const enrollmentEnd = enrollmentStatus?.end_date;
-
-  // Check existing enrollment on mount
-  useEffect(() => {
-    checkExistingEnrollment();
-  }, []);
-
-  // Set academic year and semester when context loads
+  // Update form data when context values change
   useEffect(() => {
     if (academicYear && semester) {
       setFormData((prev) => ({
@@ -102,42 +97,36 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     }
   }, [academicYear, semester]);
 
+  // Check existing enrollment on mount
+  useEffect(() => {
+    checkExistingEnrollment();
+  }, []);
+
   // Update document requirements when student type changes
   useEffect(() => {
-    setDocuments((prev) => ({
-      ...prev,
-      form138: { ...prev.form138, required: studentType === "new" },
-      birthCertificate: {
-        ...prev.birthCertificate,
-        required: studentType === "new",
-      },
-      transcript: {
-        ...prev.transcript,
-        required: studentType === "transferee",
-      },
-      honorableDismissal: {
-        ...prev.honorableDismissal,
-        required: studentType === "transferee",
-      },
-    }));
+    setDocuments(getRequiredDocuments(studentType));
     // Clear errors when type changes
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors.studentType;
-      return newErrors;
-    });
-  }, [studentType]);
-
-  console.log(user);
+    clearErrors(["studentType"]);
+  }, [studentType, clearErrors]);
 
   const checkExistingEnrollment = async () => {
     try {
       setCheckingEnrollment(true);
+
+      // Uncomment when you want to use real API
+      /*
       const response = await axios.get(
         `${API_BASE}/my-enrollment`,
-        getAuthHeaders(),
+        getAuthHeaders()
       );
       setMyEnrollment(response.data);
+      */
+
+      // For testing, simulate no existing enrollment
+      setTimeout(() => {
+        setMyEnrollment(null);
+        setCheckingEnrollment(false);
+      }, 1000);
     } catch (err) {
       // 404 means no enrollment exists - that's fine
       if (err.response?.status !== 404) {
@@ -153,8 +142,10 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setTouched((prev) => ({ ...prev, [name]: true }));
+
+    // Clear error for this field
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }));
+      clearErrors([name]);
     }
   };
 
@@ -163,8 +154,10 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       ...prev,
       [docType]: { ...prev[docType], file },
     }));
+
+    // Clear error for this document
     if (errors[docType]) {
-      setErrors((prev) => ({ ...prev, [docType]: null }));
+      clearErrors([docType]);
     }
   };
 
@@ -175,51 +168,14 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     }));
   };
 
-  const validateStep = (step) => {
-    const newErrors = {};
-
-    if (step === 1) {
-      if (!studentType) {
-        newErrors.studentType = "Please select your student type";
-      }
-    }
-
-    if (step === 2) {
-      if (!formData.contactNumber?.trim()) {
-        newErrors.contactNumber = "Contact number is required";
-      } else if (
-        !/^[0-9]{11}$/.test(formData.contactNumber.replace(/\D/g, ""))
-      ) {
-        newErrors.contactNumber = "Must be 11 digits";
-      }
-
-      if (!formData.address?.trim()) {
-        newErrors.address = "Address is required";
-      }
-
-      if (!formData.yearLevel) {
-        newErrors.yearLevel = "Please select year level";
-      }
-
-      if (!formData.course) {
-        newErrors.course = "Please select a course";
-      }
-    }
-
-    if (step === 3 && (studentType === "new" || studentType === "transferee")) {
-      Object.entries(documents).forEach(([key, doc]) => {
-        if (doc.required && !doc.file) {
-          newErrors[key] = `${doc.label} is required`;
-        }
-      });
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleNext = () => {
-    if (validateStep(activeStep)) {
+    const isValid = validateStep(activeStep, {
+      studentType,
+      formData,
+      documents,
+    });
+
+    if (isValid) {
       setActiveStep((prev) => Math.min(prev + 1, 3));
     }
   };
@@ -229,37 +185,44 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(3)) return;
+    // Validate final step before submission
+    const isValid = validateStep(3, {
+      studentType,
+      formData,
+      documents,
+    });
+
+    if (!isValid) return;
 
     setSubmitting(true);
     setSubmitError(null);
 
     try {
       // Create FormData to send both enrollment data AND files
-      const formData = new FormData();
+      const submitFormData = new FormData();
 
       // Add enrollment data fields
-      formData.append("studentId", user?.id);
-      formData.append("studentType", studentType);
-      formData.append("contactNumber", formData.contactNumber);
-      formData.append("address", formData.address);
-      formData.append("yearLevel", formData.yearLevel);
-      formData.append("course", formData.course);
-      formData.append("academicYear", academicYear);
-      formData.append("semester", semester);
-      formData.append(
+      submitFormData.append("studentId", user?.id);
+      submitFormData.append("studentType", studentType);
+      submitFormData.append("contactNumber", formData.contactNumber);
+      submitFormData.append("address", formData.address);
+      submitFormData.append("yearLevel", formData.yearLevel);
+      submitFormData.append("course", formData.course);
+      submitFormData.append("academicYear", academicYear);
+      submitFormData.append("semester", semester);
+      submitFormData.append(
         "fullName",
         `${user?.firstName || ""} ${user?.middleName || ""} ${user?.lastName || ""}`.trim(),
       );
-      formData.append("email", user?.email);
-      formData.append("birthDate", user?.birthDate);
-      formData.append("gender", user?.gender);
+      submitFormData.append("email", user?.email);
+      submitFormData.append("birthDate", user?.birthDate);
+      submitFormData.append("gender", user?.gender);
 
       // Add documents if applicable
       if (studentType === "new" || studentType === "transferee") {
         Object.entries(documents).forEach(([key, doc]) => {
           if (doc.file) {
-            formData.append(key, doc.file);
+            submitFormData.append(key, doc.file);
           }
         });
       }
@@ -267,7 +230,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       // Single request with everything
       const response = await axios.post(
         `${API_BASE}/upload-documents`,
-        formData,
+        submitFormData,
         {
           ...getAuthHeaders(),
           headers: {
@@ -279,7 +242,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
       setSubmitSuccess(true);
       await checkExistingEnrollment();
-      refreshData?.();
       onSuccess?.(response.data);
     } catch (err) {
       console.error("Submission failed:", err);
@@ -299,14 +261,17 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
   // Context error
   if (contextError) {
-    return <FailedLoadData />;
+    return <FailedLoadData message={contextError} />;
   }
 
   // Enrollment closed
   if (!isEnrollmentOpen) {
+    const startDate = enrollmentStatus?.start_date;
+    const endDate = enrollmentStatus?.end_date;
+
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-linear-to-r from-red-600 to-red-700 px-6 py-5">
+        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
           <h2 className="text-xl font-semibold text-white flex items-center">
             <Lock className="w-5 h-5 mr-2" />
             Enrollment Closed
@@ -324,13 +289,13 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
             the scheduled enrollment dates.
           </p>
 
-          {enrollmentStart && enrollmentEnd && (
+          {startDate && endDate && (
             <div className="bg-gray-50 rounded-xl p-6 max-w-md mx-auto border border-gray-200">
               <div className="flex items-center justify-between text-sm">
                 <div className="text-left">
                   <p className="text-gray-500 mb-1">Enrollment Opens</p>
                   <p className="font-semibold text-gray-900">
-                    {new Date(enrollmentStart).toLocaleDateString("en-US", {
+                    {new Date(startDate).toLocaleDateString("en-US", {
                       month: "long",
                       day: "numeric",
                       year: "numeric",
@@ -343,7 +308,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                 <div className="text-right">
                   <p className="text-gray-500 mb-1">Enrollment Closes</p>
                   <p className="font-semibold text-gray-900">
-                    {new Date(enrollmentEnd).toLocaleDateString("en-US", {
+                    {new Date(endDate).toLocaleDateString("en-US", {
                       month: "long",
                       day: "numeric",
                       year: "numeric",
@@ -406,7 +371,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className={`bg-linear-to-r ${config.gradient} px-6 py-5`}>
+        <div className={`bg-gradient-to-r ${config.gradient} px-6 py-5`}>
           <h2 className="text-xl font-semibold text-white flex items-center">
             <GraduationCap className="w-5 h-5 mr-2" />
             Enrollment Status
@@ -525,7 +490,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-linear-to-r from-blue-600 to-blue-700 px-6 py-5">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-white flex items-center">
@@ -539,8 +504,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
           <div className="bg-white/20 rounded-lg px-4 py-2 backdrop-blur-sm">
             <span className="text-white font-medium text-sm">
               Due:{" "}
-              {enrollmentEnd
-                ? new Date(enrollmentEnd).toLocaleDateString()
+              {enrollmentStatus?.end_date
+                ? new Date(enrollmentStatus.end_date).toLocaleDateString()
                 : "TBA"}
             </span>
           </div>
@@ -655,10 +620,10 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                 ))}
               </div>
 
-              {errors.studentType && (
+              {getError("studentType") && (
                 <p className="mt-4 text-sm text-red-600 flex items-center">
                   <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.studentType}
+                  {getError("studentType")}
                 </p>
               )}
             </div>
@@ -724,17 +689,18 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                       name="contactNumber"
                       value={formData.contactNumber}
                       onChange={handleInputChange}
+                      onBlur={() => handleBlur("contactNumber")}
                       placeholder="09123456789"
                       className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        errors.contactNumber
+                        getError("contactNumber")
                           ? "border-red-500"
                           : "border-gray-300"
                       }`}
                     />
                   </div>
-                  {errors.contactNumber && (
+                  {getError("contactNumber") && (
                     <p className="mt-1 text-sm text-red-600">
-                      {errors.contactNumber}
+                      {getError("contactNumber")}
                     </p>
                   )}
                 </div>
@@ -747,8 +713,11 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                     name="yearLevel"
                     value={formData.yearLevel}
                     onChange={handleInputChange}
+                    onBlur={() => handleBlur("yearLevel")}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.yearLevel ? "border-red-500" : "border-gray-300"
+                      getError("yearLevel")
+                        ? "border-red-500"
+                        : "border-gray-300"
                     }`}
                   >
                     <option value="">Select Year Level</option>
@@ -759,9 +728,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                     <option value="Fifth Year">Fifth Year</option>
                     <option value="Other">Other</option>
                   </select>
-                  {errors.yearLevel && (
+                  {getError("yearLevel") && (
                     <p className="mt-1 text-sm text-red-600">
-                      {errors.yearLevel}
+                      {getError("yearLevel")}
                     </p>
                   )}
                 </div>
@@ -776,8 +745,11 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                       name="course"
                       value={formData.course}
                       onChange={handleInputChange}
+                      onBlur={() => handleBlur("course")}
                       className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        errors.course ? "border-red-500" : "border-gray-300"
+                        getError("course")
+                          ? "border-red-500"
+                          : "border-gray-300"
                       }`}
                     >
                       <option value="">Select Course</option>
@@ -788,8 +760,10 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                       ))}
                     </select>
                   </div>
-                  {errors.course && (
-                    <p className="mt-1 text-sm text-red-600">{errors.course}</p>
+                  {getError("course") && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {getError("course")}
+                    </p>
                   )}
                 </div>
 
@@ -803,16 +777,19 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                       name="address"
                       value={formData.address}
                       onChange={handleInputChange}
+                      onBlur={() => handleBlur("address")}
                       rows={3}
                       placeholder="House number, street, barangay, city, province"
                       className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none ${
-                        errors.address ? "border-red-500" : "border-gray-300"
+                        getError("address")
+                          ? "border-red-500"
+                          : "border-gray-300"
                       }`}
                     />
                   </div>
-                  {errors.address && (
+                  {getError("address") && (
                     <p className="mt-1 text-sm text-red-600">
-                      {errors.address}
+                      {getError("address")}
                     </p>
                   )}
                 </div>
@@ -880,7 +857,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                         className={`p-5 border-2 rounded-xl transition-colors ${
                           doc.file
                             ? "border-green-300 bg-green-50"
-                            : errors[docType]
+                            : getError(docType)
                               ? "border-red-300 bg-red-50"
                               : "border-gray-200 bg-gray-50"
                         }`}
@@ -921,6 +898,12 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                                 <div className="flex gap-2">
                                   <button
                                     type="button"
+                                    onClick={() => {
+                                      // Implement preview functionality
+                                      window.alert(
+                                        "Preview feature coming soon",
+                                      );
+                                    }}
                                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                                     title="Preview"
                                   >
@@ -957,10 +940,10 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                               </div>
                             )}
 
-                            {errors[docType] && !doc.file && (
+                            {getError(docType) && !doc.file && (
                               <p className="mt-2 text-sm text-red-600 flex items-center">
                                 <AlertCircle className="w-4 h-4 mr-1" />
-                                {errors[docType]}
+                                {getError(docType)}
                               </p>
                             )}
                           </div>
@@ -1019,5 +1002,25 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     </div>
   );
 };
+
+// AlertCircle component (needed for errors)
+const AlertCircle = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
 
 export default EnrollmentProfiling;

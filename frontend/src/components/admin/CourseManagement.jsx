@@ -24,6 +24,27 @@ import axios from "axios";
 
 const ITEMS_PER_PAGE = 5;
 
+// Helper function to map server data to component format
+const mapServerToComponent = (serverCourse) => ({
+  id: serverCourse.id,
+  code: serverCourse.course_code || "",
+  name: serverCourse.course_name || "",
+  type: serverCourse.duration_type || "",
+  tuition_fee: serverCourse.tuition_fee || "",
+  status: serverCourse.course_status || "active",
+  created_at: serverCourse.created_at,
+  updated_at: serverCourse.updated_at,
+});
+
+// Helper function to map component data to server format
+const mapComponentToServer = (componentData) => ({
+  course_code: componentData.code,
+  course_name: componentData.name,
+  duration_type: componentData.type,
+  tuition_fee: componentData.tuition_fee,
+  course_status: componentData.status,
+});
+
 const CourseForm = ({
   formData,
   onInputChange,
@@ -402,8 +423,12 @@ function CourseManagement() {
   const [formErrors, setFormErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
 
+  // Load initial courses and map them to component format
   useEffect(() => {
-    setCourses(initialCourses);
+    if (initialCourses && initialCourses.length > 0) {
+      const mappedCourses = initialCourses.map(mapServerToComponent);
+      setCourses(mappedCourses);
+    }
   }, [initialCourses]);
 
   // Real-time validation
@@ -430,8 +455,8 @@ function CourseManagement() {
       const bVal = b[sortConfig.key];
       if (sortConfig.key === "tuition_fee") {
         return sortConfig.direction === "ascending"
-          ? (aVal || 0) - (bVal || 0)
-          : (bVal || 0) - (aVal || 0);
+          ? (parseFloat(aVal) || 0) - (parseFloat(bVal) || 0)
+          : (parseFloat(bVal) || 0) - (parseFloat(aVal) || 0);
       }
       const aStr = String(aVal || "").toLowerCase();
       const bStr = String(bVal || "").toLowerCase();
@@ -490,6 +515,7 @@ function CourseManagement() {
           `http://localhost:3000/admin/deleteCourse/${courseToDelete.id}`,
         );
 
+        // Update local state
         setCourses(courses.filter((c) => c.id !== courseToDelete.id));
         setIsDeleteModalOpen(false);
         setCourseToDelete(null);
@@ -533,34 +559,31 @@ function CourseManagement() {
     }
 
     try {
-      const operation = currentCourse ? "update" : "create";
+      // Map form data to server format
+      const serverData = mapComponentToServer(formData);
 
-      switch (operation) {
-        case "update":
-          await axios.put(
-            `http://localhost:3000/admin/editCourse/${currentCourse.id}`,
-            formData,
-          );
-          toast.success("Course updated successfully");
-          break;
-
-        case "create":
-          await axios.post("http://localhost:3000/admin/addCourse", formData);
-          toast.success("Course added successfully");
-          break;
-
-        default:
-          break;
+      if (currentCourse) {
+        // Update existing course
+        await axios.put(
+          `http://localhost:3000/admin/editCourse/${currentCourse.id}`,
+          serverData,
+        );
+        toast.success("Course updated successfully");
+      } else {
+        // Create new course
+        await axios.post("http://localhost:3000/admin/addCourse", serverData);
+        toast.success("Course added successfully");
       }
 
-      // Reload courses from DB
+      // Reload courses from DB and map them
       const res = await axios.get("http://localhost:3000/admin/courseList");
-      setCourses(res.data);
+      const mappedCourses = res.data.map(mapServerToComponent);
+      setCourses(mappedCourses);
 
       handleCloseModal();
     } catch (error) {
-      console.error(error);
-      toast.error("Operation failed");
+      console.error("Operation failed:", error);
+      toast.error(error.response?.data?.message || "Operation failed");
     }
   };
 
@@ -614,7 +637,13 @@ function CourseManagement() {
                 <div className="flex items-center">
                   {key === "tuition_fee"
                     ? "Tuition Fee"
-                    : key.charAt(0).toUpperCase() + key.slice(1)}
+                    : key === "code"
+                      ? "Course Code"
+                      : key === "name"
+                        ? "Course Name"
+                        : key === "type"
+                          ? "Duration"
+                          : key.charAt(0).toUpperCase() + key.slice(1)}
                   {sortConfig.key === key &&
                     (sortConfig.direction === "ascending" ? (
                       <ChevronUp className="w-4 h-4 ml-1" />

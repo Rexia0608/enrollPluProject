@@ -9,10 +9,11 @@ const API_URL_ENROLLMENT_OPEN =
 
 export const StudentProvider = ({ children }) => {
   const { user } = useAuth();
+
   const [initialCourses, setInitialCourses] = useState([]);
   const [enrollmentStatus, setEnrollmentStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // Added error state
+  const [error, setError] = useState(null);
 
   const getAuthHeaders = () => ({
     headers: { Authorization: `Bearer ${user?.token}` },
@@ -35,8 +36,9 @@ export const StudentProvider = ({ children }) => {
         const courses = Array.isArray(coursesRes.data) ? coursesRes.data : [];
         setInitialCourses(courses);
 
-        // Validate enrollment status (object with AcademicYear array)
-        const enrollment = enrollmentRes.data?.AcademicYear?.[0] || null;
+        // FIXED: Access Response array correctly (capital R)
+        // The API returns { message, Response: [...] }
+        const enrollment = enrollmentRes.data?.Response?.[0] || null;
         setEnrollmentStatus(enrollment);
       } catch (err) {
         const errorMsg =

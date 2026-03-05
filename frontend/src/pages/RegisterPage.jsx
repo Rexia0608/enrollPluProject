@@ -65,48 +65,59 @@ const RegisterPage = () => {
     setIsSubmitting(true);
 
     try {
+      // Client-side validation
       const { notValid, isValid } = await signUpValidation(inputs);
-      const body = inputs;
-      if (isValid || Object.keys(notValid).length === 0) {
-        const response = await axios.post(`${API_BASE_URL}`, body);
 
-        toast(`User ${response.data.email} Registered`, {
-          toastId: "validation-errors",
-          type: "success",
-          autoClose: 2000,
-        });
-        setTimeout(() => {
-          navigate("/email-validation", {
-            state: {
-              currentEmail: inputs.email,
-            },
-          });
-        }, 1500);
-      } else {
+      if (!isValid && Object.keys(notValid).length > 0) {
+        // Show validation errors
         setInvalid(notValid);
         const errorMessages = Object.values(notValid).join(", ");
-        toast(`${errorMessages}`, {
+        toast(errorMessages, {
           toastId: "validation-errors",
           type: "error",
           autoClose: 5000,
         });
+        return; // Stop submission
       }
-    } catch (error) {
-      if (error.response.data.error) {
-        toast(error.response.data.error, {
-          toastId: "validation-errors",
-          type: "warning",
-          autoClose: 4000,
+
+      // Prepare request body
+      const body = inputs;
+      const response = await axios.post(`${API_BASE_URL}`, body);
+
+      // Success toast
+      toast(`User ${response.data.email} Registered`, {
+        toastId: "validation-success",
+        type: "success",
+        autoClose: 2000,
+      });
+
+      // Navigate to email validation page
+      setTimeout(() => {
+        navigate("/email-validation", {
+          state: { currentEmail: inputs.email },
         });
-        setTimeout(() => {
-          navigate("/login");
-        }, 3000);
-      }
+      }, 1500);
+    } catch (error) {
+      // Handle server errors
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        "Something went wrong";
+
+      toast(errorMessage, {
+        toastId: "server-error",
+        type: "error",
+        autoClose: 4000,
+      });
+
+      // Optional: navigate to login if needed
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000);
     } finally {
       setIsSubmitting(false);
     }
   };
-
   // Check if form is valid for enabling submit button
   const isFormValid = Object.values(invalid).every((error) => !error);
 

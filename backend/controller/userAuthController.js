@@ -4,45 +4,48 @@ import {
   registerUserModel,
   checkIfTheUserExist,
 } from "../models/usersAuthModel.js";
+import {
+  globalResponseHandler,
+  errorResponseHandler,
+} from "../middleware/responseHandler.js";
 
 const UserRegisterController = async (req, res) => {
   try {
-    const response = await registerUserModel(req.body);
+    const result = await registerUserModel(req.body);
 
-    if (response.error) {
-      return res.status(400).json({ error: response.error });
+    if (result.error) {
+      return errorResponseHandler(res, new Error(result.error), 400);
     }
 
-    return res.status(200).json(response);
+    return globalResponseHandler(res, result, {
+      message: "User registered successfully",
+      statusCode: 201,
+    });
   } catch (error) {
     console.error("Controller error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return errorResponseHandler(res, error, 500);
   }
 };
 
 const userAuthController = async (req, res) => {
   try {
-    const response = (await verifyingOtpServices(req.body)) || {};
+    const result = (await verifyingOtpServices(req.body)) || {};
 
-    if (response.error) {
-      return res.status(400).json({
-        success: false,
-        message: response.error,
-      });
+    if (result.error) {
+      return errorResponseHandler(
+        res,
+        new Error(result.error || "Verification failed"),
+        400,
+      );
     }
 
-    // Success
-    return res.status(200).json({
-      success: true,
-      message: response.message,
-      email: response.email,
+    return globalResponseHandler(res, result, {
+      message: result.message || "OTP verified successfully",
+      statusCode: 200,
     });
   } catch (error) {
     console.error("Controller error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    return errorResponseHandler(res, error, 500);
   }
 };
 

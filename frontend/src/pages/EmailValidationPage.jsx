@@ -198,7 +198,7 @@ function EmailValidationPage() {
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL_VERIFY}`,
+        API_BASE_URL_VERIFY,
         {
           email: currentEmail,
           otp: code,
@@ -211,7 +211,8 @@ function EmailValidationPage() {
         },
       );
 
-      toast(response.data.message || "Email verified successfully!", {
+      // ✅ Success toast
+      toast(response.data?.message || "Email verified successfully!", {
         type: "success",
       });
 
@@ -223,10 +224,25 @@ function EmailValidationPage() {
         navigate("/login", { replace: true });
       }, REDIRECT_DELAY);
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.error ||
-        err.message ||
-        "Verification failed. Please try again.";
+      console.log("Verification error:", err.response?.data);
+
+      let errorMessage = "Verification failed. Please try again.";
+
+      // ✅ Server responded with error (like OTP expired)
+      if (err.response) {
+        errorMessage =
+          err.response.data?.error?.message || // nested error object
+          err.response.data?.message || // top-level message
+          errorMessage;
+      }
+      // ✅ Network error (server down, timeout, etc.)
+      else if (err.request) {
+        errorMessage = "Server is not responding. Please try again.";
+      }
+      // ✅ Other error
+      else {
+        errorMessage = err.message || errorMessage;
+      }
 
       toast(errorMessage, {
         type: "error",

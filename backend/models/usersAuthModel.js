@@ -11,7 +11,10 @@ const registerUserModel = async (data) => {
     // 1️⃣ Check if email exists
     const isAlreadyRegistered = await checkIfTheUserExist(data.email);
     if (isAlreadyRegistered.length > 0) {
-      return { error: "Email is already in use." };
+      return {
+        error:
+          "Email is already in use. Please try to login using your credentials.",
+      };
     }
 
     // 2️⃣ Insert user (assumes id is UUID defaulted in DB)

@@ -38,16 +38,23 @@ const updateCourses = async (id, data) => {
       `
       UPDATE courses 
       SET 
-        code = $1, 
-        name = $2, 
-        type = $3, 
+        course_code = $1, 
+        course_name = $2, 
+        duration_type = $3, 
         tuition_fee = $4, 
-        status = $5, 
+        course_status = $5, 
         updated_at = NOW()
       WHERE id = $6
       RETURNING *;
       `,
-      [data.code, data.name, data.type, data.tuition_fee, data.status, id],
+      [
+        data.course_code,
+        data.course_name,
+        data.duration_type,
+        data.tuition_fee,
+        data.course_status,
+        id,
+      ],
     );
 
     return result.rows[0];
@@ -57,31 +64,32 @@ const updateCourses = async (id, data) => {
   }
 };
 
+// In your AdminModel.js
 const addNewCourses = async (data) => {
   try {
+    console.log("Data received in model:", data);
+
     const result = await db.query(
       `
       INSERT INTO courses (
-        code,
-        name,
-        type,
+        course_code,
+        course_name,
+        duration_type,
         tuition_fee,
-        status,
+        course_status,
         created_at,
         updated_at
       )
-      VALUES (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        NOW(),
-        NOW()
-      )
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       RETURNING *;
       `,
-      [data.code, data.name, data.type, data.tuition_fee, data.status],
+      [
+        data.course_code,
+        data.course_name,
+        data.duration_type,
+        data.tuition_fee,
+        data.course_status,
+      ],
     );
 
     return result.rows[0];
