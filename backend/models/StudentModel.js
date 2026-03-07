@@ -13,7 +13,7 @@ const getAllCoursesList = async () => {
 const getAcademicYearlist = async () => {
   try {
     const result = await db.query(
-      `SELECT id, academic_year, semester, start_date, end_date, enrollment_open 
+      `SELECT id, year_series, semester, start_date, end_date, enrollment_open 
         FROM academic_year 
         WHERE enrollment_open = 'true'`,
     );

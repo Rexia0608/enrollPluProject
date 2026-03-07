@@ -62,6 +62,7 @@ export const getRequiredDocuments = (studentType) => {
         ...baseDocuments.honorableDismissal,
         required: true,
       },
+      birthCertificate: { ...baseDocuments.birthCertificate, required: true },
     };
   }
 

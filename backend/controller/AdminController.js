@@ -191,7 +191,6 @@ const switchStatus = async (req, res) => {
 const getAcademicYear = async (req, res) => {
   try {
     const result = await getAcademicYearlist();
-
     res.status(200).json({
       message: "Academic Year loaded successfully",
       AcademicYear: result,

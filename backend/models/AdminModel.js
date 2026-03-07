@@ -67,8 +67,6 @@ const updateCourses = async (id, data) => {
 // In your AdminModel.js
 const addNewCourses = async (data) => {
   try {
-    console.log("Data received in model:", data);
-
     const result = await db.query(
       `
       INSERT INTO courses (
@@ -147,7 +145,7 @@ const switchStatusMode = async (id, data) => {
 const getAcademicYearlist = async () => {
   try {
     const result = await db.query(
-      `SELECT id, academic_year, semester, start_date, end_date, enrollment_open FROM academic_year`,
+      `SELECT id, year_series, semester, start_date, end_date, enrollment_open FROM academic_year`,
     );
     return result.rows;
   } catch (error) {
@@ -158,12 +156,13 @@ const getAcademicYearlist = async () => {
 
 // ADD new academic year
 const addAcademicYear = async (data) => {
+  console.log(data);
   try {
     // Check for duplicates
     const existing = await db.query(
       `SELECT id 
        FROM academic_year 
-       WHERE academic_year = $1 AND semester = $2`,
+       WHERE year_series = $1 AND semester = $2`,
       [data.academic_year, data.semester],
     );
 
@@ -174,7 +173,7 @@ const addAcademicYear = async (data) => {
     // Insert new academic year
     const result = await db.query(
       `INSERT INTO academic_year 
-       (academic_year, semester, start_date, end_date, enrollment_open)
+       (year_series, semester, start_date, end_date, enrollment_open)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
       [

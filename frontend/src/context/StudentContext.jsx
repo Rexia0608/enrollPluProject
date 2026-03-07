@@ -32,8 +32,30 @@ export const StudentProvider = ({ children }) => {
           axios.get(API_URL_ENROLLMENT_OPEN, getAuthHeaders()),
         ]);
 
-        // Validate and set courses (handle duplicates if needed)
-        const courses = Array.isArray(coursesRes.data) ? coursesRes.data : [];
+        // Check the actual structure of courses response
+        let courses = [];
+        if (Array.isArray(coursesRes.data)) {
+          courses = coursesRes.data;
+        } else if (
+          coursesRes.data?.data &&
+          Array.isArray(coursesRes.data.data)
+        ) {
+          // If response is { data: [...] }
+          courses = coursesRes.data.data;
+        } else if (
+          coursesRes.data?.courses &&
+          Array.isArray(coursesRes.data.courses)
+        ) {
+          // If response is { courses: [...] }
+          courses = coursesRes.data.courses;
+        } else if (
+          coursesRes.data?.Response &&
+          Array.isArray(coursesRes.data.Response)
+        ) {
+          // If response has Response property (like your enrollment API)
+          courses = coursesRes.data.Response;
+        }
+
         setInitialCourses(courses);
 
         // FIXED: Access Response array correctly (capital R)
@@ -45,6 +67,11 @@ export const StudentProvider = ({ children }) => {
           err.response?.data?.message || err.message || "Failed to fetch data";
         setError(errorMsg);
         console.error("Student data fetch error:", err);
+        console.error("Error details:", {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+        });
       } finally {
         setLoading(false);
       }
@@ -63,7 +90,7 @@ export const StudentProvider = ({ children }) => {
 
   // Computed values for easier consumption
   const isEnrollmentOpen = enrollmentStatus?.enrollment_open ?? false;
-  const academicYear = enrollmentStatus?.academic_year || null;
+  const academicYear = enrollmentStatus?.year_series || null;
   const semester = enrollmentStatus?.semester || null;
 
   return (

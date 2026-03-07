@@ -512,7 +512,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               Student Enrollment
             </h2>
             <p className="text-blue-100 text-sm mt-1">
-              Complete your profiling to enroll for {semester}
+              Complete your profiling to enroll for {semester} {academicYear}
             </p>
           </div>
           <div className="bg-white/20 rounded-lg px-4 py-2 backdrop-blur-sm">
@@ -715,7 +715,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                       value={formData.contactNumber}
                       onChange={handleInputChange}
                       onBlur={() => handleBlur("contactNumber")}
-                      placeholder={user?.mobile || "09123456789"}
+                      placeholder="09123456789"
                       className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                         getError("contactNumber")
                           ? "border-red-500"
@@ -1041,14 +1041,10 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
           <p className="text-xs">
             Courses loaded: {initialCourses?.length || 0}
           </p>
-
           <pre className="text-xs mt-2 overflow-auto max-h-40 bg-white p-2 rounded">
             {JSON.stringify(initialCourses, null, 2)}
           </pre>
 
-          <pre className="text-xs mt-2 overflow-auto max-h-40 bg-white p-2 rounded">
-            {JSON.stringify(user, null, 2)}
-          </pre>
           <pre className="text-xs mt-2 overflow-auto max-h-40 bg-white p-2 rounded">
             {JSON.stringify(user, null, 2)}
           </pre>

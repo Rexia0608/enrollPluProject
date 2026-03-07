@@ -72,7 +72,7 @@ const transformApiData = (apiData) => {
   if (!apiData) return null;
   return {
     id: apiData.id,
-    academicYear: apiData.academic_year || "",
+    year_series: apiData.year_series || "",
     semester: apiData.semester || "",
     startDate: apiData.start_date ? apiData.start_date.split("T")[0] : "",
     endDate: apiData.end_date ? apiData.end_date.split("T")[0] : "",
@@ -305,7 +305,7 @@ export default function EnrollmentControl() {
       await axios.post(
         `${API_BASE}/admin/addAcademicYear`,
         {
-          academic_year: formData.academicYear,
+          year_series: formData.academicYear,
           semester: formData.semester,
           start_date: formData.startDate,
           end_date: formData.endDate,
@@ -333,7 +333,7 @@ export default function EnrollmentControl() {
       await axios.patch(
         `${API_BASE}/admin/updateAcademicYear/${formData.id}`,
         {
-          academic_year: formData.academicYear,
+          year_series: formData.academicYear,
           semester: formData.semester,
           start_date: formData.startDate,
           end_date: formData.endDate,
@@ -541,7 +541,7 @@ export default function EnrollmentControl() {
                           <span className="mr-2 flex h-2 w-2 rounded-full bg-blue-600"></span>
                         )}
                         <span className="font-medium text-gray-900">
-                          {year.academicYear}
+                          {year.year_series}
                         </span>
                       </div>
                     </td>
