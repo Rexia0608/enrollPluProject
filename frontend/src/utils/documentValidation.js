@@ -44,6 +44,7 @@ export const getRequiredDocuments = (studentType) => {
     birthCertificate: { required: false, label: "Birth Certificate" },
     transcript: { required: false, label: "Transcript of Records" },
     honorableDismissal: { required: false, label: "Honorable Dismissal" },
+    PhotoId: { required: false, label: "1X1 Photo ID white backround" },
   };
 
   if (studentType === "new") {
@@ -51,6 +52,7 @@ export const getRequiredDocuments = (studentType) => {
       ...baseDocuments,
       form138: { ...baseDocuments.form138, required: true },
       birthCertificate: { ...baseDocuments.birthCertificate, required: true },
+      PhotoId: { ...baseDocuments.PhotoId, required: true },
     };
   }
 
@@ -63,6 +65,7 @@ export const getRequiredDocuments = (studentType) => {
         required: true,
       },
       birthCertificate: { ...baseDocuments.birthCertificate, required: true },
+      PhotoId: { ...baseDocuments.PhotoId, required: true },
     };
   }
 

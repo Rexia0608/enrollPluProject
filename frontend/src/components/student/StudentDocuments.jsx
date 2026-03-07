@@ -207,16 +207,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       submitFormData.append("contactNumber", formData.contactNumber);
       submitFormData.append("address", formData.address);
       submitFormData.append("yearLevel", formData.yearLevel);
-      submitFormData.append("course", formData.course); // This will be course_code
+      submitFormData.append("course", formData.course_id); // This will be course_code
       submitFormData.append("academicYear", academicYear);
       submitFormData.append("semester", semester);
-      submitFormData.append(
-        "fullName",
-        `${user?.firstName || ""} ${user?.middleName || ""} ${user?.lastName || ""}`.trim(),
-      );
-      submitFormData.append("email", user?.email);
-      submitFormData.append("birthDate", user?.birthDate);
-      submitFormData.append("gender", user?.gender);
 
       // Add documents if applicable
       if (studentType === "new" || studentType === "transferee") {
@@ -229,7 +222,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
       // Single request with everything
       const response = await axios.post(
-        `${API_BASE}/upload-documents`,
+        `${API_BASE}/upload-documents-process`,
         submitFormData,
         {
           ...getAuthHeaders(),
@@ -782,7 +775,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                         initialCourses.map((course) => {
                           const formatted = formatCourseDisplay(course);
                           return (
-                            <option key={formatted.id} value={formatted.code}>
+                            <option key={formatted.id} value={formatted.id}>
                               {formatted.display}
                             </option>
                           );
@@ -1033,27 +1026,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
           )}
         </div>
       </div>
-
-      {/* Debug section - remove in production */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="m-6 p-4 bg-gray-100 border border-gray-300 rounded-lg">
-          <p className="text-sm font-semibold mb-2">Debug Info:</p>
-          <p className="text-xs">
-            Courses loaded: {initialCourses?.length || 0}
-          </p>
-
-          <pre className="text-xs mt-2 overflow-auto max-h-40 bg-white p-2 rounded">
-            {JSON.stringify(initialCourses, null, 2)}
-          </pre>
-
-          <pre className="text-xs mt-2 overflow-auto max-h-40 bg-white p-2 rounded">
-            {JSON.stringify(user, null, 2)}
-          </pre>
-          <pre className="text-xs mt-2 overflow-auto max-h-40 bg-white p-2 rounded">
-            {JSON.stringify(user, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 };

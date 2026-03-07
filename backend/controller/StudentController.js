@@ -33,20 +33,14 @@ const getAcademicYear = async (req, res) => {
   }
 };
 
-const postEnrollmentProcess = async (req, res) => {
+const enrollStudent = async (req, res) => {
   try {
-    res.status(200).json({
-      message: "Enrollment submitted successfully",
-      enrollmentId: enrollmentId,
-      documents: documentResult,
-    });
+    console.log(req.body);
   } catch (error) {
     console.error("Error in postEnrollmentProcess:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// In your AdminController.js or StudentController.js
 
 const getEnrollment = async (req, res) => {
   try {
@@ -168,4 +162,4 @@ const getEnrollment = async (req, res) => {
   }
 };
 
-export { getCourses, getAcademicYear, postEnrollmentProcess, getEnrollment };
+export { getCourses, getAcademicYear, enrollStudent, getEnrollment };
