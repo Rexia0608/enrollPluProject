@@ -1,6 +1,6 @@
 // components/student/EnrollmentProfiling.jsx (updated with validation hook)
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import LoadingPage from "../../pages/LoadingPage";
 import FailedLoadData from "../../pages/FailedLoadData";
 import {
@@ -25,14 +25,12 @@ import {
   Calendar,
   FileCheck,
   X,
+  AlertCircle,
 } from "lucide-react";
 import { useStudent } from "../../context/StudentContext";
 import { useAuth } from "../../context/AuthContext";
 import { useEnrollmentValidation } from "../../utils/useEnrollmentValidation";
-import {
-  getRequiredDocuments,
-  validateRequiredDocuments,
-} from "../../utils/documentValidation";
+import { getRequiredDocuments } from "../../utils/documentValidation";
 import axios from "axios";
 
 const API_BASE = "http://localhost:3000/student";
@@ -41,17 +39,17 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   // Context data
   const { user } = useAuth();
   const {
-    initialCourses = [], // This now contains the array with course_code and course_name
+    initialCourses = [],
     enrollmentStatus,
     loading: contextLoading,
     error: contextError,
     getAuthHeaders,
     isEnrollmentOpen,
     academicYear,
+    academicYearId,
     semester,
   } = useStudent();
 
-  // Validation hook
   const {
     errors,
     touched,
@@ -64,7 +62,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     resetValidation,
   } = useEnrollmentValidation();
 
-  // Local state
   const [activeStep, setActiveStep] = useState(1);
   const [studentType, setStudentType] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +76,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     address: "",
     yearLevel: "",
     course: "",
+    academicYearId: academicYearId || "",
     academicYear: academicYear || "",
     semester: semester || "",
   });
@@ -86,26 +84,35 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   // Documents
   const [documents, setDocuments] = useState(getRequiredDocuments(""));
 
+  // Ref for timeout cleanup
+  const timeoutRef = useRef(null);
+
   // Update form data when context values change
   useEffect(() => {
     if (academicYear && semester) {
       setFormData((prev) => ({
         ...prev,
         academicYear,
+        academicYearId: academicYearId || prev.academicYearId,
         semester,
       }));
     }
-  }, [academicYear, semester]);
+  }, [academicYear, academicYearId, semester]);
 
   // Check existing enrollment on mount
   useEffect(() => {
     checkExistingEnrollment();
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
   // Update document requirements when student type changes
   useEffect(() => {
     setDocuments(getRequiredDocuments(studentType));
-    // Clear errors when type changes
     clearErrors(["studentType"]);
   }, [studentType, clearErrors]);
 
@@ -113,7 +120,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     try {
       setCheckingEnrollment(true);
 
-      // Uncomment when you want to use real API
       /*
       const response = await axios.get(
         `${API_BASE}/my-enrollment`,
@@ -122,13 +128,11 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       setMyEnrollment(response.data);
       */
 
-      // For testing, simulate no existing enrollment
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setMyEnrollment(null);
         setCheckingEnrollment(false);
       }, 1000);
     } catch (err) {
-      // 404 means no enrollment exists - that's fine
       if (err.response?.status !== 404) {
         console.error("Failed to check enrollment:", err);
       }
@@ -143,7 +147,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     setTouched((prev) => ({ ...prev, [name]: true }));
 
-    // Clear error for this field
     if (errors[name]) {
       clearErrors([name]);
     }
@@ -155,7 +158,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       [docType]: { ...prev[docType], file },
     }));
 
-    // Clear error for this document
+    setTouched((prev) => ({ ...prev, [docType]: true }));
+
     if (errors[docType]) {
       clearErrors([docType]);
     }
@@ -185,7 +189,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   };
 
   const handleSubmit = async () => {
-    // Validate final step before submission
     const isValid = validateStep(3, {
       studentType,
       formData,
@@ -198,20 +201,18 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     setSubmitError(null);
 
     try {
-      // Create FormData to send both enrollment data AND files
       const submitFormData = new FormData();
 
-      // Add enrollment data fields
       submitFormData.append("studentId", user?.id);
       submitFormData.append("studentType", studentType);
       submitFormData.append("contactNumber", formData.contactNumber);
       submitFormData.append("address", formData.address);
       submitFormData.append("yearLevel", formData.yearLevel);
-      submitFormData.append("course", formData.course_id); // This will be course_code
+      submitFormData.append("course", formData.course);
+      submitFormData.append("academicYearId", formData.academicYearId);
       submitFormData.append("academicYear", academicYear);
       submitFormData.append("semester", semester);
 
-      // Add documents if applicable
       if (studentType === "new" || studentType === "transferee") {
         Object.entries(documents).forEach(([key, doc]) => {
           if (doc.file) {
@@ -220,7 +221,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         });
       }
 
-      // Single request with everything
       const response = await axios.post(
         `${API_BASE}/upload-documents-process`,
         submitFormData,
@@ -247,7 +247,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     }
   };
 
-  // Helper function to format course display
   const formatCourseDisplay = (course) => {
     const courseCode = course.course_code || course.code || "";
     const courseName = course.course_name || course.name || "";
@@ -261,24 +260,21 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     };
   };
 
-  // Loading states
   if (contextLoading || checkingEnrollment) {
     return <LoadingPage />;
   }
 
-  // Context error
   if (contextError) {
     return <FailedLoadData message={contextError} />;
   }
 
-  // Enrollment closed
   if (!isEnrollmentOpen) {
     const startDate = enrollmentStatus?.start_date;
     const endDate = enrollmentStatus?.end_date;
 
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
+        <div className="bg-linear-to-r from-red-600 to-red-700 px-6 py-5">
           <h2 className="text-xl font-semibold text-white flex items-center">
             <Lock className="w-5 h-5 mr-2" />
             Enrollment Closed
@@ -338,7 +334,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     );
   }
 
-  // Already enrolled or pending
   if (myEnrollment && myEnrollment.status !== "rejected") {
     const statusConfig = {
       enrolled: {
@@ -378,7 +373,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className={`bg-gradient-to-r ${config.gradient} px-6 py-5`}>
+        <div className={`bg-linear-to-r ${config.gradient} px-6 py-5`}>
           <h2 className="text-xl font-semibold text-white flex items-center">
             <GraduationCap className="w-5 h-5 mr-2" />
             Enrollment Status
@@ -466,7 +461,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     );
   }
 
-  // Success state after submission
   if (submitSuccess) {
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-12 text-center">
@@ -493,11 +487,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     );
   }
 
-  // Main enrollment form
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
+      <div className="bg-linear-to-r from-blue-600 to-blue-700 px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-white flex items-center">
@@ -519,7 +511,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         </div>
       </div>
 
-      {/* Progress Steps */}
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center justify-between max-w-md mx-auto">
           {[1, 2, 3].map((step, index) => (
@@ -554,7 +545,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         </div>
       </div>
 
-      {/* Error Banner */}
       {submitError && (
         <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
           <AlertCircle className="w-5 h-5 text-red-600 mr-3 shrink-0 mt-0.5" />
@@ -571,9 +561,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         </div>
       )}
 
-      {/* Form Content */}
       <div className="p-6">
-        {/* Step 1: Student Type */}
         {activeStep === 1 && (
           <div className="space-y-6">
             <div>
@@ -637,7 +625,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
           </div>
         )}
 
-        {/* Step 2: Profile Information */}
         {activeStep === 2 && (
           <div className="space-y-6">
             <div>
@@ -648,7 +635,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                 Review your details and complete the required fields
               </p>
 
-              {/* Read-only Info Card */}
               <div className="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
@@ -694,7 +680,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                 </div>
               </div>
 
-              {/* Form Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -849,7 +834,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
           </div>
         )}
 
-        {/* Step 3: Document Upload */}
         {activeStep === 3 && (
           <div className="space-y-6">
             <div>
@@ -926,7 +910,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      // Implement preview functionality
                                       window.alert(
                                         "Preview feature coming soon",
                                       );
@@ -984,7 +967,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         )}
       </div>
 
-      {/* Footer Navigation */}
       <div className="px-6 py-5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
         <button
           type="button"
@@ -1029,25 +1011,5 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     </div>
   );
 };
-
-// AlertCircle component (needed for errors)
-const AlertCircle = (props) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="8" x2="12" y2="12" />
-    <line x1="12" y1="16" x2="12.01" y2="16" />
-  </svg>
-);
 
 export default EnrollmentProfiling;

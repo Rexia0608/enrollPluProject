@@ -163,7 +163,7 @@ const addAcademicYear = async (data) => {
       `SELECT id 
        FROM academic_year 
        WHERE year_series = $1 AND semester = $2`,
-      [data.academic_year, data.semester],
+      [data.year_series, data.semester],
     );
 
     if (existing.rows.length > 0) {
@@ -177,7 +177,7 @@ const addAcademicYear = async (data) => {
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
       [
-        data.academic_year,
+        data.year_series,
         data.semester,
         data.start_date,
         data.end_date,

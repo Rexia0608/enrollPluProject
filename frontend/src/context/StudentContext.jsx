@@ -91,6 +91,7 @@ export const StudentProvider = ({ children }) => {
   // Computed values for easier consumption
   const isEnrollmentOpen = enrollmentStatus?.enrollment_open ?? false;
   const academicYear = enrollmentStatus?.year_series || null;
+  const academicYearId = enrollmentStatus?.id || null;
   const semester = enrollmentStatus?.semester || null;
 
   return (
@@ -102,6 +103,7 @@ export const StudentProvider = ({ children }) => {
         error,
         isEnrollmentOpen,
         academicYear,
+        academicYearId,
         semester,
         getAuthHeaders,
       }}

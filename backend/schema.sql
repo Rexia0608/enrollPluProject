@@ -144,7 +144,8 @@ CREATE TABLE transaction_table (
     -- Period/Term
     period VARCHAR(50) NOT NULL 
         CHECK (period IN (
-            'term', 
+            'prelim', 
+            'mid-term', 
             'pre-final', 
             'final', 
             'summer'
