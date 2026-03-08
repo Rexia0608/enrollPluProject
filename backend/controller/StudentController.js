@@ -52,10 +52,7 @@ const enrollStudent = async (req, res) => {
 
 const getMyEnrollment = async (req, res) => {
   try {
-    // Get userId from URL parameter
-    const userId = req.params.userId;
-    // OR from query string
-    // const userId = req.query.userId;
+    const userId = req.params.id;
 
     if (!userId) {
       return res.status(400).json({
@@ -68,10 +65,44 @@ const getMyEnrollment = async (req, res) => {
 
     const result = await getMyEnrollmentModel(userId);
 
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.error || "Failed to fetch enrollment",
+      });
+    }
+
+    // If no enrollment found
+    if (!result.data) {
+      return res.status(404).json({
+        success: true,
+        message: "No enrollment found",
+        data: null,
+      });
+    }
+
+    console.log("Raw enrollment data:", result.data);
+
+    // Transform the data to match frontend expectations
+    const transformedData = {
+      id: result.data.id,
+      status: mapEnrollmentStatus(result.data.enrollment_status), // Map to frontend status values
+      studentType: result.data.student_type,
+      course: result.data.course_name,
+      courseCode: result.data.course_code,
+      submittedAt: result.data.created_at,
+      yearLevel: result.data.year_level,
+      academicYear: result.data.academic_year,
+      semester: result.data.semester,
+      remarks: result.data.remarks,
+    };
+
+    console.log("Transformed data for frontend:", transformedData);
+
     return res.status(200).json({
       success: true,
-      message: result.message,
-      data: result.data,
+      message: "Enrollment retrieved successfully",
+      data: transformedData,
     });
   } catch (error) {
     console.error("Error in getMyEnrollment:", error);
@@ -80,6 +111,19 @@ const getMyEnrollment = async (req, res) => {
       message: "Internal server error",
     });
   }
+};
+
+// Helper function to map database status to frontend status
+const mapEnrollmentStatus = (dbStatus) => {
+  const statusMap = {
+    documents_approved: "approved",
+    payment_pending: "pending",
+    enrolled: "enrolled",
+    cancelled: "rejected",
+    suspended: "rejected",
+  };
+
+  return statusMap[dbStatus] || "pending";
 };
 
 export { getCourses, getAcademicYear, enrollStudent, getMyEnrollment };

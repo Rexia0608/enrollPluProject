@@ -103,7 +103,7 @@ const getMyEnrollmentModel = async (userId) => {
         ep.*,
         c.course_name,
         c.course_code,
-        ay.year as academic_year,
+        ay.year_series as academic_year,
         ay.semester
       FROM enrollment_profile ep
       LEFT JOIN courses c ON ep.course_code_id = c.id
@@ -122,7 +122,7 @@ const getMyEnrollmentModel = async (userId) => {
         data: null,
       };
     }
-    console.log(result.rows[0]);
+
     return {
       success: true,
       message: "Enrollment retrieved successfully",

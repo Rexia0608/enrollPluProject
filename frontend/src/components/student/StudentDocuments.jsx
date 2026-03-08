@@ -124,13 +124,14 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         `${API_BASE}/my-enrollment/${user.id}`,
         getAuthHeaders(),
       );
-      setMyEnrollment(response.data);
 
-      timeoutRef.current = setTimeout(() => {
-        setMyEnrollment(null);
-        setCheckingEnrollment(false);
-      }, 1000);
+      console.log("Full response:", response);
+      console.log("Response data:", response.data);
+      console.log("Status from response:", response.data?.data?.status);
+
+      setMyEnrollment(response.data);
     } catch (err) {
+      console.log("Error response:", err.response);
       if (err.response?.status !== 404) {
         console.error("Failed to check enrollment:", err);
       }
@@ -395,13 +396,15 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                   <div>
                     <span className="text-gray-500 block">Enrollment ID</span>
                     <span className="font-semibold text-gray-900">
-                      {myEnrollment.id || "N/A"}
+                      {myEnrollment?.id
+                        ? myEnrollment.id.slice(0, 8) + "..."
+                        : "N/A"}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 block">Submitted</span>
                     <span className="font-semibold text-gray-900">
-                      {myEnrollment.submittedAt
+                      {myEnrollment?.submittedAt
                         ? new Date(
                             myEnrollment.submittedAt,
                           ).toLocaleDateString()
@@ -411,13 +414,13 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                   <div>
                     <span className="text-gray-500 block">Student Type</span>
                     <span className="font-semibold text-gray-900 capitalize">
-                      {myEnrollment.studentType || studentType}
+                      {myEnrollment?.studentType?.replace("_", " ") || "N/A"}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 block">Course</span>
                     <span className="font-semibold text-gray-900">
-                      {myEnrollment.course || formData.course || "N/A"}
+                      {myEnrollment?.course || "N/A"}
                     </span>
                   </div>
                 </div>
