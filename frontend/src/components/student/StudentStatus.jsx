@@ -96,7 +96,7 @@ function StudentStatus() {
             enrollmentEnd: "2024-08-10",
           },
           enrollment: {
-            status: "enrolled", // not_started, documents_pending, documents_approved, payment_pending, payment_validated, enrolled
+            status: "documents_approved", // not_started, documents_pending, documents_approved, payment_pending, payment_validated, enrolled
           },
         };
 

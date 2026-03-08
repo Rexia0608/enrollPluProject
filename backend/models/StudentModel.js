@@ -2,11 +2,11 @@ import db from "../config/db.js";
 
 const getAllCoursesList = async () => {
   try {
-    const result = await db.query(`SELECT * FROM courses`);
+    const result = await db.query(`SELECT * FROM courses ORDER BY id`);
     return result.rows;
   } catch (error) {
     console.error("Error in getAllCoursesList:", error);
-    throw error;
+    throw new Error(`Failed to fetch courses: ${error.message}`);
   }
 };
 
@@ -24,98 +24,122 @@ const getAcademicYearlist = async () => {
   }
 };
 
-const createEnrollment = async (data) => {
-  const {
-    studentId,
-    studentType,
-    contactNumber,
-    address,
-    yearLevel,
-    course,
-    academicYear,
-    semester,
-    fullName,
-    email,
-    birthDate,
-    gender,
-    status,
-  } = data;
-  console.log(
-    studentId,
-    studentType,
-    contactNumber,
-    address,
-    yearLevel,
-    course,
-    academicYear,
-    semester,
-    fullName,
-    email,
-    birthDate,
-    gender,
-    status,
-  );
+const enrollStudentModel = async (data) => {
   try {
-    // Adjust this SQL to match your actual table structure
-    // const query = `
-    //   INSERT INTO enrollments
-    //   (student_id, student_type, contact_number, address, year_level, course,
-    //    academic_year, semester, full_name, email, birth_date, gender, status, created_at)
-    //   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-    // `;
-    // const values = [
-    //   studentId,
-    //   studentType,
-    //   contactNumber,
-    //   address,
-    //   yearLevel,
-    //   course,
-    //   academicYear,
-    //   semester,
-    //   fullName,
-    //   email,
-    //   birthDate,
-    //   gender,
-    //   status,
-    // ];
-    // const [result] = await db.execute(query, values);
-    // return {
-    //   id: result.insertId, // Return the new enrollment ID
-    //   ...enrollmentData,
-    // };
+    // Check if student already has an enrollment profile
+    const result = await db.query(
+      `SELECT * FROM enrollment_profile WHERE user_id = $1`,
+      [data.studentId],
+    );
+
+    console.log("Enrollment data received:", data);
+
+    // If NO existing enrollment found, create one
+    if (result.rows.length === 0) {
+      // Map studentType to database value
+      const studentTypeMap = {
+        old: "old_student",
+        new: "new",
+        transferee: "transferee",
+      };
+
+      const dbStudentType = studentTypeMap[data.studentType];
+
+      if (!dbStudentType) {
+        throw new Error(`Invalid student type: ${data.studentType}`);
+      }
+
+      const query = `
+        INSERT INTO enrollment_profile (
+          course_code_id,
+          user_id,
+          enrollment_year_code,
+          enrollment_status,
+          student_type,
+          year_level,
+          created_at,
+          updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *;
+      `;
+
+      const values = [
+        data.course,
+        data.studentId,
+        data.academicYearId,
+        "documents_approved",
+        dbStudentType,
+        data.yearLevel,
+      ];
+
+      const insertResult = await db.query(query, values);
+
+      return {
+        success: true,
+        message: "Enrollment profile created successfully",
+        data: insertResult.rows[0],
+      };
+    }
+
+    // Return existing enrollment if found
+    return {
+      success: true,
+      message: "Student already has an enrollment profile",
+      data: result.rows[0],
+    };
   } catch (error) {
-    console.error("Error creating enrollment:", error);
-    throw error;
+    console.error("Error in enrollStudentModel:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 
-const documentsHandlerModel = async (files, enrollmentId) => {
+const getMyEnrollmentModel = async (userId) => {
   try {
-    const fileRecords = [];
+    const query = `
+      SELECT 
+        ep.*,
+        c.course_name,
+        c.course_code,
+        ay.year as academic_year,
+        ay.semester
+      FROM enrollment_profile ep
+      LEFT JOIN courses c ON ep.course_code_id = c.id
+      LEFT JOIN academic_year ay ON ep.enrollment_year_code = ay.id
+      WHERE ep.user_id = $1
+      ORDER BY ep.created_at DESC
+      LIMIT 1;
+    `;
 
-    for (const [docType, fileArray] of Object.entries(files)) {
-      const file = fileArray[0]; // Assuming one file per field
+    const result = await db.query(query, [userId]);
 
-      // Insert file metadata into the DB
-      const result = await db.query(
-        `INSERT INTO documents (enrollment_id, doc_type, file_name, file_path, uploaded_at) 
-         VALUES ($1, $2, $3, $4, NOW()) RETURNING *`,
-        [enrollmentId, docType, file.filename, file.path],
-      );
-
-      fileRecords.push(result.rows[0]);
+    if (result.rows.length === 0) {
+      return {
+        success: true,
+        message: "No enrollment found",
+        data: null,
+      };
     }
-
-    return fileRecords; // Return the inserted records if needed
+    console.log(result.rows[0]);
+    return {
+      success: true,
+      message: "Enrollment retrieved successfully",
+      data: result.rows[0],
+    };
   } catch (error) {
-    console.error("Error in documentsHandlerModel:", error);
-    throw error;
+    console.error("Error in getMyEnrollmentModel:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 
 export {
   getAllCoursesList,
   getAcademicYearlist,
-  createEnrollment,
-  documentsHandlerModel,
+  enrollStudentModel,
+  getMyEnrollmentModel,
 };

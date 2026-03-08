@@ -3,12 +3,12 @@ import {
   getCourses,
   getAcademicYear,
   enrollStudent,
-  getEnrollment,
+  getMyEnrollment,
 } from "../controller/StudentController.js";
 import upload from "../middleware/uploadmiddleware.js";
 
 const router = express.Router();
-router.get("/my-enrollment", getEnrollment);
+router.get("/my-enrollment/:id", getMyEnrollment);
 router.get("/course-list", getCourses);
 router.get("/enrollment-open-status", getAcademicYear);
 
