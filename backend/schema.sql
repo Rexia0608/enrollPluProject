@@ -163,10 +163,7 @@ CREATE TABLE transaction_table (
         CHECK (payment_type IN (
             'maya', 
             'gcash', 
-            'bank_transfer', 
-            'cash', 
-            'credit_card', 
-            'check'
+            'bank_transfer'
         )),
     
     -- Timestamps
