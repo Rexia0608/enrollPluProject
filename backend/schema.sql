@@ -67,7 +67,7 @@ CREATE TABLE maintenance_settings (
 -- ENROLLEMENT_PROFILE TABLE
 -- ============================================
 
-CREATE TABLE enrollement_profile (
+CREATE TABLE enrollment_profile (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Changed from INTEGER to UUID to match academic_year.id IWANTED TO BE enrollment ID should be 6 digit numbers and letter random but unique
     
     -- Foreign Keys
@@ -78,11 +78,12 @@ CREATE TABLE enrollement_profile (
     -- Enrollment Details
     enrollement_status VARCHAR(50) NOT NULL 
         CHECK (enrollement_status IN (
-            'documents_approved', 
-            'payment_pending', 
-            'enrolled', 
-            'cancelled', 
-            'suspended'
+           "not_started",
+    "documents_pending",
+    "documents_approved",
+    "payment_pending",
+    "payment_validated",
+    "enrolled",
         )),
     
     student_type VARCHAR(50) NOT NULL 
@@ -126,10 +127,10 @@ CREATE TABLE enrollement_profile (
 );
 
 -- Create indexes for frequently queried columns
-CREATE INDEX idx_enrollement_user ON enrollement_profile(user_id);
-CREATE INDEX idx_enrollement_course ON enrollement_profile(course_code_id);
-CREATE INDEX idx_enrollement_year ON enrollement_profile(enrollement_year_code);
-CREATE INDEX idx_enrollement_status ON enrollement_profile(enrollement_status);
+CREATE INDEX idx_enrollement_user ON enrollment_profile(user_id);
+CREATE INDEX idx_enrollement_course ON enrollment_profile(course_code_id);
+CREATE INDEX idx_enrollement_year ON enrollment_profile(enrollement_year_code);
+CREATE INDEX idx_enrollement_status ON enrollment_profile(enrollement_status);
 
 
 -- ============================================
