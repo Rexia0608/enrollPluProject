@@ -36,7 +36,6 @@ import axios from "axios";
 const API_BASE = "http://localhost:3000/student";
 
 const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
-  // Context data
   const { user } = useAuth();
   const {
     initialCourses = [],
@@ -110,7 +109,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     };
   }, []);
 
-  // Update document requirements when student type changes
   useEffect(() => {
     setDocuments(getRequiredDocuments(studentType));
     clearErrors(["studentType"]);
@@ -125,11 +123,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         getAuthHeaders(),
       );
 
-      console.log("Full response:", response);
-      console.log("Response data:", response.data);
-      console.log("Status from response:", response.data?.data?.status);
-
-      setMyEnrollment(response.data);
+      setMyEnrollment(response.data.data);
     } catch (err) {
       console.log("Error response:", err.response);
       if (err.response?.status !== 404) {
@@ -394,11 +388,11 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
                 <div className="grid grid-cols-2 gap-4 text-sm bg-white/50 rounded-lg p-4">
                   <div>
-                    <span className="text-gray-500 block">Enrollment ID</span>
+                    <span className="text-gray-500 block">
+                      Enrollment Reference
+                    </span>
                     <span className="font-semibold text-gray-900">
-                      {myEnrollment?.id
-                        ? myEnrollment.id.slice(0, 8) + "..."
-                        : "N/A"}
+                      {myEnrollment?.id ? myEnrollment.id : "N/A"}
                     </span>
                   </div>
                   <div>

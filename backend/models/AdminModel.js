@@ -156,7 +156,6 @@ const getAcademicYearlist = async () => {
 
 // ADD new academic year
 const addAcademicYear = async (data) => {
-  console.log(data);
   try {
     // Check for duplicates
     const existing = await db.query(

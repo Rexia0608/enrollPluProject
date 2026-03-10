@@ -68,7 +68,7 @@ CREATE TABLE maintenance_settings (
 -- ============================================
 
 CREATE TABLE enrollement_profile (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Changed from INTEGER to UUID to match academic_year.id IWANTED TO BE enrollment ID should be 6 digit numbers and letter random but unique
     
     -- Foreign Keys
     course_code_id UUID NOT NULL,

@@ -85,8 +85,8 @@ const getMyEnrollment = async (req, res) => {
 
     // Transform the data to match frontend expectations
     const transformedData = {
-      id: result.data.id,
-      status: mapEnrollmentStatus(result.data.enrollment_status), // Map to frontend status values
+      id: result.data.enrollment_id,
+      status: result.data.enrollment_status, // Map to frontend status values
       studentType: result.data.student_type,
       course: result.data.course_name,
       courseCode: result.data.course_code,
@@ -96,8 +96,6 @@ const getMyEnrollment = async (req, res) => {
       semester: result.data.semester,
       remarks: result.data.remarks,
     };
-
-    console.log("Transformed data for frontend:", transformedData);
 
     return res.status(200).json({
       success: true,
