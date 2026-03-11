@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // Mock QR Code components (in real app, you'd use actual QR code images)
 const MayaQR = () => (
-  <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-xl text-white text-center">
+  <div className="bg-linear-to-br from-blue-500 to-blue-700 p-6 rounded-xl text-white text-center">
     <div className="bg-white p-4 rounded-lg mb-4">
       <div className="w-48 h-48 mx-auto bg-gray-200 flex items-center justify-center">
         <span className="text-gray-600">Maya QR Code</span>
@@ -14,7 +14,7 @@ const MayaQR = () => (
 );
 
 const GCashQR = () => (
-  <div className="bg-gradient-to-br from-blue-400 to-blue-600 p-6 rounded-xl text-white text-center">
+  <div className="bg-linear-to-br from-blue-400 to-blue-600 p-6 rounded-xl text-white text-center">
     <div className="bg-white p-4 rounded-lg mb-4">
       <div className="w-48 h-48 mx-auto bg-gray-200 flex items-center justify-center">
         <span className="text-gray-600">GCash QR Code</span>
@@ -25,7 +25,7 @@ const GCashQR = () => (
 );
 
 const InstapayQR = () => (
-  <div className="bg-gradient-to-br from-green-500 to-green-700 p-6 rounded-xl text-white text-center">
+  <div className="bg-linear-to-br from-green-500 to-green-700 p-6 rounded-xl text-white text-center">
     <div className="bg-white p-4 rounded-lg mb-4">
       <div className="w-48 h-48 mx-auto bg-gray-200 flex items-center justify-center">
         <span className="text-gray-600">Instapay QR Code</span>
