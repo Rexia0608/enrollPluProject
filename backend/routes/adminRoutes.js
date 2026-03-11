@@ -13,6 +13,7 @@ import {
   setAcademicYear,
   getAcademicYear,
   setStatusAcademicYear,
+  setClassStatusAcademicYear,
 } from "../controller/AdminController.js";
 import { setAnnouncement, getStats } from "../services/announcementServices.js";
 
@@ -37,5 +38,6 @@ router.delete("/deleteCourse/:id", deleteCourse);
 
 router.patch("/switchStatus/:id", switchStatus);
 router.patch("/switchStatusAcademicYear/:id", setStatusAcademicYear);
+router.patch("/switchClassStatusAcademicYear/:id", setClassStatusAcademicYear);
 
 export default router;

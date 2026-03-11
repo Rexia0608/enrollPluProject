@@ -15,6 +15,7 @@ import {
   switchStatusAcademicYear,
   addAcademicYear,
   getAcademicYearlist,
+  switchClassStatusAcademicYear,
 } from "../models/AdminModel.js";
 
 const getAllUsers = async (req, res) => {
@@ -239,6 +240,26 @@ const setStatusAcademicYear = async (req, res) => {
   }
 };
 
+const setClassStatusAcademicYear = async (req, res) => {
+  try {
+    const result = await switchClassStatusAcademicYear(req.body, req.params.id);
+
+    if (!result) {
+      return res
+        .status(404)
+        .json({ message: "Academic Year are fail to updated" });
+    }
+
+    res.status(200).json({
+      message: "Academic Year updated status successfully",
+      AcademicYear: result,
+    });
+  } catch (error) {
+    console.error("Error in setStatusAcademicYear:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   getAllUsers,
   getCourses,
@@ -253,4 +274,5 @@ export {
   setAcademicYear,
   getAcademicYear,
   setStatusAcademicYear,
+  setClassStatusAcademicYear,
 };

@@ -11,6 +11,8 @@ import {
   AlertCircle,
   RefreshCw,
   XCircle,
+  BookOpen,
+  X,
 } from "lucide-react";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
@@ -66,8 +68,6 @@ const getNextAcademicYear = () => {
   return `${y}-${y + 1}`;
 };
 
-// Transform API data - NO STATUS COLUMN ANYMORE
-// isActive is now determined by enrollment_open (or could be by date range)
 const transformApiData = (apiData) => {
   if (!apiData) return null;
   return {
@@ -76,9 +76,8 @@ const transformApiData = (apiData) => {
     semester: apiData.semester || "",
     startDate: apiData.start_date ? apiData.start_date.split("T")[0] : "",
     endDate: apiData.end_date ? apiData.end_date.split("T")[0] : "",
-    // No status column - isActive now equals enrollmentOpen
-    // Or you could calculate: isActive based on current date between start/end
-    isActive: apiData.enrollment_open === true || apiData.enrollment_open === 1,
+    isClassOngoing:
+      apiData.is_class_ongoing === true || apiData.is_class_ongoing === 1,
     enrollmentOpen:
       apiData.enrollment_open === true || apiData.enrollment_open === 1,
   };
@@ -216,9 +215,11 @@ export default function EnrollmentControl() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConfirmOpenEnrollment, setIsConfirmOpenEnrollment] = useState(false);
+  const [isConfirmClassStatus, setIsConfirmClassStatus] = useState(false);
 
   // Selection State
   const [selectedYear, setSelectedYear] = useState(null);
+  const [pendingClassStatus, setPendingClassStatus] = useState(null); // true or false
   const [formData, setFormData] = useState({
     id: null,
     academicYear: "",
@@ -240,6 +241,17 @@ export default function EnrollmentControl() {
     }, 5000);
     return () => clearTimeout(timer);
   }, [error, successMessage]);
+
+  // Reset pending state when modal closes
+  useEffect(() => {
+    if (!isConfirmClassStatus) {
+      const timer = setTimeout(() => {
+        setPendingClassStatus(null);
+        setSelectedYear(null);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isConfirmClassStatus]);
 
   // Sync Context Data to Local State
   useEffect(() => {
@@ -310,6 +322,7 @@ export default function EnrollmentControl() {
           start_date: formData.startDate,
           end_date: formData.endDate,
           enrollment_open: false,
+          is_class_ongoing: false,
         },
         getAuthHeaders(),
       );
@@ -351,10 +364,8 @@ export default function EnrollmentControl() {
     }
   };
 
-  // ─── MODIFIED: "Activate" now means "Open Enrollment" ──────────────────────
   const handleActivateClick = (year) => {
     if (year.enrollmentOpen) {
-      // Already active/enrollment open
       setError("Enrollment is already open for this academic year");
       return;
     }
@@ -362,12 +373,36 @@ export default function EnrollmentControl() {
     setIsConfirmOpenEnrollment(true);
   };
 
+  // Updated: Handle class status toggle click with validation
+  const handleClassStatusClick = (year, newStatus) => {
+    // Prevent toggling if there's already an active class and we're trying to start another
+    if (
+      newStatus === true &&
+      ongoingClassYear &&
+      ongoingClassYear.id !== year.id
+    ) {
+      setError(
+        `Cannot start classes for ${year.semester} while ${ongoingClassYear.semester} is still ongoing. End current classes first.`,
+      );
+      return;
+    }
+
+    // Prevent ending classes that haven't started
+    if (newStatus === false && !year.isClassOngoing) {
+      setError("Cannot end classes that haven't started.");
+      return;
+    }
+
+    setSelectedYear(year);
+    setPendingClassStatus(newStatus);
+    setIsConfirmClassStatus(true);
+  };
+
   const confirmOpenEnrollment = async () => {
     if (!selectedYear) return;
 
     setIsSubmitting(true);
     try {
-      // Only toggle enrollment_open - no status field
       await axios.patch(
         `${API_BASE}/admin/switchStatusAcademicYear/${selectedYear.id}`,
         {
@@ -383,6 +418,59 @@ export default function EnrollmentControl() {
       setError(err.response?.data?.message || "Failed to open enrollment");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Updated: Confirm class status change with better error handling
+  const confirmClassStatusChange = async () => {
+    if (!selectedYear || pendingClassStatus === null) {
+      setError("Invalid class status change request");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(""); // Clear any previous errors
+
+    try {
+      const response = await axios.patch(
+        `${API_BASE}/admin/switchClassStatusAcademicYear/${selectedYear.id}`,
+        {
+          is_class_ongoing: pendingClassStatus,
+        },
+        getAuthHeaders(),
+      );
+
+      // Check if the response was successful
+      if (response.status === 200 || response.status === 201) {
+        setSuccessMessage(
+          pendingClassStatus
+            ? `Classes started successfully for ${selectedYear.semester} ${selectedYear.year_series}`
+            : `Classes ended successfully for ${selectedYear.semester} ${selectedYear.year_series}`,
+        );
+
+        // Refresh the data
+        await refreshAcademicYears();
+      }
+    } catch (err) {
+      // Handle specific error cases
+      if (err.response?.status === 400) {
+        setError(
+          err.response?.data?.message ||
+            "Cannot change class status at this time",
+        );
+      } else if (err.response?.status === 409) {
+        setError("Conflict: Another class is currently ongoing. End it first.");
+      } else {
+        setError(
+          err.response?.data?.message || "Failed to update class status",
+        );
+      }
+      console.error("Class status change error:", err);
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmClassStatus(false);
+      setPendingClassStatus(null);
+      setSelectedYear(null);
     }
   };
 
@@ -418,9 +506,20 @@ export default function EnrollmentControl() {
     }
   };
 
-  // Derived State - Active year is the one with enrollmentOpen = true
+  const handleCloseConfirmDialog = () => {
+    setIsConfirmClassStatus(false);
+    setPendingClassStatus(null);
+    setSelectedYear(null);
+  };
+
+  // Derived State
   const activeYear = useMemo(
     () => years.find((y) => y.enrollmentOpen),
+    [years],
+  );
+
+  const ongoingClassYear = useMemo(
+    () => years.find((y) => y.isClassOngoing),
     [years],
   );
 
@@ -433,7 +532,7 @@ export default function EnrollmentControl() {
             Academic Year Management
           </h1>
           <p className="text-gray-600 text-sm mt-1">
-            Manage semesters, schedules, and enrollment status.
+            Manage semesters, schedules, enrollment, and class status.
           </p>
         </div>
         <div className="flex gap-2">
@@ -465,38 +564,68 @@ export default function EnrollmentControl() {
         </div>
       )}
 
-      {/* Active Status Card - Shows the year with OPEN enrollment */}
-      {activeYear && (
-        <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <GraduationCap className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  Currently Active: {activeYear.academicYear} •{" "}
-                  {activeYear.semester}
-                </h3>
-                <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
-                  <span className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {formatDate(activeYear.startDate)} -{" "}
-                    {formatDate(activeYear.endDate)}
-                  </span>
-                  <span className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    Enrollment is Open
-                  </span>
+      {/* Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Enrollment Open Card */}
+        {activeYear && (
+          <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <GraduationCap className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    Enrollment Open: {activeYear.academicYear}
+                  </h3>
+                  <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                    <span className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      {activeYear.semester}
+                    </span>
+                    <span className="flex items-center">
+                      <Clock className="w-4 h-4 mr-1" />
+                      Accepting Applications
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="hidden sm:block">
               <StatusBadge status="active" />
             </div>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
+
+        {/* Class Ongoing Card */}
+        {ongoingClassYear && (
+          <Card className="bg-linear-to-r from-emerald-50 to-green-50 border-emerald-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-emerald-100 rounded-full">
+                  <BookOpen className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    Classes Ongoing: {ongoingClassYear.academicYear}
+                  </h3>
+                  <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                    <span className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      {ongoingClassYear.semester}
+                    </span>
+                    <span className="flex items-center">
+                      <Clock className="w-4 h-4 mr-1" />
+                      In Session
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                Active
+              </span>
+            </div>
+          </Card>
+        )}
+      </div>
 
       {/* Table Section */}
       <Card className="overflow-hidden">
@@ -507,8 +636,8 @@ export default function EnrollmentControl() {
                 <th className={tableHeaderClasses}>Academic Year</th>
                 <th className={tableHeaderClasses}>Semester</th>
                 <th className={tableHeaderClasses}>Duration</th>
-                <th className={tableHeaderClasses}>Status</th>
                 <th className={tableHeaderClasses}>Enrollment</th>
+                <th className={tableHeaderClasses}>Class Status</th>
                 <th className={`${tableHeaderClasses} text-right`}>Actions</th>
               </tr>
             </thead>
@@ -530,15 +659,21 @@ export default function EnrollmentControl() {
                   <tr
                     key={year.id}
                     className={`transition-colors ${
-                      year.enrollmentOpen
-                        ? "bg-blue-50/50 border-l-4 border-blue-500"
+                      year.enrollmentOpen || year.isClassOngoing
+                        ? "bg-blue-50/30 border-l-4 border-blue-500"
                         : "hover:bg-gray-50"
                     }`}
                   >
                     <td className={tableCellClasses}>
                       <div className="flex items-center">
-                        {year.enrollmentOpen && (
-                          <span className="mr-2 flex h-2 w-2 rounded-full bg-blue-600"></span>
+                        {(year.enrollmentOpen || year.isClassOngoing) && (
+                          <span
+                            className={`mr-2 flex h-2 w-2 rounded-full ${
+                              year.enrollmentOpen
+                                ? "bg-blue-600"
+                                : "bg-emerald-500"
+                            }`}
+                          ></span>
                         )}
                         <span className="font-medium text-gray-900">
                           {year.year_series}
@@ -557,17 +692,6 @@ export default function EnrollmentControl() {
                       <div className="text-gray-500 text-xs">
                         to {formatDate(year.endDate)}
                       </div>
-                    </td>
-                    <td className={tableCellClasses}>
-                      {year.enrollmentOpen ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          Inactive
-                        </span>
-                      )}
                     </td>
                     <td className={tableCellClasses}>
                       <button
@@ -590,9 +714,73 @@ export default function EnrollmentControl() {
                         )}
                       </button>
                     </td>
+                    {/* Updated: Class Status with loading states and validation */}
+                    <td className={tableCellClasses}>
+                      {year.isClassOngoing ? (
+                        <button
+                          onClick={() => handleClassStatusClick(year, false)}
+                          disabled={isSubmitting || loading}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                            isSubmitting
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 hover:shadow-sm active:scale-95"
+                          }`}
+                          title="Click to end classes"
+                        >
+                          {isSubmitting &&
+                          pendingClassStatus === false &&
+                          selectedYear?.id === year.id ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                              Ending...
+                            </>
+                          ) : (
+                            <>
+                              <BookOpen className="w-3 h-3 mr-1" />
+                              Ongoing
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleClassStatusClick(year, true)}
+                          disabled={
+                            isSubmitting ||
+                            loading ||
+                            (ongoingClassYear &&
+                              ongoingClassYear.id !== year.id)
+                          }
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                            isSubmitting ||
+                            (ongoingClassYear &&
+                              ongoingClassYear.id !== year.id)
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:shadow-sm active:scale-95"
+                          }`}
+                          title={
+                            ongoingClassYear && ongoingClassYear.id !== year.id
+                              ? `Cannot start: ${ongoingClassYear.semester} is still ongoing`
+                              : "Click to start classes"
+                          }
+                        >
+                          {isSubmitting &&
+                          pendingClassStatus === true &&
+                          selectedYear?.id === year.id ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                              Starting...
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3 h-3 mr-1" />
+                              Not Started
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </td>
                     <td className={`${tableCellClasses} text-right`}>
                       <div className="flex items-center justify-end space-x-2">
-                        {/* MODIFIED: "Activate" button now opens enrollment */}
                         {!year.enrollmentOpen && (
                           <button
                             onClick={() => handleActivateClick(year)}
@@ -655,16 +843,44 @@ export default function EnrollmentControl() {
         />
       </Modal>
 
-      {/* MODIFIED: Confirmation dialog for opening enrollment */}
+      {/* Confirm Open Enrollment */}
       <ConfirmDialog
         isOpen={isConfirmOpenEnrollment}
         onClose={() => setIsConfirmOpenEnrollment(false)}
         onConfirm={confirmOpenEnrollment}
         title="Open Enrollment?"
-        message={`Are you sure you want to open enrollment for ${selectedYear?.academicYear} - ${selectedYear?.semester}? Students will be able to submit applications.`}
+        message={`Are you sure you want to open enrollment for ${selectedYear?.year_series} - ${selectedYear?.semester}? Students will be able to submit applications.`}
         confirmText="Open Enrollment"
         confirmColor="blue"
         isConfirming={isSubmitting}
+      />
+
+      {/* Updated: Dynamic Class Status Confirmation Dialog with better messaging */}
+      <ConfirmDialog
+        isOpen={isConfirmClassStatus}
+        onClose={handleCloseConfirmDialog}
+        onConfirm={confirmClassStatusChange}
+        title={pendingClassStatus ? "Start Classes?" : "End Classes?"}
+        message={
+          pendingClassStatus
+            ? `Are you sure you want to START classes for ${selectedYear?.year_series} - ${selectedYear?.semester}? 
+               \n\nThis will: 
+               \n• Mark the semester as currently in session
+               \n• Allow class-related activities to begin
+               \n• Update the system status for all enrolled students`
+            : `Are you sure you want to END classes for ${selectedYear?.year_series} - ${selectedYear?.semester}?
+               \n\nThis will:
+               \n• Mark the semester as completed
+               \n• Finalize current class records
+               \n• Prepare for grade submission`
+        }
+        confirmText={
+          pendingClassStatus ? "Yes, Start Classes" : "Yes, End Classes"
+        }
+        cancelText="No, Cancel"
+        confirmColor={pendingClassStatus ? "blue" : "red"}
+        isConfirming={isSubmitting}
+        icon={pendingClassStatus ? BookOpen : XCircle}
       />
     </div>
   );

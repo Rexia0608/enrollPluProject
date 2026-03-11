@@ -48,12 +48,15 @@ CREATE TABLE academic_year (
     semester VARCHAR(50) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
+    is_class_ongoing BOOLEAN DEFAULT FALSE,
     enrollment_open BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 
+
+ 
 CREATE TABLE maintenance_settings (
     id SERIAL PRIMARY KEY,
     is_active BOOLEAN DEFAULT false,
@@ -68,7 +71,7 @@ CREATE TABLE maintenance_settings (
 -- ============================================
 
 CREATE TABLE enrollment_profile (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Changed from INTEGER to UUID to match academic_year.id IWANTED TO BE enrollment ID should be 6 digit numbers and letter random but unique
+    Enrollment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- Changed from INTEGER to UUID to match academic_year.id IWANTED TO BE enrollment ID should be 6 digit numbers and letter random but unique
     
     -- Foreign Keys
     course_code_id UUID NOT NULL,
@@ -163,7 +166,8 @@ CREATE TABLE transaction_table (
         CHECK (payment_type IN (
             'maya', 
             'gcash', 
-            'bank_transfer'
+            'bank_transfer',
+            'Other'
         )),
     
     -- Timestamps
