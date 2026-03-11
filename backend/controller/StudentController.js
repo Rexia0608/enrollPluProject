@@ -61,8 +61,6 @@ const getMyEnrollment = async (req, res) => {
       });
     }
 
-    console.log("Fetching enrollment for user:", userId);
-
     const result = await getMyEnrollmentModel(userId);
 
     if (!result.success) {
