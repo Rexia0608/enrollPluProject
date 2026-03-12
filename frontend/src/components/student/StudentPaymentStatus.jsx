@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import LoadingPage from "../../pages/LoadingPage";
 
 // Mock QR Code components (in real app, you'd use actual QR code images)
 const MayaQR = () => (
@@ -86,6 +87,19 @@ const PromisedNote = ({ onSubmit }) => {
 };
 
 const PaymentComponent = ({ userData }) => {
+  // Mock API response - simulating data from backend
+  const mockApiResponse = {
+    user_id: "08593912-2cb3-49d0-8ac8-ec37da4d5064",
+    enrollment_year_code: "d0406ab2-3588-4aa9-a4d8-33b9de410fb1",
+    enrollment_id: "AGJORF", // AGJORF || Change to null/empty to test enrollment validation
+    current_payment_period: "mid-term" || "enrollment",
+    allowed_payment_periods: ["mid-term"], // ["enrollment", "prelim", "mid-term", "pre-final", "final", "summer"]
+  };
+
+  // Loading state for API simulation
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiData, setApiData] = useState(null);
+
   // Mock user data (in real app, this would come from props/context)
   const mockUser = {
     id: userData?.id || "12345",
@@ -120,12 +134,66 @@ const PaymentComponent = ({ userData }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [paymentData, setPaymentData] = useState({
+    enrollment: { tuition: 15000, paid: 0, remaining: 15000 },
     prelim: { tuition: 15000, paid: 5000, remaining: 10000 },
     "mid-term": { tuition: 15000, paid: 3000, remaining: 12000 },
     "pre-final": { tuition: 15000, paid: 2000, remaining: 13000 },
     final: { tuition: 15000, paid: 0, remaining: 15000 },
     summer: { tuition: 8000, paid: 0, remaining: 8000 },
   });
+
+  // Simulate API call on component mount
+  useEffect(() => {
+    const fetchPaymentData = async () => {
+      setIsLoading(true);
+
+      // Simulate API request with setTimeout
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // In real implementation, this would be:
+      // import { useAuth } from "../../context/AuthContext";
+      // import { useStudent } from "../../context/StudentContext";
+      // const { getAuthHeaders } = useStudent();
+      // const { user } = useAuth();
+      // const response = await axios.get(
+      //   `http://localhost:3000/student/my-transaction-payment/${user.id}`,
+      //   getAuthHeaders()
+      // );
+
+      setApiData(mockApiResponse);
+
+      // Set current payment period from API
+      if (mockApiResponse.current_payment_period) {
+        setSelectedPeriod(mockApiResponse.current_payment_period);
+      }
+
+      setIsLoading(false);
+    };
+
+    fetchPaymentData();
+  }, []);
+
+  // Check if user is enrolled
+  const isEnrolled =
+    apiData?.enrollment_id &&
+    apiData.enrollment_id !== null &&
+    apiData.enrollment_id !== undefined &&
+    apiData.enrollment_id !== "";
+
+  // Check if period is allowed
+  const isPeriodAllowed = (periodId) => {
+    if (!apiData?.allowed_payment_periods) return false;
+    return apiData.allowed_payment_periods.includes(periodId);
+  };
+
+  // Check if payment should be visible
+  const shouldShowPayment =
+    isEnrolled &&
+    apiData?.current_payment_period &&
+    isPeriodAllowed(selectedPeriod);
+
+  // Check if there are any allowed periods
+  const hasAllowedPeriods = apiData?.allowed_payment_periods?.length > 0;
 
   // Payment methods
   const paymentMethods = [
@@ -163,6 +231,8 @@ const PaymentComponent = ({ userData }) => {
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (methodId) => {
+    if (!shouldShowPayment) return; // Prevent selection if payment not allowed
+
     setPaymentMethod(methodId);
     setShowPromisedNote(methodId === "promised-note");
     if (methodId !== "promised-note") {
@@ -296,6 +366,30 @@ const PaymentComponent = ({ userData }) => {
 
   const QRComponent = getQRComponent();
 
+  // Loading state
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+
+  // Enrollment validation - Show "Not yet enrolled" if enrollment_id is invalid
+  if (!isEnrolled) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div className="text-6xl mb-4">📝</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Not yet enrolled
+            </h2>
+            <p className="text-gray-600">
+              Please complete your enrollment process to access payment options.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -304,7 +398,7 @@ const PaymentComponent = ({ userData }) => {
           <h1 className="text-3xl font-bold text-gray-900">Payment Details</h1>
           <p className="mt-2 text-sm text-gray-600">
             Welcome back, {mockUser.name} | Enrollment ID:{" "}
-            {mockUser.isUserActiveEnrolled_id}
+            {apiData?.enrollment_id}
           </p>
         </div>
 
@@ -324,23 +418,29 @@ const PaymentComponent = ({ userData }) => {
               Select Period
             </label>
             <div className="flex flex-wrap gap-2">
-              {periods.map((period) => (
-                <button
-                  key={period.id}
-                  onClick={() => setSelectedPeriod(period.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all
-                    ${
-                      selectedPeriod === period.id
-                        ? "bg-blue-600 text-white shadow-lg scale-105"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                >
-                  {period.label}
-                  <span className="block text-xs mt-1">
-                    Due: {new Date(period.dueDate).toLocaleDateString()}
-                  </span>
-                </button>
-              ))}
+              {periods.map((period) => {
+                const allowed = isPeriodAllowed(period.id);
+                return (
+                  <button
+                    key={period.id}
+                    onClick={() => allowed && setSelectedPeriod(period.id)}
+                    disabled={!allowed}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all
+                      ${
+                        selectedPeriod === period.id
+                          ? "bg-blue-600 text-white shadow-lg scale-105"
+                          : allowed
+                            ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                      }`}
+                  >
+                    {period.label}
+                    <span className="block text-xs mt-1">
+                      Due: {new Date(period.dueDate).toLocaleDateString()}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -369,68 +469,90 @@ const PaymentComponent = ({ userData }) => {
           </div>
         </motion.div>
 
-        {/* Payment Method Selection */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl shadow-lg p-6 mb-8"
-        >
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Select Payment Method
-          </h2>
+        {/* No Payment Required Message */}
+        {!hasAllowedPeriods && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-lg p-12 text-center mb-8"
+          >
+            <div className="text-6xl mb-4">💳</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              No payment required at this time.
+            </h2>
+            <p className="text-gray-600">All your payments are up to date.</p>
+          </motion.div>
+        )}
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {paymentMethods.map((method) => (
-              <button
-                key={method.id}
-                onClick={() => handlePaymentMethodSelect(method.id)}
-                className={`p-4 rounded-xl border-2 transition-all text-center
-                  ${
-                    paymentMethod === method.id
-                      ? "border-blue-600 bg-blue-50 scale-105 shadow-lg"
-                      : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                  }`}
-              >
-                <span className="text-3xl mb-2 block">{method.icon}</span>
-                <span className="text-sm font-medium">{method.label}</span>
-              </button>
-            ))}
-          </div>
+        {/* Payment Method Selection - Only show if payment should be visible */}
+        {hasAllowedPeriods && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-2xl shadow-lg p-6 mb-8"
+          >
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Select Payment Method
+            </h2>
 
-          {/* QR Code Display */}
-          <AnimatePresence mode="wait">
-            {paymentMethod && !showPromisedNote && QRComponent && (
-              <motion.div
-                key="qr"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-6"
-              >
-                <QRComponent />
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {paymentMethods.map((method) => (
+                <button
+                  key={method.id}
+                  onClick={() => handlePaymentMethodSelect(method.id)}
+                  disabled={!shouldShowPayment}
+                  className={`p-4 rounded-xl border-2 transition-all text-center
+                    ${!shouldShowPayment ? "opacity-50 cursor-not-allowed" : ""}
+                    ${
+                      paymentMethod === method.id
+                        ? "border-blue-600 bg-blue-50 scale-105 shadow-lg"
+                        : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                    }`}
+                >
+                  <span className="text-3xl mb-2 block">{method.icon}</span>
+                  <span className="text-sm font-medium">{method.label}</span>
+                </button>
+              ))}
+            </div>
 
-          {/* Promised Note Section */}
-          <AnimatePresence>
-            {showPromisedNote && (
-              <motion.div
-                key="promised-note"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-6"
-              >
-                <PromisedNote onSubmit={handlePromisedNoteSubmit} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+            {/* QR Code Display */}
+            <AnimatePresence mode="wait">
+              {paymentMethod &&
+                !showPromisedNote &&
+                QRComponent &&
+                shouldShowPayment && (
+                  <motion.div
+                    key="qr"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-6"
+                  >
+                    <QRComponent />
+                  </motion.div>
+                )}
+            </AnimatePresence>
 
-        {/* Payment Form */}
-        {paymentMethod && !showPromisedNote && (
+            {/* Promised Note Section */}
+            <AnimatePresence>
+              {showPromisedNote && shouldShowPayment && (
+                <motion.div
+                  key="promised-note"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-6"
+                >
+                  <PromisedNote onSubmit={handlePromisedNoteSubmit} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* Payment Form - Only show if payment should be visible */}
+        {paymentMethod && !showPromisedNote && shouldShowPayment && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -610,12 +732,10 @@ const PaymentComponent = ({ userData }) => {
           )}
         </AnimatePresence>
 
-        {/* User Info Debug (can be removed in production) */}
+        {/* API Data Debug (can be removed in production) */}
         <div className="mt-8 text-xs text-gray-400 border-t pt-4">
-          <p>
-            User Session: {mockUser.id} | Enrolled:{" "}
-            {mockUser.isUserEnrolled ? "Yes" : "No"}
-          </p>
+          <p>API Response:</p>
+          <pre className="mt-1">{JSON.stringify(apiData, null, 2)}</pre>
         </div>
       </div>
     </div>

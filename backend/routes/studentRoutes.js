@@ -4,13 +4,23 @@ import {
   getAcademicYear,
   enrollStudent,
   getMyEnrollment,
+  postPayment,
+  getEnrollmentProfile,
 } from "../controller/StudentController.js";
 import upload from "../middleware/uploadmiddleware.js";
+import uploadReceipts from "../middleware/uploadReceipts.js";
 
 const router = express.Router();
-router.get("/my-enrollment/:id", getMyEnrollment);
 router.get("/course-list", getCourses);
+router.get("/my-enrollment/:id", getMyEnrollment);
 router.get("/enrollment-open-status", getAcademicYear);
+router.get("/enrollment_profile/:user_id", getEnrollmentProfile);
+
+router.post(
+  "/upload-payment-process/:userId/:enrollment_id",
+  uploadReceipts.fields([{ name: "receipts", maxCount: 1 }]),
+  postPayment,
+);
 
 router.post(
   "/upload-documents-process",

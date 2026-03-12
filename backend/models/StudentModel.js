@@ -13,8 +13,8 @@ const getAllCoursesList = async () => {
 const getAcademicYearlist = async () => {
   try {
     const result = await db.query(
-      `SELECT id, year_series, semester, start_date, end_date, enrollment_open 
-        FROM academic_year 
+      `SELECT id, year_series, semester, start_date, end_date, enrollment_open
+        FROM academic_year
         WHERE enrollment_open = 'true'`,
     );
     return result.rows;
@@ -137,9 +137,32 @@ const getMyEnrollmentModel = async (userId) => {
   }
 };
 
+const getEnrollmentProfileModel = async (data) => {
+  try {
+    const query = `SELECT * FROM enrollment_profile WHERE user_id = $1`;
+    const values = [data.user_id];
+    const result = await db.query(query, values);
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error in getEnrollmentProfileModel:", error);
+    throw new Error(`Failed to get enrollment profile: ${error.message}`);
+  }
+};
+
+const postPaymentModel = async (data) => {
+  try {
+    console.log(data);
+  } catch (error) {
+    console.error("Error in postPaymenModel:", error);
+    throw new Error(`Failed to post Payment: ${error.message}`);
+  }
+};
+
 export {
+  postPaymentModel,
   getAllCoursesList,
   getAcademicYearlist,
   enrollStudentModel,
   getMyEnrollmentModel,
+  getEnrollmentProfileModel,
 };

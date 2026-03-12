@@ -3,6 +3,8 @@ import {
   getAcademicYearlist,
   enrollStudentModel,
   getMyEnrollmentModel,
+  postPaymentModel,
+  getEnrollmentProfileModel,
 } from "../models/StudentModel.js";
 
 import {
@@ -79,8 +81,6 @@ const getMyEnrollment = async (req, res) => {
       });
     }
 
-    console.log("Raw enrollment data:", result.data);
-
     // Transform the data to match frontend expectations
     const transformedData = {
       id: result.data.enrollment_id,
@@ -109,17 +109,34 @@ const getMyEnrollment = async (req, res) => {
   }
 };
 
-// Helper function to map database status to frontend status
-const mapEnrollmentStatus = (dbStatus) => {
-  const statusMap = {
-    documents_approved: "approved",
-    payment_pending: "pending",
-    enrolled: "enrolled",
-    cancelled: "rejected",
-    suspended: "rejected",
-  };
-
-  return statusMap[dbStatus] || "pending";
+const postPayment = async (req, res) => {
+  try {
+    const result = await postPaymentModel(req.params);
+    res.status(200).json(result);
+  } catch (error) {
+    return errorResponseHandler(
+      res,
+      new Error(error.message || "Payment process failed"),
+      400,
+    );
+  }
 };
 
-export { getCourses, getAcademicYear, enrollStudent, getMyEnrollment };
+const getEnrollmentProfile = async (req, res) => {
+  try {
+    const result = await getEnrollmentProfileModel(req.params);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getCourses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export {
+  getCourses,
+  getEnrollmentProfile,
+  getAcademicYear,
+  enrollStudent,
+  getMyEnrollment,
+  postPayment,
+};
