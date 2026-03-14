@@ -138,6 +138,8 @@ function StudentStatus() {
           return;
         }
 
+        console.log("Fetching data for user ID:", user.id);
+
         // Create axios instance with default config
         const api = axios.create({
           baseURL: "http://localhost:3000",
@@ -179,7 +181,7 @@ function StudentStatus() {
 
         try {
           statusResponse = await api.get("/student/enrollment-open-status");
-          console.log("Status Response:", statusResponse?.data?.data);
+          console.log("Status Response:", statusResponse.data);
         } catch (error) {
           console.error("Error fetching enrollment status:", error);
           if (error.response?.status === 400) {
@@ -190,7 +192,7 @@ function StudentStatus() {
 
         // Safely access the data with null checks
         const enrollmentData = enrollmentResponse?.data?.data;
-        const statusData = statusResponse?.data?.data;
+        const statusData = statusResponse?.data?.Response?.[0];
 
         // Determine enrollment stage with fallback
         const stage = determineEnrollmentStage(enrollmentData);

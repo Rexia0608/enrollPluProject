@@ -1,10 +1,11 @@
-// components/student/EnrollmentProfiling.jsx
+// components/student/EnrollmentProfiling.jsx (updated with submission check)
+
 import React, { useState, useEffect, useRef } from "react";
 import LoadingPage from "../../pages/LoadingPage";
 import FailedLoadData from "../../pages/FailedLoadData";
-import { useAuth } from "../../context/AuthContext";
-import { useStudent } from "../../context/StudentContext";
 import {
+  User,
+  Mail,
   Phone,
   MapPin,
   BookOpen,
@@ -13,6 +14,7 @@ import {
   FileText,
   XCircle,
   Lock,
+  Unlock,
   Save,
   Eye,
   RefreshCw,
@@ -25,47 +27,51 @@ import {
   X,
   AlertCircle,
 } from "lucide-react";
+import { useStudent } from "../../context/StudentContext";
+import { useAuth } from "../../context/AuthContext";
 import { useEnrollmentValidation } from "../../utils/useEnrollmentValidation";
 import { getRequiredDocuments } from "../../utils/documentValidation";
 import axios from "axios";
 
+const API_BASE = "http://localhost:3000/student";
+
 const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   const { user } = useAuth();
-  const { getAuthHeaders } = useStudent();
+  const {
+    initialCourses = [],
+    enrollmentStatus,
+    loading: contextLoading,
+    error: contextError,
+    getAuthHeaders,
+    isEnrollmentOpen,
+    academicYear,
+    academicYearId,
+    semester,
+  } = useStudent();
 
   const {
     errors,
+    touched,
+    setErrors,
     setTouched,
     validateStep,
     handleBlur,
     getError,
     clearErrors,
+    resetValidation,
   } = useEnrollmentValidation();
 
-  // State for fetched data
-  const [initialCourses, setInitialCourses] = useState([]);
-  const [academicYearInfo, setAcademicYearInfo] = useState({
-    id: "",
-    year_series: "",
-    semester: "",
-    start_date: "",
-    end_date: "",
-    enrollment_open: false,
-  });
-  const [myEnrollment, setMyEnrollment] = useState(null);
-  const [enrollmentDateRange, setEnrollmentDateRange] = useState({
-    start_date: "",
-    end_date: "",
-  });
-
-  // UI states
   const [activeStep, setActiveStep] = useState(1);
   const [studentType, setStudentType] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [myEnrollment, setMyEnrollment] = useState(null);
+  const [checkingEnrollment, setCheckingEnrollment] = useState(true);
+
+  // New state for submission eligibility check
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
+  const [eligibilityError, setEligibilityError] = useState(null);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -73,102 +79,131 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     address: "",
     yearLevel: "",
     course: "",
-    academicYearId: "",
+    academicYearId: academicYearId || "",
+    academicYear: academicYear || "",
+    semester: semester || "",
   });
 
   // Documents
   const [documents, setDocuments] = useState(getRequiredDocuments(""));
+
+  // Ref for timeout cleanup
   const timeoutRef = useRef(null);
 
-  // Update documents when student type changes
+  // Update form data when context values change
+  useEffect(() => {
+    if (academicYear && semester) {
+      setFormData((prev) => ({
+        ...prev,
+        academicYear,
+        academicYearId: academicYearId || prev.academicYearId,
+        semester,
+      }));
+    }
+  }, [academicYear, academicYearId, semester]);
+
+  // Check existing enrollment on mount
+  useEffect(() => {
+    checkExistingEnrollment();
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     setDocuments(getRequiredDocuments(studentType));
     clearErrors(["studentType"]);
   }, [studentType, clearErrors]);
 
-  // Fetch all necessary data on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const headers = getAuthHeaders();
+  const checkExistingEnrollment = async () => {
+    try {
+      setCheckingEnrollment(true);
 
-        // Fetch all three endpoints in parallel
-        const [enrollmentStatusRes, enrollmentCheckRes, coursesRes] =
-          await Promise.all([
-            axios.get(
-              "http://localhost:3000/student/enrollment-open-status",
-              headers,
-            ),
-            axios.get(
-              `http://localhost:3000/student/enrollment-checking/${user.id}`,
-              headers,
-            ),
-            axios.get("http://localhost:3000/student/course-list", headers),
-          ]);
+      const response = await axios.get(
+        `${API_BASE}/my-enrollment/${user.id}`,
+        getAuthHeaders(),
+      );
 
-        // Process enrollment open status
-        const statusData = enrollmentStatusRes.data;
-        if (statusData.success && statusData.data) {
-          const {
-            id,
-            year_series,
-            semester,
-            start_date,
-            end_date,
-            enrollment_open,
-          } = statusData.data;
-          setAcademicYearInfo({
-            id,
-            year_series,
-            semester,
-            start_date,
-            end_date,
-            enrollment_open,
-          });
-          setEnrollmentDateRange({ start_date, end_date });
-          setFormData((prev) => ({ ...prev, academicYearId: id }));
-        } else {
-          // No active academic year (enrollment closed)
-          setAcademicYearInfo((prev) => ({ ...prev, enrollment_open: false }));
-        }
-
-        // Process enrollment check
-        const checkData = enrollmentCheckRes.data;
-        if (checkData.success && checkData.data) {
-          setMyEnrollment(checkData.data); // contains enrollment object
-        } else {
-          setMyEnrollment(null); // not enrolled
-        }
-
-        // Process courses list – the response is an array directly
-        const coursesArray = coursesRes.data || [];
-        setInitialCourses(coursesArray);
-      } catch (err) {
-        console.error("Failed to fetch enrollment data:", err);
-        setError(
-          err.response?.data?.message || "Failed to load enrollment data.",
-        );
-      } finally {
-        setLoading(false);
+      setMyEnrollment(response.data.data);
+    } catch (err) {
+      console.log("Error response:", err.response);
+      if (err.response?.status !== 404) {
+        console.error("Failed to check enrollment:", err);
       }
-    };
-
-    if (user) {
-      fetchData();
+      setMyEnrollment(null);
+    } finally {
+      setCheckingEnrollment(false);
     }
+  };
 
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [user, getAuthHeaders]);
+  /**
+   * PLACEHOLDER API: Check if user can submit enrollment
+   * TODO: Implement backend endpoint for this check
+   *
+   * Expected backend response:
+   * {
+   *   canSubmit: boolean,
+   *   reason?: string, // If canSubmit is false, provide reason
+   *   existingEnrollment?: object // Optional existing enrollment data
+   * }
+   */
+  const checkSubmissionEligibility = async () => {
+    try {
+      setCheckingEligibility(true);
+      setEligibilityError(null);
+
+      // PLACEHOLDER: Replace with actual API endpoint
+      // This endpoint should check:
+      // 1. If user already has an active enrollment (not rejected)
+      // 2. If enrollment period is still open
+      // 3. If user hasn't exceeded submission limits
+      // 4. Any other business rules for your institution
+
+      const response = await axios.get(
+        `${API_BASE}/can-submit-enrollment/${user.id}`,
+        getAuthHeaders(),
+      );
+
+      // Expected response structure
+      return {
+        canSubmit: response.data.canSubmit,
+        reason: response.data.reason || null,
+        existingEnrollment: response.data.existingEnrollment || null,
+      };
+    } catch (err) {
+      console.error("Failed to check submission eligibility:", err);
+
+      // Handle different error scenarios
+      if (err.response?.status === 404) {
+        // User has no enrollment - this is actually good for new submissions
+        return { canSubmit: true, reason: null };
+      } else if (err.response?.status === 403) {
+        return {
+          canSubmit: false,
+          reason:
+            err.response.data?.message ||
+            "You are not eligible to enroll at this time.",
+        };
+      } else {
+        // For other errors, we'll allow submission but backend should handle duplicate check
+        return { canSubmit: true, reason: null };
+      }
+    } finally {
+      setCheckingEligibility(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setTouched((prev) => ({ ...prev, [name]: true }));
-    if (errors[name]) clearErrors([name]);
+
+    if (errors[name]) {
+      clearErrors([name]);
+    }
   };
 
   const handleFileSelect = (docType, file) => {
@@ -176,8 +211,12 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       ...prev,
       [docType]: { ...prev[docType], file },
     }));
+
     setTouched((prev) => ({ ...prev, [docType]: true }));
-    if (errors[docType]) clearErrors([docType]);
+
+    if (errors[docType]) {
+      clearErrors([docType]);
+    }
   };
 
   const handleFileRemove = (docType) => {
@@ -193,68 +232,132 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       formData,
       documents,
     });
-    if (isValid) setActiveStep((prev) => Math.min(prev + 1, 3));
+
+    if (isValid) {
+      setActiveStep((prev) => Math.min(prev + 1, 3));
+    }
   };
 
-  const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 1));
+  const handleBack = () => {
+    setActiveStep((prev) => Math.max(prev - 1, 1));
+  };
 
+  /**
+   * PLACEHOLDER API: Submit enrollment
+   * Updated to handle duplicate submission errors from backend
+   */
   const handleSubmit = async () => {
-    const isValid = validateStep(3, { studentType, formData, documents });
+    // Step 1: Frontend validation
+    const isValid = validateStep(3, {
+      studentType,
+      formData,
+      documents,
+    });
+
     if (!isValid) return;
 
-    // Check for existing non-rejected enrollment
+    // Step 2: Check for existing enrollment in state (quick frontend check)
     if (myEnrollment && myEnrollment.status !== "rejected") {
-      setSubmitError(`You already have an ${myEnrollment.status} enrollment.`);
+      setSubmitError(
+        `You already have an ${myEnrollment.status} enrollment. Cannot submit another.`,
+      );
       return;
     }
 
+    // Step 3: Check with backend for eligibility (optional but recommended)
     setSubmitting(true);
     setSubmitError(null);
 
     try {
+      // Check eligibility before submission
+      const eligibility = await checkSubmissionEligibility();
+
+      if (!eligibility.canSubmit) {
+        setSubmitError(
+          eligibility.reason ||
+            "You are not eligible to submit an enrollment at this time.",
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      // Step 4: Prepare form data for submission
       const submitFormData = new FormData();
-      submitFormData.append("studentId", user.id);
+
+      submitFormData.append("studentId", user?.id);
       submitFormData.append("studentType", studentType);
       submitFormData.append("contactNumber", formData.contactNumber);
       submitFormData.append("address", formData.address);
       submitFormData.append("yearLevel", formData.yearLevel);
       submitFormData.append("course", formData.course);
       submitFormData.append("academicYearId", formData.academicYearId);
+      submitFormData.append("academicYear", academicYear);
+      submitFormData.append("semester", semester);
 
-      if (studentType !== "old") {
-        Object.entries(documents).forEach(([docType, doc]) => {
-          if (doc.required && doc.file) {
-            submitFormData.append(docType, doc.file);
+      if (studentType === "new" || studentType === "transferee") {
+        Object.entries(documents).forEach(([key, doc]) => {
+          if (doc.file) {
+            submitFormData.append(key, doc.file);
           }
         });
       }
 
-      const headers = getAuthHeaders();
-      headers.headers["Content-Type"] = "multipart/form-data";
+      // Step 5: Submit enrollment
+      const response = await axios.post(
+        `${API_BASE}/upload-documents-process`,
+        submitFormData,
+        {
+          ...getAuthHeaders(),
+          headers: {
+            ...getAuthHeaders().headers,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
 
-      const [enrollmentResultRes, enrollmentCheckResult] = await Promise.all([
-        axios.post(
-          "http://localhost:3000/student/enrollment-upload-documents-process",
-          submitFormData,
-          headers,
-        ),
-        axios.get(
-          `http://localhost:3000/student/enrollment-checking/${user.id}`,
-          headers,
-        ),
-      ]);
-
-      if (enrollmentResultRes.data.success) {
-        setSubmitSuccess(true);
-        setTimeout(() => {
-          setMyEnrollment(enrollmentCheckResult.data.data);
-        }, 1800);
-        onSuccess?.();
-      } else {
-        setSubmitError(response.data.message || "Submission failed.");
-      }
+      // Success!
+      setSubmitSuccess(true);
+      await checkExistingEnrollment(); // Refresh enrollment data
+      onSuccess?.(response.data);
     } catch (err) {
-      setSubmitError(err.response?.data?.message || "Something went wrong.");
+      console.error("Submission failed:", err);
+
+      // Handle specific error status codes
+      const status = err.response?.status;
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to submit enrollment. Please try again.";
+
+      switch (status) {
+        case 409: // Conflict - Duplicate submission
+          setSubmitError(
+            "You already have an active enrollment. Multiple submissions are not allowed.",
+          );
+          // Refresh enrollment data to show correct status
+          await checkExistingEnrollment();
+          break;
+
+        case 400: // Bad request - Validation error
+          setSubmitError(`Validation Error: ${errorMessage}`);
+          break;
+
+        case 403: // Forbidden - Not eligible
+          setSubmitError(`Not Eligible: ${errorMessage}`);
+          break;
+
+        case 413: // Payload too large - Files too big
+          setSubmitError("One or more files exceed the maximum size limit.");
+          break;
+
+        case 415: // Unsupported media type - Wrong file format
+          setSubmitError(
+            "Invalid file format. Please upload PDF, JPG, or PNG files only.",
+          );
+          break;
+
+        default:
+          setSubmitError(errorMessage);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -263,7 +366,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   const formatCourseDisplay = (course) => {
     const courseCode = course.course_code || course.code || "";
     const courseName = course.course_name || course.name || "";
-    const courseType = course.duration_type || "Course";
+    const courseType = course.type || "Course";
+
     return {
       id: course.id || courseCode,
       code: courseCode,
@@ -272,17 +376,21 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     };
   };
 
-  // Loading / error states
-  if (loading) return <LoadingPage />;
-  if (error) return <FailedLoadData message={error} />;
+  if (contextLoading || checkingEnrollment) {
+    return <LoadingPage />;
+  }
 
-  // Enrollment closed view
-  if (!academicYearInfo.enrollment_open) {
-    const startDate = enrollmentDateRange?.start_date;
-    const endDate = enrollmentDateRange?.end_date;
+  if (contextError) {
+    return <FailedLoadData message={contextError} />;
+  }
+
+  if (!isEnrollmentOpen) {
+    const startDate = enrollmentStatus?.start_date;
+    const endDate = enrollmentStatus?.end_date;
+
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
+        <div className="bg-linear-to-r from-red-600 to-red-700 px-6 py-5">
           <h2 className="text-xl font-semibold text-white flex items-center">
             <Lock className="w-5 h-5 mr-2" />
             Enrollment Closed
@@ -299,6 +407,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
             The enrollment period is currently closed. Please check back during
             the scheduled enrollment dates.
           </p>
+
           {startDate && endDate && (
             <div className="bg-gray-50 rounded-xl p-6 max-w-md mx-auto border border-gray-200">
               <div className="flex items-center justify-between text-sm">
@@ -328,8 +437,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               </div>
             </div>
           )}
+
           <button
-            onClick={() => window.location.reload()}
+            onClick={checkExistingEnrollment}
             className="mt-8 text-blue-600 hover:text-blue-800 flex items-center justify-center mx-auto font-medium"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -340,7 +450,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     );
   }
 
-  // Existing enrollment (non-rejected) view
+  // Show enrollment status if user has an active enrollment
   if (myEnrollment && myEnrollment.status !== "rejected") {
     const statusConfig = {
       enrolled: {
@@ -374,11 +484,13 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         gradient: "from-yellow-600 to-yellow-700",
       },
     };
+
     const config = statusConfig[myEnrollment.status] || statusConfig.pending;
     const Icon = config.icon;
+
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className={`bg-gradient-to-r ${config.gradient} px-6 py-5`}>
+        <div className={`bg-linear-to-r ${config.gradient} px-6 py-5`}>
           <h2 className="text-xl font-semibold text-white flex items-center">
             <GraduationCap className="w-5 h-5 mr-2" />
             Enrollment Status
@@ -397,39 +509,43 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                   {config.title}
                 </h3>
                 <p className="text-gray-700 mb-4">{config.message}</p>
+
                 <div className="grid grid-cols-2 gap-4 text-sm bg-white/50 rounded-lg p-4">
                   <div>
                     <span className="text-gray-500 block">
                       Enrollment Reference
                     </span>
                     <span className="font-semibold text-gray-900">
-                      {myEnrollment?.enrollment_id || "N/A"}
+                      {myEnrollment?.id ? myEnrollment.id : "N/A"}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 block">Submitted</span>
                     <span className="font-semibold text-gray-900">
-                      {myEnrollment?.updated_at
-                        ? new Date(myEnrollment.updated_at).toLocaleDateString()
+                      {myEnrollment?.submittedAt
+                        ? new Date(
+                            myEnrollment.submittedAt,
+                          ).toLocaleDateString()
                         : "N/A"}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 block">Student Type</span>
                     <span className="font-semibold text-gray-900 capitalize">
-                      {myEnrollment?.student_type?.replace("_", " ") || "N/A"}
+                      {myEnrollment?.studentType?.replace("_", " ") || "N/A"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500 block">Semester</span>
+                    <span className="text-gray-500 block">Course</span>
                     <span className="font-semibold text-gray-900">
-                      {myEnrollment?.semester || "TBA"}
+                      {myEnrollment?.course || "N/A"}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
           {myEnrollment.status === "enrolled" && (
             <div className="bg-green-50 rounded-xl p-6 border border-green-200">
               <h4 className="font-semibold text-green-800 mb-3">
@@ -451,8 +567,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               </ul>
             </div>
           )}
+
           <button
-            onClick={() => window.location.reload()}
+            onClick={checkExistingEnrollment}
             className="mt-6 text-blue-600 hover:text-blue-800 flex items-center font-medium"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -463,7 +580,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     );
   }
 
-  // Success view after submission
   if (submitSuccess) {
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-12 text-center">
@@ -479,8 +595,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         </p>
         <button
           onClick={() => {
-            setSubmitSuccess(false);
-            // Keep myEnrollment as pending
+            // Instead of resetting submitSuccess, just refresh the enrollment
+            checkExistingEnrollment();
           }}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
@@ -490,10 +606,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     );
   }
 
-  // Main enrollment form
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
+      <div className="bg-linear-to-r from-blue-600 to-blue-700 px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-white flex items-center">
@@ -501,14 +616,14 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               Student Enrollment
             </h2>
             <p className="text-blue-100 text-sm mt-1">
-              Complete your profiling to enroll for {academicYearInfo.semester}
+              Complete your profiling to enroll for {semester}
             </p>
           </div>
           <div className="bg-white/20 rounded-lg px-4 py-2 backdrop-blur-sm">
             <span className="text-white font-medium text-sm">
               Due:{" "}
-              {enrollmentDateRange?.end_date
-                ? new Date(enrollmentDateRange.end_date).toLocaleDateString()
+              {enrollmentStatus?.end_date
+                ? new Date(enrollmentStatus.end_date).toLocaleDateString()
                 : "TBA"}
             </span>
           </div>
@@ -559,6 +674,22 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
           <button
             onClick={() => setSubmitError(null)}
             className="text-red-400 hover:text-red-600"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {eligibilityError && (
+        <div className="mx-6 mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start">
+          <Info className="w-5 h-5 text-yellow-600 mr-3 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-semibold text-yellow-800">Eligibility Check</h4>
+            <p className="text-sm text-yellow-700 mt-1">{eligibilityError}</p>
+          </div>
+          <button
+            onClick={() => setEligibilityError(null)}
+            className="text-yellow-400 hover:text-yellow-600"
           >
             <X className="w-5 h-5" />
           </button>
@@ -672,7 +803,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                     <span className="font-semibold text-gray-900">
                       {user?.birthdate
                         ? new Date(user.birthdate).toLocaleDateString()
-                        : "N/A"}
+                        : "N/A"}{" "}
                     </span>
                   </div>
                   <div>
@@ -816,7 +947,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                   </label>
                   <input
                     type="text"
-                    value={academicYearInfo.year_series || ""}
+                    value={academicYear || ""}
                     disabled
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
                   />
@@ -828,7 +959,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                   </label>
                   <input
                     type="text"
-                    value={academicYearInfo.semester || ""}
+                    value={semester || ""}
                     disabled
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
                   />
@@ -913,7 +1044,11 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                                 <div className="flex gap-2">
                                   <button
                                     type="button"
-                                    onClick={() => alert("Preview coming soon")}
+                                    onClick={() => {
+                                      window.alert(
+                                        "Preview feature coming soon",
+                                      );
+                                    }}
                                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                                     title="Preview"
                                   >
@@ -990,13 +1125,13 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || checkingEligibility}
               className="px-8 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? (
+              {submitting || checkingEligibility ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
+                  {checkingEligibility ? "Checking..." : "Submitting..."}
                 </>
               ) : (
                 <>

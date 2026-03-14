@@ -231,7 +231,7 @@ CREATE TABLE transaction_table (
     enrollment_id VARCHAR(6) NOT NULL,  -- Changed from UUID to match enrollment_profile
     
     -- Period/Term
-    period VARCHAR(50) NOT NULL 
+    period VARCHAR(50)  
         CHECK (period IN (
             'enrollment',
             'prelim', 
@@ -245,10 +245,10 @@ CREATE TABLE transaction_table (
     course_tuition_fee UUID NOT NULL,
     
     -- Payment Information
-    paid DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
-    balance DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    paid DECIMAL(12, 2)  DEFAULT 0.00,
+    balance DECIMAL(12, 2)  DEFAULT 0.00,
     
-    payment_type VARCHAR(50) NOT NULL 
+    payment_type VARCHAR(50) 
         CHECK (payment_type IN (
             'maya', 
             'gcash', 

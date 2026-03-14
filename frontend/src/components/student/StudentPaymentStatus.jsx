@@ -92,8 +92,8 @@ const PaymentComponent = ({ userData }) => {
     user_id: "08593912-2cb3-49d0-8ac8-ec37da4d5064",
     enrollment_year_code: "d0406ab2-3588-4aa9-a4d8-33b9de410fb1",
     enrollment_id: "AGJORF", // AGJORF || Change to null/empty to test enrollment validation
-    current_payment_period: "mid-term" || "enrollment",
-    allowed_payment_periods: ["mid-term"], // ["enrollment", "prelim", "mid-term", "pre-final", "final", "summer"]
+    current_payment_period: "prelim",
+    allowed_payment_periods: "prelim", // ["enrollment", "prelim", "mid-term", "pre-final", "final", "summer"]
   };
 
   // Loading state for API simulation

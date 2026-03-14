@@ -1,5 +1,27 @@
 import db from "../config/db.js";
 
+//*******************finalized*****************************/
+const getCheckStudentIfEnrolledModel = async (userId) => {
+  try {
+    const result = await db.query(
+      `SELECT *
+       FROM enrollment_profile ep
+       JOIN academic_year ay
+         ON ep.enrollment_year_code = ay.id
+       WHERE ay.enrollment_open = true
+       AND ep.user_id = $1`,
+      [userId],
+    );
+
+    return result.rows;
+  } catch (error) {
+    console.error("Error in getCheckStudentIfEnrolledModel:", error);
+    throw new Error(
+      `Failed to fetch get Check Student If Enrolled: ${error.message}`,
+    );
+  }
+};
+
 const getAllCoursesList = async () => {
   try {
     const result = await db.query(`SELECT * FROM courses ORDER BY id`);
@@ -10,7 +32,7 @@ const getAllCoursesList = async () => {
   }
 };
 
-const getAcademicYearlist = async () => {
+const getAcademicYearlistModel = async () => {
   try {
     const result = await db.query(
       `SELECT id, year_series, semester, start_date, end_date, enrollment_open
@@ -26,75 +48,71 @@ const getAcademicYearlist = async () => {
 
 const enrollStudentModel = async (data) => {
   try {
-    // Check if student already has an enrollment profile
+    const studentTypeMap = {
+      old: "old_student",
+      new: "new",
+      transferee: "transferee",
+    };
+
+    const dbStudentType = studentTypeMap[data.studentType];
+
+    if (!dbStudentType) {
+      throw new Error(`Invalid student type: ${data.studentType}`);
+    }
+
     const result = await db.query(
-      `SELECT * FROM enrollment_profile WHERE user_id = $1`,
-      [data.studentId],
-    );
-
-    console.log("Enrollment data received:", data);
-
-    // If NO existing enrollment found, create one
-    if (result.rows.length === 0) {
-      // Map studentType to database value
-      const studentTypeMap = {
-        old: "old_student",
-        new: "new",
-        transferee: "transferee",
-      };
-
-      const dbStudentType = studentTypeMap[data.studentType];
-
-      if (!dbStudentType) {
-        throw new Error(`Invalid student type: ${data.studentType}`);
-      }
-
-      const query = `
-        INSERT INTO enrollment_profile (
-          course_code_id,
-          user_id,
-          enrollment_year_code,
-          enrollment_status,
-          student_type,
-          year_level,
-          created_at,
-          updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-        RETURNING *;
-      `;
-
-      const values = [
+      `
+      INSERT INTO enrollment_profile (
+        course_code_id,
+        user_id,
+        enrollment_year_code,
+        enrollment_status,
+        student_type,
+        year_level,
+        created_at,
+        updated_at
+      )
+      SELECT $1, $2, $3, $4, $5, $6, NOW(), NOW()
+      WHERE 
+        -- ensure academic year is open
+        EXISTS (
+          SELECT 1 
+          FROM academic_year 
+          WHERE id = $3 
+          AND enrollment_open = true
+        )
+      AND 
+        -- ensure student is not already enrolled in an open year
+        NOT EXISTS (
+          SELECT 1
+          FROM enrollment_profile ep
+          INNER JOIN academic_year ay 
+            ON ep.enrollment_year_code = ay.id
+          WHERE ep.user_id = $2
+          AND ay.enrollment_open = true
+        )
+      RETURNING *;
+      `,
+      [
         data.course,
         data.studentId,
         data.academicYearId,
         "documents_approved",
         dbStudentType,
         data.yearLevel,
-      ];
+      ],
+    );
 
-      const insertResult = await db.query(query, values);
-
-      return {
-        success: true,
-        message: "Enrollment profile created successfully",
-        data: insertResult.rows[0],
-      };
-    }
-
-    // Return existing enrollment if found
     return {
-      success: true,
-      message: "Student already has an enrollment profile",
-      data: result.rows[0],
+      inserted: result.rowCount > 0,
+      userId: result.rows[0]?.user_id || null,
     };
   } catch (error) {
-    console.error("Error in enrollStudentModel:", error);
-    return {
-      success: false,
-      error: error.message,
-    };
+    throw error;
   }
 };
+
+//*******************finalized*****************************/
 
 const getMyEnrollmentModel = async (userId) => {
   try {
@@ -161,8 +179,9 @@ const postPaymentModel = async (data) => {
 export {
   postPaymentModel,
   getAllCoursesList,
-  getAcademicYearlist,
+  getAcademicYearlistModel,
   enrollStudentModel,
   getMyEnrollmentModel,
   getEnrollmentProfileModel,
+  getCheckStudentIfEnrolledModel,
 };
