@@ -282,7 +282,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     const endDate = enrollmentDateRange?.end_date;
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
+        <div className="bg-linear-to-r from-red-600 to-red-700 px-6 py-5">
           <h2 className="text-xl font-semibold text-white flex items-center">
             <Lock className="w-5 h-5 mr-2" />
             Enrollment Closed
@@ -378,7 +378,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     const Icon = config.icon;
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className={`bg-gradient-to-r ${config.gradient} px-6 py-5`}>
+        <div className={`bg-linear-to-r ${config.gradient} px-6 py-5`}>
           <h2 className="text-xl font-semibold text-white flex items-center">
             <GraduationCap className="w-5 h-5 mr-2" />
             Enrollment Status
@@ -493,7 +493,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
   // Main enrollment form
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
+      <div className="bg-linear-to-r from-blue-600 to-blue-700 px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-white flex items-center">
