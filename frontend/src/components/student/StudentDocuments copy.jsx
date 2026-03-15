@@ -203,11 +203,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     const isValid = validateStep(3, { studentType, formData, documents });
     if (!isValid) return;
 
-    // Check for existing non-rejected enrollment using enrollment_status
-    if (myEnrollment && myEnrollment.enrollment_status !== "rejected") {
-      setSubmitError(
-        `You already have an ${myEnrollment.enrollment_status} enrollment.`,
-      );
+    // Check for existing non-rejected enrollment
+    if (myEnrollment && myEnrollment.status !== "rejected") {
+      setSubmitError(`You already have an ${myEnrollment.status} enrollment.`);
       return;
     }
 
@@ -343,8 +341,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     );
   }
 
-  // Existing enrollment (non-rejected) view - FIXED: using enrollment_status instead of status
-  if (myEnrollment && myEnrollment.enrollment_status !== "rejected") {
+  // Existing enrollment (non-rejected) view
+  if (myEnrollment && myEnrollment.status !== "rejected") {
     const statusConfig = {
       enrolled: {
         bg: "bg-green-50",
@@ -377,12 +375,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         gradient: "from-yellow-600 to-yellow-700",
       },
     };
-
-    // FIXED: using enrollment_status instead of status
-    const config =
-      statusConfig[myEnrollment.enrollment_status] || statusConfig.pending;
+    const config = statusConfig[myEnrollment.status] || statusConfig.pending;
     const Icon = config.icon;
-
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className={`bg-linear-to-r ${config.gradient} px-6 py-5`}>
@@ -437,9 +431,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               </div>
             </div>
           </div>
-
-          {/* FIXED: using enrollment_status instead of status */}
-          {myEnrollment.enrollment_status === "enrolled" && (
+          {myEnrollment.status === "enrolled" && (
             <div className="bg-green-50 rounded-xl p-6 border border-green-200">
               <h4 className="font-semibold text-green-800 mb-3">
                 What's Next?

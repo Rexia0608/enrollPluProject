@@ -1,4 +1,21 @@
 -- ============================================
+-- COMPLETE DATABASE SCHEMA
+-- ============================================
+
+-- ============================================
+-- HELPER FUNCTION FOR UPDATED_AT TRIGGERS
+-- ============================================
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- ============================================
 -- USERS TABLE
 -- ============================================
 
@@ -13,7 +30,7 @@ CREATE TABLE users (
         CHECK (role IN ('admin', 'faculty', 'student')),                   
     status BOOLEAN DEFAULT false,                     
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()  -- Added default
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 ); 
 
 -- Trigger for users updated_at
@@ -29,14 +46,14 @@ CREATE TRIGGER update_users_updated_at
 
 CREATE TABLE credentials (
     user_id UUID PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,  -- Added UNIQUE constraint
+    email VARCHAR(255) NOT NULL UNIQUE,
     mobile_number VARCHAR(20),
     password VARCHAR(255) NOT NULL,
     login_attempts INTEGER DEFAULT 0,
     email_otp VARCHAR(10),
     otp_expires_at TIMESTAMP,
     is_verified BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),  -- Changed to TIMESTAMPTZ for consistency
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
     CONSTRAINT fk_user_credentials
@@ -105,7 +122,7 @@ CREATE TABLE maintenance_settings (
     id SERIAL PRIMARY KEY,
     is_active BOOLEAN DEFAULT false,
     message TEXT,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),  -- Changed to TIMESTAMPTZ
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -115,9 +132,13 @@ CREATE TRIGGER update_maintenance_settings_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+-- Insert initial record for maintenance_settings
+INSERT INTO maintenance_settings (is_active, message) 
+VALUES (false, 'System is currently under maintenance. Please check back later.');
+
 
 -- ============================================
--- ENROLLMENT_PROFILE TABLE (CORRECTED)
+-- ENROLLMENT_PROFILE TABLE
 -- ============================================
 
 -- Function to generate 6-character alphanumeric ID
@@ -146,25 +167,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create table with CORRECTED spelling
+-- Create enrollment_profile table
 CREATE TABLE enrollment_profile (
-    -- CORRECTED: 6-character alphanumeric ID (not UUID)
     enrollment_id VARCHAR(6) PRIMARY KEY DEFAULT generate_enrollment_id(),
     
     -- Foreign Keys
     course_code_id UUID NOT NULL,
     user_id UUID NOT NULL,
-    enrollment_year_code UUID NOT NULL,  -- CORRECTED spelling (was enrollement_year_code)
+    enrollment_year_code UUID NOT NULL,
     
     -- Enrollment Details
-    enrollment_status VARCHAR(50) NOT NULL  -- CORRECTED spelling (was enrollement_status)
+    enrollment_status VARCHAR(50) NOT NULL
         CHECK (enrollment_status IN (
             'not_started',
             'documents_pending',
             'documents_approved',
             'payment_pending',
             'payment_validated',
-            'enrolled'
+            'enrolled' 
         )),
     
     student_type VARCHAR(50) NOT NULL 
@@ -207,13 +227,13 @@ CREATE TABLE enrollment_profile (
         ON DELETE RESTRICT
 );
 
--- CORRECTED: Create indexes with proper spelling
+-- Indexes for enrollment_profile
 CREATE INDEX idx_enrollment_user ON enrollment_profile(user_id);
 CREATE INDEX idx_enrollment_course ON enrollment_profile(course_code_id);
 CREATE INDEX idx_enrollment_year ON enrollment_profile(enrollment_year_code);
 CREATE INDEX idx_enrollment_status ON enrollment_profile(enrollment_status);
 
--- CORRECTED: Trigger name
+-- Trigger for enrollment_profile updated_at
 CREATE TRIGGER update_enrollment_profile_updated_at
     BEFORE UPDATE ON enrollment_profile
     FOR EACH ROW
@@ -221,16 +241,45 @@ CREATE TRIGGER update_enrollment_profile_updated_at
 
 
 -- ============================================
--- TRANSACTION_TABLE (CORRECTED)
+-- TRANSACTION_TABLE
 -- ============================================
 
+-- Function to generate 9-character transaction ID (optional - you can also generate in application)
+CREATE OR REPLACE FUNCTION generate_transaction_id()
+RETURNS VARCHAR(9) AS $$
+DECLARE
+    new_id VARCHAR(9);
+    exists_check BOOLEAN;
+    chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    i INTEGER;
+BEGIN
+    LOOP
+        new_id := '';
+        -- Add 'TRX' prefix for transaction
+        new_id := 'TRX';
+        FOR i IN 4..9 LOOP
+            new_id := new_id || SUBSTRING(chars, FLOOR(RANDOM() * 36 + 1)::INTEGER, 1);
+        END LOOP;
+        
+        SELECT EXISTS(
+            SELECT 1 FROM transaction_table WHERE id = new_id
+        ) INTO exists_check;
+        
+        EXIT WHEN NOT exists_check;
+    END LOOP;
+    
+    RETURN new_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create transaction_table
 CREATE TABLE transaction_table (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(9) PRIMARY KEY DEFAULT generate_transaction_id(),
     
-    -- CORRECTED: Reference enrollment_id as VARCHAR(6), not UUID
-    enrollment_id VARCHAR(6) NOT NULL,  -- Changed from UUID to match enrollment_profile
+    -- Reference to enrollment_profile
+    enrollment_id VARCHAR(6) NOT NULL,
     
-    -- Period/Term
+    -- Academic period
     period VARCHAR(50)  
         CHECK (period IN (
             'enrollment',
@@ -245,9 +294,10 @@ CREATE TABLE transaction_table (
     course_tuition_fee UUID NOT NULL,
     
     -- Payment Information
-    paid DECIMAL(12, 2)  DEFAULT 0.00,
-    balance DECIMAL(12, 2)  DEFAULT 0.00,
+    paid DECIMAL(12, 2) DEFAULT 0.00,
+    balance DECIMAL(12, 2) DEFAULT 0.00,
     
+    -- Payment method
     payment_type VARCHAR(50) 
         CHECK (payment_type IN (
             'maya', 
@@ -266,12 +316,12 @@ CREATE TABLE transaction_table (
     -- Foreign Key Constraints
     CONSTRAINT fk_transaction_enrollment 
         FOREIGN KEY (enrollment_id) 
-        REFERENCES enrollment_profile(enrollment_id)  -- Now references VARCHAR(6)
+        REFERENCES enrollment_profile(enrollment_id)
         ON DELETE RESTRICT,
     
     CONSTRAINT fk_transaction_course 
         FOREIGN KEY (course_tuition_fee) 
-        REFERENCES courses(id) 
+        REFERENCES courses(id)
         ON DELETE RESTRICT,
     
     -- Validation constraints
@@ -282,14 +332,56 @@ CREATE TABLE transaction_table (
         CHECK (paid >= 0)
 );
 
--- CORRECTED: Create indexes
+-- Indexes for transaction_table
 CREATE INDEX idx_transaction_enrollment_id ON transaction_table(enrollment_id);
 CREATE INDEX idx_transaction_period ON transaction_table(period);
 CREATE INDEX idx_transaction_payment_type ON transaction_table(payment_type);
 CREATE INDEX idx_transaction_created_at ON transaction_table(created_at);
 
--- CORRECTED: Trigger name
+-- Trigger for transaction_table updated_at
 CREATE TRIGGER update_transaction_table_updated_at
     BEFORE UPDATE ON transaction_table
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ============================================
+-- SAMPLE INITIAL DATA (Optional)
+-- ============================================
+
+-- Insert sample admin user (password should be hashed in real application)
+INSERT INTO users (first_name, last_name, role, status) 
+VALUES ('Admin', 'User', 'admin', true);
+
+-- Insert admin credentials (using the generated user_id)
+INSERT INTO credentials (user_id, email, password, is_verified)
+SELECT id, 'admin@example.com', 'hashed_password_here', true
+FROM users WHERE role = 'admin' LIMIT 1;
+
+-- Insert sample academic year
+INSERT INTO academic_year (year_series, semester, start_date, end_date, is_class_ongoing, enrollment_open)
+VALUES ('2024-2025', 'First Semester', '2024-08-15', '2024-12-15', false, true);
+
+-- Insert sample courses
+INSERT INTO courses (course_code, course_name, duration_type, tuition_fee, course_status)
+VALUES 
+    ('CS101', 'Bachelor of Science in Computer Science', '4 years', 45000.00, 'active'),
+    ('IT101', 'Bachelor of Science in Information Technology', '4 years', 42000.00, 'active'),
+    ('ENG101', 'Bachelor of Arts in English', '4 years', 38000.00, 'active');
+
+
+-- ============================================
+-- VERIFY DATABASE SCHEMA
+-- ============================================
+
+-- List all tables
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public'
+ORDER BY table_name;
+
+-- List all triggers
+SELECT trigger_name, event_object_table 
+FROM information_schema.triggers 
+WHERE trigger_schema = 'public'
+ORDER BY event_object_table, trigger_name;

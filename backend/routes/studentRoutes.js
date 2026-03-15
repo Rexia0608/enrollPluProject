@@ -2,20 +2,17 @@ import express from "express";
 import {
   getCourses,
   getAcademicYear,
-  enrollStudent,
-  getMyEnrollment,
-  postPayment,
-  getEnrollmentProfile,
+  postEnrollStudent,
   getCheckStudentIfEnrolled,
 } from "../controller/StudentController.js";
 import upload from "../middleware/uploadmiddleware.js";
 import uploadReceipts from "../middleware/uploadReceipts.js";
 
 const router = express.Router();
-//finalize on here //
-router.get("/enrollment-open-status", getAcademicYear);
-router.get("/enrollment-checking/:user_id", getCheckStudentIfEnrolled);
+//++++++++++++++++++ finalized here +++++++++++++++++++//
 router.get("/course-list", getCourses);
+router.get("/enrollment-open-status", getAcademicYear);
+router.get("/validate-enrolled-student/:user_id", getCheckStudentIfEnrolled);
 
 router.post(
   "/enrollment-upload-documents-process",
@@ -26,19 +23,11 @@ router.post(
     { name: "honorableDismissal", maxCount: 1 },
     { name: "PhotoId", maxCount: 1 },
   ]),
-  enrollStudent,
+  postEnrollStudent,
 );
 
-//finalize ont top //
+//++++++++++++++++++ finalized here +++++++++++++++++++//
 
-router.get("/my-enrollment/:user_id", getMyEnrollment);
-
-router.get("/enrollment_profile/:user_id", getEnrollmentProfile);
-
-router.post(
-  "/upload-payment-process/:userId/:enrollment_id",
-  uploadReceipts.fields([{ name: "receipts", maxCount: 1 }]),
-  postPayment,
-);
+//++++++++++++++++++ TEST here +++++++++++++++++++//
 
 export default router;

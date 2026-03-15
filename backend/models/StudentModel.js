@@ -22,7 +22,7 @@ const getCheckStudentIfEnrolledModel = async (userId) => {
   }
 };
 
-const getAllCoursesList = async () => {
+const getAllCoursesListModel = async () => {
   try {
     const result = await db.query(`SELECT * FROM courses ORDER BY id`);
     return result.rows;
@@ -46,7 +46,7 @@ const getAcademicYearlistModel = async () => {
   }
 };
 
-const enrollStudentModel = async (data) => {
+const postEnrollStudentModel = async (data) => {
   try {
     const studentTypeMap = {
       old: "old_student",
@@ -60,7 +60,20 @@ const enrollStudentModel = async (data) => {
       throw new Error(`Invalid student type: ${data.studentType}`);
     }
 
-    const result = await db.query(
+    // First, get the course tuition fee
+    const courseResult = await db.query(
+      `SELECT tuition_fee FROM courses WHERE id = $1`,
+      [data.course],
+    );
+
+    if (courseResult.rows.length === 0) {
+      throw new Error("Course not found");
+    }
+
+    const tuitionFee = courseResult.rows[0].tuition_fee;
+
+    // Insert enrollment profile
+    const enrollmentResult = await db.query(
       `
       INSERT INTO enrollment_profile (
         course_code_id,
@@ -103,9 +116,34 @@ const enrollStudentModel = async (data) => {
       ],
     );
 
+    // Check if enrollment was successful
+    if (enrollmentResult.rows.length > 0) {
+      const enrollment = enrollmentResult.rows[0];
+
+      // Insert transaction record
+      await db.query(
+        `INSERT INTO transaction_table (
+          enrollment_id,
+          period, 
+          course_tuition_fee,
+          paid, 
+          balance, 
+          payment_type
+        ) VALUES ($1, $2, $3, $4, $5, $6);`,
+        [
+          enrollment.enrollment_id,
+          "enrollment",
+          enrollment.course_code_id,
+          0.0,
+          tuitionFee, // Full tuition fee as balance
+          data.paymentType || null,
+        ],
+      );
+    }
+
     return {
-      inserted: result.rowCount > 0,
-      userId: result.rows[0]?.user_id || null,
+      inserted: enrollmentResult.rowCount > 0,
+      userId: enrollmentResult.rows[0]?.user_id || null,
     };
   } catch (error) {
     throw error;
@@ -114,74 +152,11 @@ const enrollStudentModel = async (data) => {
 
 //*******************finalized*****************************/
 
-const getMyEnrollmentModel = async (userId) => {
-  try {
-    const query = `
-      SELECT 
-        ep.*,
-        c.course_name,
-        c.course_code,
-        ay.year_series as academic_year,
-        ay.semester
-      FROM enrollment_profile ep
-      LEFT JOIN courses c ON ep.course_code_id = c.id
-      LEFT JOIN academic_year ay ON ep.enrollment_year_code = ay.id
-      WHERE ep.user_id = $1
-      ORDER BY ep.created_at DESC
-      LIMIT 1;
-    `;
-
-    const result = await db.query(query, [userId]);
-
-    if (result.rows.length === 0) {
-      return {
-        success: true,
-        message: "No enrollment found",
-        data: null,
-      };
-    }
-
-    return {
-      success: true,
-      message: "Enrollment retrieved successfully",
-      data: result.rows[0],
-    };
-  } catch (error) {
-    console.error("Error in getMyEnrollmentModel:", error);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
-};
-
-const getEnrollmentProfileModel = async (data) => {
-  try {
-    const query = `SELECT * FROM enrollment_profile WHERE user_id = $1`;
-    const values = [data.user_id];
-    const result = await db.query(query, values);
-    return result.rows[0];
-  } catch (error) {
-    console.error("Error in getEnrollmentProfileModel:", error);
-    throw new Error(`Failed to get enrollment profile: ${error.message}`);
-  }
-};
-
-const postPaymentModel = async (data) => {
-  try {
-    console.log(data);
-  } catch (error) {
-    console.error("Error in postPaymenModel:", error);
-    throw new Error(`Failed to post Payment: ${error.message}`);
-  }
-};
+//*******************TEST BELOW*****************************/
 
 export {
-  postPaymentModel,
-  getAllCoursesList,
+  getAllCoursesListModel,
   getAcademicYearlistModel,
-  enrollStudentModel,
-  getMyEnrollmentModel,
-  getEnrollmentProfileModel,
+  postEnrollStudentModel,
   getCheckStudentIfEnrolledModel,
 };

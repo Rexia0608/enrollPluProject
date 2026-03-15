@@ -1,5 +1,6 @@
 // components/student/StudentStatus.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CheckCircle,
   Clock,
@@ -14,8 +15,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Card from "../ui/Card";
+import PrimaryButton from "../ui/PrimaryButton";
 import StatusBadge from "../ui/StatusBadge";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import LoadingPage from "../../pages/LoadingPage";
 import { useStudent } from "../../context/StudentContext";
 import { useAuth } from "../../context/AuthContext";
@@ -28,8 +30,9 @@ function StudentStatus() {
   const [error, setError] = useState(null);
   const { user } = useAuth();
   const { getAuthHeaders } = useStudent();
+  const navigate = useNavigate();
 
-  // Define valid enrollment stages
+  // Define valid enrollment stages (matches API enrollment_status values)
   const validStages = [
     "not_started",
     "documents_pending",
@@ -91,28 +94,31 @@ function StudentStatus() {
     },
   ];
 
-  // Helper function to safely determine enrollment stage
+  // Helper function to safely determine enrollment stage from API response
   const determineEnrollmentStage = (enrollmentData) => {
     if (!enrollmentData) {
       console.log("No enrollment data found, defaulting to not_started");
       return "not_started";
     }
 
-    if (!enrollmentData.status) {
+    // API uses enrollment_status, not status
+    const status = enrollmentData.enrollment_status;
+
+    if (!status) {
       console.warn(
-        "Enrollment data missing status property, defaulting to not_started",
+        "Enrollment data missing enrollment_status property, defaulting to not_started",
       );
       return "not_started";
     }
 
-    if (!validStages.includes(enrollmentData.status)) {
+    if (!validStages.includes(status)) {
       console.warn(
-        `Invalid enrollment status: ${enrollmentData.status}, defaulting to not_started`,
+        `Invalid enrollment status: ${status}, defaulting to not_started`,
       );
       return "not_started";
     }
 
-    return enrollmentData.status;
+    return status;
   };
 
   // Validate user ID before making requests
@@ -145,15 +151,32 @@ function StudentStatus() {
           headers: getAuthHeaders().headers,
         });
 
-        // Fetch both APIs with individual error handling
+        // Fetch enrollment open status (new API)
         let enrollmentResponse = { data: { data: null } };
-        let statusResponse = { data: { Response: [null] } };
+        let enrollmentStatusResponse = { data: { data: null } };
 
         try {
-          enrollmentResponse = await api.get(
-            `/student/my-enrollment/${user.id}`,
+          // First API call - Get enrollment open status
+          enrollmentStatusResponse = await api.get(
+            `/student/enrollment-open-status`,
           );
-          console.log("Enrollment Response:", enrollmentResponse.data);
+          console.log(
+            "Enrollment Open Status Response:",
+            enrollmentStatusResponse.data,
+          );
+        } catch (error) {
+          console.error("Error fetching enrollment open status:", error);
+          if (error.code !== "ERR_CANCELED") {
+            toast.warn("Unable to fetch enrollment period details");
+          }
+        }
+
+        try {
+          // Second API call - Get student's enrollment data
+          enrollmentResponse = await api.get(
+            `/student/validate-enrolled-student/${user.id}`,
+          );
+          console.log("Student Enrollment Response:", enrollmentResponse.data);
         } catch (error) {
           if (error.response?.status === 404) {
             console.log(
@@ -177,57 +200,99 @@ function StudentStatus() {
           }
         }
 
-        try {
-          statusResponse = await api.get("/student/enrollment-open-status");
-          console.log("Status Response:", statusResponse?.data?.data);
-        } catch (error) {
-          console.error("Error fetching enrollment status:", error);
-          if (error.response?.status === 400) {
-            console.error("Bad request for status:", error.response.data);
-          }
-          // Don't show toast for status errors as we can still function
-        }
-
         // Safely access the data with null checks
         const enrollmentData = enrollmentResponse?.data?.data;
-        const statusData = statusResponse?.data?.data;
+        const enrollmentStatusData = enrollmentStatusResponse?.data?.data;
 
         // Determine enrollment stage with fallback
         const stage = determineEnrollmentStage(enrollmentData);
         setEnrollmentStage(stage);
 
-        // --- Build semester name and dates from statusData if possible ---
+        // --- Build semester data from both APIs ---
         let semesterName = "No Active Semester";
         let enrollmentStart = null;
         let enrollmentEnd = null;
+        let enrollmentId = null;
+        let isEnrollmentOpen = false;
+        let isClassOngoing = false;
+        let yearLevel = null;
+        let studentType = null;
+        let yearSeries = null;
+        let semester = null;
 
-        if (statusData) {
-          // Use fields from the status API: semester and year_series
-          const semParts = [statusData.semester, statusData.year_series].filter(
-            Boolean,
-          );
-          if (semParts.length > 0) {
-            semesterName = semParts.join(" ");
+        // Use data from enrollment-open-status API for semester info
+        if (enrollmentStatusData) {
+          yearSeries = enrollmentStatusData.year_series;
+          semester = enrollmentStatusData.semester;
+          enrollmentStart = enrollmentStatusData.start_date || null;
+          enrollmentEnd = enrollmentStatusData.end_date || null;
+          isEnrollmentOpen = enrollmentStatusData.enrollment_open || false;
+
+          // Create semester name from year_series and semester
+          if (semester && yearSeries) {
+            semesterName = `${semester} ${yearSeries}`;
+          } else if (semester) {
+            semesterName = semester;
+          } else if (yearSeries) {
+            semesterName = yearSeries;
           }
-          // Use start_date and end_date for enrollment period
-          enrollmentStart = statusData.start_date || null;
-          enrollmentEnd = statusData.end_date || null;
-        } else if (enrollmentData) {
-          // Fallback to enrollmentData if no statusData
-          semesterName =
-            [enrollmentData.semester, enrollmentData.academicYear]
-              .filter(Boolean)
-              .join(" ") || "No Active Semester";
-          // If enrollmentData has its own enrollment dates, you could set them here
         }
 
-        // Create semester data
+        // Enhance with student-specific data from validate-enrolled-student API
+        if (enrollmentData) {
+          // Use enrollment_id from API (not id)
+          enrollmentId = enrollmentData.enrollment_id || null;
+
+          // Use is_class_ongoing flag from API
+          isClassOngoing = enrollmentData.is_class_ongoing || false;
+
+          // Additional fields that might be useful
+          yearLevel = enrollmentData.year_level || null;
+          studentType = enrollmentData.student_type || null;
+
+          // If enrollment status API didn't have semester info, use from this API
+          if (!semesterName || semesterName === "No Active Semester") {
+            if (enrollmentData.semester && enrollmentData.year_series) {
+              semesterName = `${enrollmentData.semester} ${enrollmentData.year_series}`;
+            } else if (enrollmentData.semester) {
+              semesterName = enrollmentData.semester;
+            } else if (enrollmentData.year_series) {
+              semesterName = enrollmentData.year_series;
+            }
+          }
+
+          // If enrollment status API didn't have dates, use from this API
+          if (!enrollmentStart)
+            enrollmentStart = enrollmentData.start_date || null;
+          if (!enrollmentEnd) enrollmentEnd = enrollmentData.end_date || null;
+
+          // Use enrollment_open from status API if available, otherwise from enrollment data
+          if (
+            !isEnrollmentOpen &&
+            enrollmentData.enrollment_open !== undefined
+          ) {
+            isEnrollmentOpen = enrollmentData.enrollment_open;
+          }
+        }
+
+        // Create semester data object with all available information
         const semesterData = {
-          id: enrollmentData?.id || null,
+          id: enrollmentId,
           name: semesterName,
           classesStart: null, // Not provided by current API; will show "TBD"
           enrollmentStart: enrollmentStart,
           enrollmentEnd: enrollmentEnd,
+          enrollmentOpen: isEnrollmentOpen,
+          isClassOngoing: isClassOngoing,
+          yearLevel: yearLevel,
+          studentType: studentType,
+          yearSeries: yearSeries,
+          semester: semester,
+          // Store the raw data if needed for other purposes
+          rawData: {
+            enrollment: enrollmentData,
+            status: enrollmentStatusData,
+          },
         };
 
         setCurrentSemester(semesterData);
@@ -263,8 +328,13 @@ function StudentStatus() {
 
   // Check if enrollment is available for current semester
   const isEnrollmentOpen = () => {
-    if (!currentSemester) return false;
-    if (!currentSemester.enrollmentStart || !currentSemester.enrollmentEnd)
+    // Use the enrollment_open field from the API if available
+    if (currentSemester?.enrollmentOpen !== undefined) {
+      return currentSemester.enrollmentOpen;
+    }
+
+    // Fallback to date checking
+    if (!currentSemester?.enrollmentStart || !currentSemester?.enrollmentEnd)
       return false;
 
     try {
@@ -296,6 +366,26 @@ function StudentStatus() {
       };
     }
 
+    // If we have the enrollment_open flag from API, use it
+    if (currentSemester.enrollmentOpen !== undefined) {
+      if (currentSemester.enrollmentOpen) {
+        return {
+          status: "open",
+          message: "Enrollment is open",
+          color: "green",
+          icon: CheckCircle,
+        };
+      } else {
+        return {
+          status: "closed",
+          message: "Enrollment is closed",
+          color: "gray",
+          icon: Ban,
+        };
+      }
+    }
+
+    // Fallback to date-based checking
     if (!currentSemester.enrollmentStart || !currentSemester.enrollmentEnd) {
       return {
         status: "unavailable",
@@ -399,7 +489,7 @@ function StudentStatus() {
   // Handle start enrollment button click
   const handleStartEnrollment = () => {
     toast.info("Starting enrollment application...");
-    console.log("Navigate to enrollment form");
+    navigate("/student/dashboard/enrollement");
   };
 
   // Retry fetching data
@@ -421,12 +511,7 @@ function StudentStatus() {
           Error Loading Data
         </h3>
         <p className="text-gray-600 mb-4">{error}</p>
-        <button
-          onClick={handleRetry}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Try Again
-        </button>
+        <PrimaryButton onClick={handleRetry}>Try Again</PrimaryButton>
       </div>
     );
   }
@@ -463,7 +548,7 @@ function StudentStatus() {
 
       {/* Main Status Card */}
       <Card className="p-6">
-        {/* Semester Info - MODIFIED: use dynamic badge */}
+        {/* Semester Info - using data from API */}
         {currentSemester ? (
           <div className="mb-6 pb-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -475,8 +560,13 @@ function StudentStatus() {
                   </h3>
                   {currentSemester.id && (
                     <p className="text-sm text-gray-600">
-                      Enrollment Reference no.{" "}
+                      Enrollment Reference:{" "}
                       <strong>{currentSemester.id}</strong>
+                    </p>
+                  )}
+                  {currentSemester.yearLevel && (
+                    <p className="text-sm text-gray-600">
+                      Year Level: <strong>{currentSemester.yearLevel}</strong>
                     </p>
                   )}
                 </div>
@@ -597,13 +687,13 @@ function StudentStatus() {
                 <p className="text-sm text-blue-800 font-medium mb-2">
                   Get Started:
                 </p>
-                <button
+                <PrimaryButton
                   onClick={handleStartEnrollment}
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center font-medium"
+                  className="w-full flex items-center justify-center"
                 >
                   Start Your Enrollment
                   <ChevronRight className="w-4 h-4 ml-2" />
-                </button>
+                </PrimaryButton>
               </div>
             )}
 
@@ -783,7 +873,7 @@ function StudentStatus() {
           </div>
         </div>
 
-        {/* Important Dates Summary - MODIFIED: use classesStart (null for now) */}
+        {/* Important Dates Summary */}
         {currentSemester && (
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h4 className="font-medium text-gray-700 mb-3">Important Dates</h4>
@@ -825,6 +915,8 @@ function StudentStatus() {
           </div>
         </div>
       </Card>
+
+      <ToastContainer />
     </div>
   );
 }
