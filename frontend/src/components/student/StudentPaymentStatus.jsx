@@ -288,6 +288,7 @@ const StudentPaymentStatus = ({ userData }) => {
     setSubmitStatus(null);
 
     try {
+      // Prepare the payload – keep your existing logic
       const paymentPayload = {
         user: {
           id: userId,
@@ -327,23 +328,35 @@ const StudentPaymentStatus = ({ userData }) => {
         },
       };
 
-      console.log("Sending payment payload:", paymentPayload);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // --- ACTUAL AXIOS POST GOES HERE ---
+      const response = await axios.post(
+        "http://localhost:3000/student/payment", // your actual endpoint
+        paymentPayload,
+        getAuthHeaders(), // includes authorization headers
+      );
 
-      setSubmitStatus({
-        type: "success",
-        message: "Payment submitted successfully! (Placeholder)",
-      });
+      // Check response and update UI accordingly
+      if (response.data.success) {
+        setSubmitStatus({
+          type: "success",
+          message: "Payment submitted successfully!",
+        });
 
-      // Reset form
-      setPaymentDetails({ amount: "", referenceNumber: "", remarks: "" });
-      setUploadedFile(null);
-      setPaymentMethod(null);
-      setShowPromisedNote(false);
+        // Reset form
+        setPaymentDetails({ amount: "", referenceNumber: "", remarks: "" });
+        setUploadedFile(null);
+        setPaymentMethod(null);
+        setShowPromisedNote(false);
+      } else {
+        throw new Error(response.data.message || "Payment failed");
+      }
     } catch (error) {
+      console.error("Payment submission error:", error);
       setSubmitStatus({
         type: "error",
-        message: "Failed to process payment. Please try again.",
+        message:
+          error.response?.data?.message ||
+          "Failed to process payment. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -774,14 +787,6 @@ const StudentPaymentStatus = ({ userData }) => {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* API Data Debug (can be removed in production) */}
-        <div className="mt-8 text-xs text-gray-400 border-t pt-4">
-          <p>Enrollment API:</p>
-          <pre className="mt-1">{JSON.stringify(enrollmentData, null, 2)}</pre>
-          <p className="mt-2">Payment API:</p>
-          <pre className="mt-1">{JSON.stringify(currentPayment, null, 2)}</pre>
-        </div>
       </div>
     </div>
   );
