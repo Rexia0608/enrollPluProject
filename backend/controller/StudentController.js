@@ -82,8 +82,6 @@ const postEnrollStudent = async (req, res) => {
   }
 };
 
-//+++++++++++++++++++ finalized here +++++++++++++++++++++//
-
 const getCheckStudentPayment = async (req, res) => {
   try {
     const data = await getCheckStudentPaymentModel(req.params);
@@ -102,6 +100,8 @@ const getCheckStudentPayment = async (req, res) => {
     return errorResponseHandler(res, error, 500);
   }
 };
+
+//+++++++++++++++++++ finalized here +++++++++++++++++++++//
 
 export {
   getCourses,

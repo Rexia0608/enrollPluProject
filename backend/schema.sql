@@ -312,7 +312,7 @@ CREATE TABLE transaction_table (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
     -- Optional remarks
-    remark TEXT,
+    remark JSONB DEFAULT '{}',
     
     -- Foreign Key Constraints
     CONSTRAINT fk_transaction_enrollment 

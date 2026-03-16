@@ -1,18 +1,30 @@
-INSERT INTO transaction_table (
-    enrollment_id,
-    period,
-    course_tuition_fee,
-    paid,
-    balance,
-    payment_type,
-    remark
-)
-VALUES (
-    '3GD9OC', -- must exist in enrollment_profile
-    'prelim',
-    '36b27b12-e6dc-435a-9622-80a9640a6d45', -- replace with an existing courses.id UUID
-    1500.00,
-    3500.00,
-    'gcash',
-    'Test payment transaction'
-);
+-- ============================================
+-- DROP ALL TABLES (in correct dependency order)
+-- ============================================
+
+-- First, drop tables that depend on others
+DROP TABLE IF EXISTS transaction_table CASCADE;
+DROP TABLE IF EXISTS enrollment_profile CASCADE;
+DROP TABLE IF EXISTS maintenance_settings CASCADE;
+DROP TABLE IF EXISTS academic_year CASCADE;
+DROP TABLE IF EXISTS courses CASCADE;
+DROP TABLE IF EXISTS credentials CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- ============================================
+-- DROP FUNCTIONS (optional – remove if you want to keep them)
+-- ============================================
+
+DROP FUNCTION IF EXISTS generate_transaction_id() CASCADE;
+DROP FUNCTION IF EXISTS generate_enrollment_id() CASCADE;
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+
+-- ============================================
+-- VERIFY ALL TABLES ARE GONE
+-- ============================================
+
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public'
+ORDER BY table_name;
+-- Should return no rows (or only system tables)
