@@ -3,6 +3,7 @@ import {
   getCourses,
   getAcademicYear,
   postEnrollStudent,
+  getCheckStudentPayment,
   getCheckStudentIfEnrolled,
 } from "../controller/StudentController.js";
 import upload from "../middleware/uploadmiddleware.js";
@@ -13,6 +14,7 @@ const router = express.Router();
 router.get("/course-list", getCourses);
 router.get("/enrollment-open-status", getAcademicYear);
 router.get("/validate-enrolled-student/:user_id", getCheckStudentIfEnrolled);
+router.get("/validat-current-payment/:enrollment_id", getCheckStudentPayment);
 
 router.post(
   "/enrollment-upload-documents-process",

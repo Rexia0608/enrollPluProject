@@ -24,7 +24,9 @@ const getCheckStudentIfEnrolledModel = async (userId) => {
 
 const getAllCoursesListModel = async () => {
   try {
-    const result = await db.query(`SELECT * FROM courses ORDER BY id`);
+    const result = await db.query(
+      `SELECT * FROM courses WHERE course_status = 'active' ORDER BY id;`,
+    );
     return result.rows;
   } catch (error) {
     console.error("Error in getAllCoursesList:", error);
@@ -71,6 +73,7 @@ const postEnrollStudentModel = async (data) => {
     }
 
     const tuitionFee = courseResult.rows[0].tuition_fee;
+    const paymentPerPeriod = tuitionFee / 5;
 
     // Insert enrollment profile
     const enrollmentResult = await db.query(
@@ -128,14 +131,16 @@ const postEnrollStudentModel = async (data) => {
           course_tuition_fee,
           paid, 
           balance, 
+          payment_per_period,
           payment_type
-        ) VALUES ($1, $2, $3, $4, $5, $6);`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7);`,
         [
           enrollment.enrollment_id,
           "enrollment",
           enrollment.course_code_id,
           0.0,
-          tuitionFee, // Full tuition fee as balance
+          tuitionFee,
+          paymentPerPeriod,
           data.paymentType || null,
         ],
       );
@@ -150,13 +155,32 @@ const postEnrollStudentModel = async (data) => {
   }
 };
 
-//*******************finalized*****************************/
+const getCheckStudentPaymentModel = async (data) => {
+  try {
+    const result = await db.query(
+      `SELECT * 
+          FROM transaction_table 
+          WHERE enrollment_id = $1
+          ORDER BY created_at DESC 
+          LIMIT 1;`,
+      [data.enrollment_id],
+    );
 
-//*******************TEST BELOW*****************************/
+    return result.rows;
+  } catch (error) {
+    console.error("Error in getCheckStudentIfEnrolledModel:", error);
+    throw new Error(
+      `Failed to fetch get Check Student If Enrolled: ${error.message}`,
+    );
+  }
+};
+
+//*******************finalized*****************************/
 
 export {
   getAllCoursesListModel,
   getAcademicYearlistModel,
   postEnrollStudentModel,
+  getCheckStudentPaymentModel,
   getCheckStudentIfEnrolledModel,
 };

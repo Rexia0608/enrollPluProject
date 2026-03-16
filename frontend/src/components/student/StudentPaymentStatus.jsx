@@ -1,8 +1,11 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingPage from "../../pages/LoadingPage";
+import { useAuth } from "../../context/AuthContext";
+import { useStudent } from "../../context/StudentContext";
+import axios from "axios";
 
-// Mock QR Code components (in real app, you'd use actual QR code images)
+// QR Code Components (unchanged)
 const MayaQR = () => (
   <div className="bg-linear-to-br from-blue-500 to-blue-700 p-6 rounded-xl text-white text-center">
     <div className="bg-white p-4 rounded-lg mb-4">
@@ -36,6 +39,7 @@ const InstapayQR = () => (
   </div>
 );
 
+// Promised Note Component (unchanged)
 const PromisedNote = ({ onSubmit }) => {
   const [promiseDate, setPromiseDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -86,32 +90,23 @@ const PromisedNote = ({ onSubmit }) => {
   );
 };
 
+// Main Payment Component
 const PaymentComponent = ({ userData }) => {
-  // Mock API response - simulating data from backend
-  const mockApiResponse = {
-    user_id: "08593912-2cb3-49d0-8ac8-ec37da4d5064",
-    enrollment_year_code: "d0406ab2-3588-4aa9-a4d8-33b9de410fb1",
-    enrollment_id: "AGJORF", // AGJORF || Change to null/empty to test enrollment validation
-    current_payment_period: "prelim",
-    allowed_payment_periods: "prelim", // ["enrollment", "prelim", "mid-term", "pre-final", "final", "summer"]
-  };
+  const { getAuthHeaders } = useStudent();
+  const { user } = useAuth();
 
-  // Loading state for API simulation
+  // States for API data
   const [isLoading, setIsLoading] = useState(true);
-  const [apiData, setApiData] = useState(null);
+  const [enrollmentData, setEnrollmentData] = useState(null);
+  const [currentPayment, setCurrentPayment] = useState(null);
+  const [apiError, setApiError] = useState(null);
 
-  // Mock user data (in real app, this would come from props/context)
-  const mockUser = {
-    id: userData?.id || "12345",
-    name: userData?.name || "John Doe",
-    email: userData?.email || "john.doe@example.com",
-    isUserEnrolled: userData?.isUserEnrolled || true,
-    isUserActiveEnrolled_id:
-      userData?.isUserActiveEnrolled_id || "ENROLL-2024-001",
-    payment_type: userData?.payment_type || "tuition",
-  };
+  // User info derived from API
+  const userId = user?.id || "";
+  const userName = user?.name || "Student";
+  const userEmail = user?.email || "";
 
-  // Payment periods
+  // Payment periods (static, but dynamically enabled/disabled)
   const periods = [
     { id: "enrollment", label: "Enrollment", dueDate: "2024-03-15" },
     { id: "prelim", label: "Prelim", dueDate: "2024-03-15" },
@@ -133,67 +128,91 @@ const PaymentComponent = ({ userData }) => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
-  const [paymentData, setPaymentData] = useState({
-    enrollment: { tuition: 15000, paid: 0, remaining: 15000 },
-    prelim: { tuition: 15000, paid: 5000, remaining: 10000 },
-    "mid-term": { tuition: 15000, paid: 3000, remaining: 12000 },
-    "pre-final": { tuition: 15000, paid: 2000, remaining: 13000 },
-    final: { tuition: 15000, paid: 0, remaining: 15000 },
-    summer: { tuition: 8000, paid: 0, remaining: 8000 },
-  });
+  const [paymentData, setPaymentData] = useState({}); // populated from API
 
-  // Simulate API call on component mount
+  // Derived values from API
+  const isEnrolled = enrollmentData?.enrollment_id != null;
+  const enrollmentId = enrollmentData?.enrollment_id;
+  const currentPeriod = currentPayment?.period;
+
+  // Build allowed periods based on current payment period
+  const allowedPeriods = currentPeriod ? [currentPeriod] : [];
+
+  // Check if a period is allowed
+  const isPeriodAllowed = (periodId) => allowedPeriods.includes(periodId);
+
+  // Update selected period when currentPeriod changes
   useEffect(() => {
-    const fetchPaymentData = async () => {
+    if (currentPeriod && isPeriodAllowed(currentPeriod)) {
+      setSelectedPeriod(currentPeriod);
+    }
+  }, [currentPeriod]);
+
+  // Update paymentData when currentPayment changes – includes payment_per_period
+  useEffect(() => {
+    if (currentPayment) {
+      const paid = parseFloat(currentPayment.paid || 0);
+      const balance = parseFloat(currentPayment.balance || 0);
+      const tuition = paid + balance;
+      const paymentPerPeriod = parseFloat(
+        currentPayment.payment_per_period || 0,
+      );
+      setPaymentData({
+        [currentPayment.period]: {
+          tuition,
+          paid,
+          remaining: balance,
+          payment_per_period: paymentPerPeriod,
+        },
+      });
+    }
+  }, [currentPayment]);
+
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
       setIsLoading(true);
+      setApiError(null);
 
-      // Simulate API request with setTimeout
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      try {
+        // 1. Validate enrolled student
+        const validateRes = await axios.get(
+          `http://localhost:3000/student/validate-enrolled-student/${user.id}`,
+          getAuthHeaders(),
+        );
 
-      // In real implementation, this would be:
-      // import { useAuth } from "../../context/AuthContext";
-      // import { useStudent } from "../../context/StudentContext";
-      // const { getAuthHeaders } = useStudent();
-      // const { user } = useAuth();
-      // const response = await axios.get(
-      //   `http://localhost:3000/student/my-transaction-payment/${user.id}`,
-      //   getAuthHeaders()
-      // );
+        if (validateRes.data.success && validateRes.data.data) {
+          setEnrollmentData(validateRes.data.data);
 
-      setApiData(mockApiResponse);
+          // 2. Fetch current payment using enrollment_id
+          const paymentRes = await axios.get(
+            `http://localhost:3000/student/validat-current-payment/${validateRes.data.data.enrollment_id}`,
+            getAuthHeaders(),
+          );
 
-      // Set current payment period from API
-      if (mockApiResponse.current_payment_period) {
-        setSelectedPeriod(mockApiResponse.current_payment_period);
+          if (paymentRes.data.success && paymentRes.data.data) {
+            setCurrentPayment(paymentRes.data.data);
+          } else {
+            // No current payment (all paid or not yet assessed)
+            setCurrentPayment(null);
+          }
+        } else {
+          // Not enrolled
+          setEnrollmentData(null);
+          setCurrentPayment(null);
+        }
+      } catch (error) {
+        console.error("API fetch error:", error);
+        setApiError("Failed to load payment data. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     };
 
-    fetchPaymentData();
-  }, []);
-
-  // Check if user is enrolled
-  const isEnrolled =
-    apiData?.enrollment_id &&
-    apiData.enrollment_id !== null &&
-    apiData.enrollment_id !== undefined &&
-    apiData.enrollment_id !== "";
-
-  // Check if period is allowed
-  const isPeriodAllowed = (periodId) => {
-    if (!apiData?.allowed_payment_periods) return false;
-    return apiData.allowed_payment_periods.includes(periodId);
-  };
-
-  // Check if payment should be visible
-  const shouldShowPayment =
-    isEnrolled &&
-    apiData?.current_payment_period &&
-    isPeriodAllowed(selectedPeriod);
-
-  // Check if there are any allowed periods
-  const hasAllowedPeriods = apiData?.allowed_payment_periods?.length > 0;
+    if (user?.id) {
+      fetchData();
+    }
+  }, [user, getAuthHeaders]);
 
   // Payment methods
   const paymentMethods = [
@@ -213,8 +232,13 @@ const PaymentComponent = ({ userData }) => {
     },
   ];
 
-  // Get current period data
-  const currentPeriodData = paymentData[selectedPeriod] || paymentData.prelim;
+  // Get current period data (default to zeros if not available)
+  const currentPeriodData = paymentData[selectedPeriod] || {
+    tuition: 0,
+    paid: 0,
+    remaining: 0,
+    payment_per_period: 0,
+  };
 
   // Handle file upload
   const handleFileUpload = useCallback((event) => {
@@ -231,8 +255,7 @@ const PaymentComponent = ({ userData }) => {
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (methodId) => {
-    if (!shouldShowPayment) return; // Prevent selection if payment not allowed
-
+    if (!isEnrolled || !currentPeriod) return;
     setPaymentMethod(methodId);
     setShowPromisedNote(methodId === "promised-note");
     if (methodId !== "promised-note") {
@@ -242,16 +265,13 @@ const PaymentComponent = ({ userData }) => {
 
   // Handle payment form changes
   const handlePaymentFormChange = (field, value) => {
-    setPaymentDetails((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setPaymentDetails((prev) => ({ ...prev, [field]: value }));
   };
 
   // Handle promised note submission
   const handlePromisedNoteSubmit = async (promiseData) => {
     const submitData = {
-      user: mockUser,
+      user: { id: userId, name: userName, email: userEmail },
       period: selectedPeriod,
       paymentMethod: "promised-note",
       promiseDate: promiseData.promiseDate,
@@ -259,28 +279,26 @@ const PaymentComponent = ({ userData }) => {
       timestamp: new Date().toISOString(),
       amount: currentPeriodData.remaining,
     };
-
     await submitPayment(submitData);
   };
 
-  // Submit payment
+  // Submit payment (placeholder)
   const submitPayment = async (data) => {
     setIsSubmitting(true);
     setSubmitStatus(null);
 
     try {
-      // Prepare the data for POST request
       const paymentPayload = {
         user: {
-          id: mockUser.id,
-          name: mockUser.name,
-          email: mockUser.email,
-          isEnrolled: mockUser.isUserEnrolled,
-          activeEnrollmentId: mockUser.isUserActiveEnrolled_id,
+          id: userId,
+          name: userName,
+          email: userEmail,
+          isEnrolled: isEnrolled,
+          activeEnrollmentId: enrollmentId,
         },
         paymentDetails: {
           period: selectedPeriod,
-          paymentType: mockUser.payment_type,
+          paymentType: "tuition",
           amount: data.amount || paymentDetails.amount,
           referenceNumber: paymentDetails.referenceNumber,
           remarks: paymentDetails.remarks,
@@ -294,7 +312,6 @@ const PaymentComponent = ({ userData }) => {
               fileName: uploadedFile.name,
               fileType: uploadedFile.type,
               fileSize: uploadedFile.size,
-              // In real app, you'd upload the actual file to server
             }
           : null,
         promiseNote: data.promiseDate
@@ -310,38 +327,19 @@ const PaymentComponent = ({ userData }) => {
         },
       };
 
-      // Simulate API call
-      console.log("Sending POST request to payment endpoint:", paymentPayload);
+      console.log("Sending payment payload:", paymentPayload);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Mock API call - replace with actual fetch
-      const response = await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            ok: true,
-            status: 200,
-            data: {
-              message: "Payment processed successfully",
-              transactionId: "TRX-" + Math.random().toString(36).substr(2, 9),
-              ...paymentPayload,
-            },
-          });
-        }, 1500);
+      setSubmitStatus({
+        type: "success",
+        message: "Payment submitted successfully! (Placeholder)",
       });
 
-      if (response.ok) {
-        setSubmitStatus({
-          type: "success",
-          message:
-            "Payment submitted successfully! Transaction ID: " +
-            response.data.transactionId,
-        });
-
-        // Reset form
-        setPaymentDetails({ amount: "", referenceNumber: "", remarks: "" });
-        setUploadedFile(null);
-        setPaymentMethod(null);
-        setShowPromisedNote(false);
-      }
+      // Reset form
+      setPaymentDetails({ amount: "", referenceNumber: "", remarks: "" });
+      setUploadedFile(null);
+      setPaymentMethod(null);
+      setShowPromisedNote(false);
     } catch (error) {
       setSubmitStatus({
         type: "error",
@@ -363,7 +361,6 @@ const PaymentComponent = ({ userData }) => {
     const method = paymentMethods.find((m) => m.id === paymentMethod);
     return method?.component || null;
   };
-
   const QRComponent = getQRComponent();
 
   // Loading state
@@ -371,7 +368,22 @@ const PaymentComponent = ({ userData }) => {
     return <LoadingPage />;
   }
 
-  // Enrollment validation - Show "Not yet enrolled" if enrollment_id is invalid
+  // Error state
+  if (apiError) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
+            <p className="text-gray-600">{apiError}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not enrolled
   if (!isEnrolled) {
     return (
       <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -390,6 +402,25 @@ const PaymentComponent = ({ userData }) => {
     );
   }
 
+  // No current payment (all paid)
+  if (!currentPayment) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div className="text-6xl mb-4">✅</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              No payment required
+            </h2>
+            <p className="text-gray-600">
+              All payments are up to date for this enrollment.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -397,12 +428,11 @@ const PaymentComponent = ({ userData }) => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Payment Details</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Welcome back, {mockUser.name} | Enrollment ID:{" "}
-            {apiData?.enrollment_id}
+            Welcome back, {userName} | Enrollment ID: {enrollmentId}
           </p>
         </div>
 
-        {/* Payment Details Card */}
+        {/* Payment Summary Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -444,115 +474,123 @@ const PaymentComponent = ({ userData }) => {
             </div>
           </div>
 
-          {/* Payment Summary Table */}
+          {/* Payment Summary Table – shows actual values from API, now includes payment_per_period */}
           <div className="bg-gray-50 rounded-xl p-4 mb-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-gray-500">Tuition Fee</p>
                 <p className="text-xl font-bold text-gray-900">
-                  ₱{currentPeriodData.tuition.toLocaleString()}
+                  ₱
+                  {currentPeriodData.tuition.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Period Due</p>
+                <p className="text-xl font-bold text-green-600">
+                  ₱
+                  {currentPeriodData.payment_per_period.toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Paid Amount</p>
                 <p className="text-xl font-bold text-green-600">
-                  ₱{currentPeriodData.paid.toLocaleString()}
+                  ₱
+                  {currentPeriodData.paid.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Remaining Balance</p>
                 <p className="text-xl font-bold text-red-600">
-                  ₱{currentPeriodData.remaining.toLocaleString()}
+                  ₱
+                  {currentPeriodData.remaining.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </p>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* No Payment Required Message */}
-        {!hasAllowedPeriods && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-lg p-12 text-center mb-8"
-          >
-            <div className="text-6xl mb-4">💳</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              No payment required at this time.
-            </h2>
-            <p className="text-gray-600">All your payments are up to date.</p>
-          </motion.div>
-        )}
+        {/* Payment Method Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-2xl shadow-lg p-6 mb-8"
+        >
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Select Payment Method
+          </h2>
 
-        {/* Payment Method Selection - Only show if payment should be visible */}
-        {hasAllowedPeriods && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-lg p-6 mb-8"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Select Payment Method
-            </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {paymentMethods.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => handlePaymentMethodSelect(method.id)}
+                disabled={!currentPeriod}
+                className={`p-4 rounded-xl border-2 transition-all text-center
+                  ${!currentPeriod ? "opacity-50 cursor-not-allowed" : ""}
+                  ${
+                    paymentMethod === method.id
+                      ? "border-blue-600 bg-blue-50 scale-105 shadow-lg"
+                      : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                  }`}
+              >
+                <span className="text-3xl mb-2 block">{method.icon}</span>
+                <span className="text-sm font-medium">{method.label}</span>
+              </button>
+            ))}
+          </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {paymentMethods.map((method) => (
-                <button
-                  key={method.id}
-                  onClick={() => handlePaymentMethodSelect(method.id)}
-                  disabled={!shouldShowPayment}
-                  className={`p-4 rounded-xl border-2 transition-all text-center
-                    ${!shouldShowPayment ? "opacity-50 cursor-not-allowed" : ""}
-                    ${
-                      paymentMethod === method.id
-                        ? "border-blue-600 bg-blue-50 scale-105 shadow-lg"
-                        : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                    }`}
-                >
-                  <span className="text-3xl mb-2 block">{method.icon}</span>
-                  <span className="text-sm font-medium">{method.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* QR Code Display */}
-            <AnimatePresence mode="wait">
-              {paymentMethod &&
-                !showPromisedNote &&
-                QRComponent &&
-                shouldShowPayment && (
-                  <motion.div
-                    key="qr"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-6"
-                  >
-                    <QRComponent />
-                  </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Promised Note Section */}
-            <AnimatePresence>
-              {showPromisedNote && shouldShowPayment && (
+          {/* QR Code Display */}
+          <AnimatePresence mode="wait">
+            {paymentMethod &&
+              !showPromisedNote &&
+              QRComponent &&
+              currentPeriod && (
                 <motion.div
-                  key="promised-note"
+                  key="qr"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-6"
                 >
-                  <PromisedNote onSubmit={handlePromisedNoteSubmit} />
+                  <QRComponent />
                 </motion.div>
               )}
-            </AnimatePresence>
-          </motion.div>
-        )}
+          </AnimatePresence>
 
-        {/* Payment Form - Only show if payment should be visible */}
-        {paymentMethod && !showPromisedNote && shouldShowPayment && (
+          {/* Promised Note Section */}
+          <AnimatePresence>
+            {showPromisedNote && currentPeriod && (
+              <motion.div
+                key="promised-note"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-6"
+              >
+                <PromisedNote onSubmit={handlePromisedNoteSubmit} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Payment Form (only if payment method selected and not promised note) */}
+        {paymentMethod && !showPromisedNote && currentPeriod && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -573,6 +611,7 @@ const PaymentComponent = ({ userData }) => {
                   <span className="absolute left-3 top-2 text-gray-500">₱</span>
                   <input
                     type="number"
+                    step="0.01"
                     value={paymentDetails.amount}
                     onChange={(e) =>
                       handlePaymentFormChange("amount", e.target.value)
@@ -584,7 +623,11 @@ const PaymentComponent = ({ userData }) => {
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  Max amount: ₱{currentPeriodData.remaining.toLocaleString()}
+                  Max amount: ₱
+                  {currentPeriodData.remaining.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </p>
               </div>
 
@@ -734,8 +777,10 @@ const PaymentComponent = ({ userData }) => {
 
         {/* API Data Debug (can be removed in production) */}
         <div className="mt-8 text-xs text-gray-400 border-t pt-4">
-          <p>API Response:</p>
-          <pre className="mt-1">{JSON.stringify(apiData, null, 2)}</pre>
+          <p>Enrollment API:</p>
+          <pre className="mt-1">{JSON.stringify(enrollmentData, null, 2)}</pre>
+          <p className="mt-2">Payment API:</p>
+          <pre className="mt-1">{JSON.stringify(currentPayment, null, 2)}</pre>
         </div>
       </div>
     </div>

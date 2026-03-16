@@ -2,6 +2,7 @@ import {
   getAllCoursesListModel,
   getAcademicYearlistModel,
   postEnrollStudentModel,
+  getCheckStudentPaymentModel,
   getCheckStudentIfEnrolledModel,
 } from "../models/StudentModel.js";
 
@@ -83,9 +84,29 @@ const postEnrollStudent = async (req, res) => {
 
 //+++++++++++++++++++ finalized here +++++++++++++++++++++//
 
+const getCheckStudentPayment = async (req, res) => {
+  try {
+    const data = await getCheckStudentPaymentModel(req.params);
+
+    const isEmpty = data.length === 0;
+
+    return globalResponseHandler(res, data[0] || null, {
+      message: isEmpty
+        ? "Student not enrolled yet for this semester year."
+        : "Student enrolled for this semester year.",
+      statusCode: 200,
+      meta: { count: data.length },
+    });
+  } catch (error) {
+    console.error("Error in getCheckStudentIfEnrolled:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
 export {
   getCourses,
   getAcademicYear,
   postEnrollStudent,
+  getCheckStudentPayment,
   getCheckStudentIfEnrolled,
 };
