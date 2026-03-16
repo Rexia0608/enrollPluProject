@@ -91,7 +91,7 @@ const PromisedNote = ({ onSubmit }) => {
 };
 
 // Main Payment Component
-const PaymentComponent = ({ userData }) => {
+const StudentPaymentStatus = ({ userData }) => {
   const { getAuthHeaders } = useStudent();
   const { user } = useAuth();
 
@@ -787,4 +787,4 @@ const PaymentComponent = ({ userData }) => {
   );
 };
 
-export default PaymentComponent;
+export default StudentPaymentStatus;
