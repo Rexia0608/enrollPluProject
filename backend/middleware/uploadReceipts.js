@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const uploadDir = path.join(__dirname, "../uploads");
+const uploadDir = path.join(__dirname, "../uploads/proof-of-payment");
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -16,21 +16,33 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const { studentId } = req.body;
-    const fieldName = file.fieldname;
+    try {
+      // `req.body.user` is a JSON string (if frontend sends it correctly)
+      const userStr = req.body.user || "{}";
+      const pmtDetailsStr = req.body.paymentDetails || "{}";
+      const user = JSON.parse(userStr);
+      const pmtDetail = JSON.parse(pmtDetailsStr);
 
-    // Get file extension
-    const ext = path.extname(file.originalname).toLowerCase();
+      const fieldName = file.fieldname; // "proofOfPayment"
+      const ext = path.extname(file.originalname).toLowerCase();
 
-    const newFilename = `${studentId}-${fieldName}${ext}`;
+      const newFilename = `${fieldName}-${user.activeEnrollmentId}-${pmtDetail.period}${ext}`;
 
-    cb(null, newFilename);
+      cb(null, newFilename);
+    } catch (error) {
+      console.error("Error parsing user JSON:", error);
+      // Fallback if parsing fails
+      cb(
+        null,
+        `unknown-${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`,
+      );
+    }
   },
 });
 
 const uploadReceipts = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
     const allowedExtensions = [".pdf", ".jpg", ".jpeg", ".png"];
     const ext = path.extname(file.originalname).toLowerCase();

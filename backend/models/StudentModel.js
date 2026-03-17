@@ -177,10 +177,98 @@ const getCheckStudentPaymentModel = async (data) => {
 
 //*******************finalized*****************************/
 
+const postPaymentModel = async (data) => {
+  try {
+    const paymentData = data.paymentDetails;
+
+    // --- Parse amount ---
+    let amount;
+    if (typeof paymentData.amount === "string") {
+      amount = parseFloat(paymentData.amount);
+    } else if (typeof paymentData.amount === "number") {
+      amount = paymentData.amount;
+    } else {
+      throw new Error("Invalid amount format");
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error("Amount must be a positive number");
+    }
+
+    // 1️⃣ Find pending transaction
+    const findTransaction = await db.query(
+      `SELECT *
+       FROM transaction_table
+       WHERE enrollment_id = $1
+         AND period = $2
+         AND balance > 0;`,
+      [data.user.activeEnrollmentId, paymentData.period],
+    );
+
+    const paymentFor = findTransaction.rows;
+    if (!paymentFor.length) {
+      throw new Error("No pending transaction found for this period.");
+    }
+
+    const transaction = paymentFor[0];
+
+    // 2️⃣ Parse all numeric fields from the database row
+    const paid = parseFloat(transaction.paid);
+    const balance = parseFloat(transaction.balance);
+
+    // 3️⃣ Calculate new balances using parsed numbers
+    const remainingBalance = balance - amount;
+
+    if (remainingBalance < 0) {
+      throw new Error("Payment amount exceeds remaining balance.");
+    }
+
+    // 4️⃣ Compute next payment (avoid negative)
+    const nextPayment = Math.min(remainingBalance * 0.2 - remainingBalance);
+
+    console.log("Next Payment:", nextPayment);
+
+    const aiAgentValidation = {
+      validationResult: false,
+      remarkNote: "need to validate by the ai agent",
+      message: "",
+    };
+
+    const query = `
+      UPDATE transaction_table
+      SET 
+          paid = $1,
+          balance = $2,
+          payment_per_period = $3,
+          payment_type = $4,
+          remark = $5
+      WHERE id = $6
+      RETURNING *;
+    `;
+
+    // Use parsed numbers in the query parameters
+    const updatedTransaction = await db.query(query, [
+      paid + amount,
+      remainingBalance,
+      nextPayment,
+      paymentData.paymentMethod,
+      aiAgentValidation,
+      transaction.id,
+    ]);
+
+    console.log(updatedTransaction.rows[0]);
+
+    return updatedTransaction.rows[0];
+  } catch (error) {
+    throw error;
+  }
+};
+
 export {
+  postPaymentModel,
+  postEnrollStudentModel,
   getAllCoursesListModel,
   getAcademicYearlistModel,
-  postEnrollStudentModel,
   getCheckStudentPaymentModel,
   getCheckStudentIfEnrolledModel,
 };

@@ -1,7 +1,8 @@
 import {
+  postPaymentModel,
   getAllCoursesListModel,
-  getAcademicYearlistModel,
   postEnrollStudentModel,
+  getAcademicYearlistModel,
   getCheckStudentPaymentModel,
   getCheckStudentIfEnrolledModel,
 } from "../models/StudentModel.js";
@@ -101,10 +102,30 @@ const getCheckStudentPayment = async (req, res) => {
   }
 };
 
+const postPayment = async (req, res) => {
+  try {
+    const result = await postPaymentModel(req.body);
+
+    return globalResponseHandler(res, result, {
+      message: result
+        ? "Proof of payment under review process"
+        : "Proof of payment invalid",
+      statusCode: result ? 201 : 400,
+    });
+  } catch (error) {
+    return errorResponseHandler(
+      res,
+      new Error(error.message || "Enrollment Process failed"),
+      400,
+    );
+  }
+};
+
 //+++++++++++++++++++ finalized here +++++++++++++++++++++//
 
 export {
   getCourses,
+  postPayment,
   getAcademicYear,
   postEnrollStudent,
   getCheckStudentPayment,

@@ -160,10 +160,6 @@ function StudentStatus() {
           enrollmentStatusResponse = await api.get(
             `/student/enrollment-open-status`,
           );
-          console.log(
-            "Enrollment Open Status Response:",
-            enrollmentStatusResponse.data,
-          );
         } catch (error) {
           console.error("Error fetching enrollment open status:", error);
           if (error.code !== "ERR_CANCELED") {
@@ -176,7 +172,6 @@ function StudentStatus() {
           enrollmentResponse = await api.get(
             `/student/validate-enrolled-student/${user.id}`,
           );
-          console.log("Student Enrollment Response:", enrollmentResponse.data);
         } catch (error) {
           if (error.response?.status === 404) {
             console.log(
