@@ -588,7 +588,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   {
-                    id: "old",
+                    id: "old_student", // ✅ FIXED
                     label: "Old Student",
                     description: "Continuing/returning student",
                     icon: "📚",

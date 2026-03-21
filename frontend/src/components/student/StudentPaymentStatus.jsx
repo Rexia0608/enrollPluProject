@@ -150,13 +150,17 @@ const StudentPaymentStatus = ({ userData }) => {
 
   // Update paymentData when currentPayment changes – includes payment_per_period
   useEffect(() => {
-    if (currentPayment) {
+    if (currentPayment?.period) {
+      console.log("Current payment changed to:", currentPayment.period);
+      setSelectedPeriod(currentPayment.period);
+
       const paid = parseFloat(currentPayment.paid || 0);
       const balance = parseFloat(currentPayment.balance || 0);
       const tuition = paid + balance;
       const paymentPerPeriod = parseFloat(
         currentPayment.payment_per_period || 0,
       );
+
       setPaymentData({
         [currentPayment.period]: {
           tuition,
@@ -168,7 +172,25 @@ const StudentPaymentStatus = ({ userData }) => {
     }
   }, [currentPayment]);
 
-  // Fetch data on mount
+  const fetchPaymentData = useCallback(async () => {
+    if (!enrollmentId) return;
+
+    try {
+      const paymentRes = await axios.get(
+        `http://localhost:3000/student/validate-current-payment/${enrollmentId}`,
+        getAuthHeaders(),
+      );
+
+      if (paymentRes.data.success && paymentRes.data.data) {
+        setCurrentPayment(paymentRes.data.data);
+      } else {
+        setCurrentPayment(null);
+      }
+    } catch (error) {
+      console.error("Error fetching payment data:", error);
+    }
+  }, [enrollmentId, getAuthHeaders]);
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -182,20 +204,8 @@ const StudentPaymentStatus = ({ userData }) => {
 
         if (validateRes.data.success && validateRes.data.data) {
           setEnrollmentData(validateRes.data.data);
-
-          // 2. Fetch current payment using enrollment_id
-          const paymentRes = await axios.get(
-            `http://localhost:3000/student/validate-current-payment/${validateRes.data.data.enrollment_id}`,
-            getAuthHeaders(),
-          );
-
-          if (paymentRes.data.success && paymentRes.data.data) {
-            setCurrentPayment(paymentRes.data.data);
-          } else {
-            setCurrentPayment(null);
-          }
+          await fetchPaymentData();
         } else {
-          // Not enrolled
           setEnrollmentData(null);
           setCurrentPayment(null);
         }
@@ -210,7 +220,7 @@ const StudentPaymentStatus = ({ userData }) => {
     if (user?.id) {
       fetchData();
     }
-  }, [user, getAuthHeaders]);
+  }, [user, getAuthHeaders, fetchPaymentData]);
 
   // Payment methods
   const paymentMethods = [
@@ -242,11 +252,16 @@ const StudentPaymentStatus = ({ userData }) => {
   const handleFileUpload = useCallback((event) => {
     const file = event.target.files[0];
     if (file) {
-      const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+      const allowedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "application/pdf",
+      ];
       if (allowedTypes.includes(file.type)) {
         setUploadedFile(file);
       } else {
-        alert("Please upload only PNG or JPG images");
+        alert("Please upload only PNG, JPG, or PDF files");
       }
     }
   }, []);
@@ -280,7 +295,7 @@ const StudentPaymentStatus = ({ userData }) => {
     await submitPayment(submitData);
   };
 
-  // Submit payment (placeholder)
+  // Submit payment - FIXED VERSION
   const submitPayment = async (data) => {
     setIsSubmitting(true);
     setSubmitStatus(null);
@@ -318,7 +333,7 @@ const StudentPaymentStatus = ({ userData }) => {
 
       // Append the actual file
       if (uploadedFile) {
-        formData.append("proofOfPayment", uploadedFile); // File object
+        formData.append("proofOfPayment", uploadedFile);
       }
 
       // Promise note
@@ -354,13 +369,21 @@ const StudentPaymentStatus = ({ userData }) => {
       const response = await axios.post(
         "http://localhost:3000/student/enrollment-payment-upload-process",
         formData,
-        getAuthHeaders(), // includes Authorization header
+        getAuthHeaders(),
       );
 
-      if (response.data.success) {
+      console.log("Full payment response:", response.data);
+
+      // Check if the response was successful - FIXED CONDITION
+      if (response.data?.success === true) {
+        // Get the data from the response
+        const responseData = response.data;
+
+        console.log("Response data:", responseData);
+
         setSubmitStatus({
           type: "success",
-          message: "Payment submitted successfully!",
+          message: responseData.message || "Payment submitted successfully!",
         });
 
         // Reset form
@@ -368,8 +391,56 @@ const StudentPaymentStatus = ({ userData }) => {
         setUploadedFile(null);
         setPaymentMethod(null);
         setShowPromisedNote(false);
+
+        // Check if we have the nested payment data with nextPayment
+        if (responseData.data?.data?.nextPayment) {
+          const paymentResult = responseData.data.data;
+
+          console.log("Payment result with nextPayment:", paymentResult);
+
+          // Create a transaction object for the next period
+          const nextPeriodTransaction = {
+            id: `TEMP-${Date.now()}`,
+            enrollment_id: enrollmentId,
+            period: paymentResult.nextPayment.period,
+            course_tuition_fee: paymentResult.paymentSummary.totalTuition,
+            paid: 0,
+            balance: paymentResult.paymentSummary.remainingBalance,
+            payment_per_period: paymentResult.nextPayment.amount,
+            payment_type: paymentMethod,
+            remark: {},
+            updated_at: new Date().toISOString(),
+          };
+
+          console.log(
+            "Setting next period transaction:",
+            nextPeriodTransaction,
+          );
+
+          // Update the current payment state to the next period
+          setCurrentPayment(nextPeriodTransaction);
+        }
+        // Check if we have transaction data but no nextPayment
+        else if (responseData.data?.transaction) {
+          console.log(
+            "Setting transaction from response:",
+            responseData.data.transaction,
+          );
+          setCurrentPayment(responseData.data.transaction);
+        }
+        // Fallback: fetch payment data
+        else {
+          console.log("No next payment data, fetching...");
+          await fetchPaymentData();
+        }
+
+        // Show success message for a moment before clearing
+        setTimeout(() => {
+          setSubmitStatus(null);
+        }, 3000);
       } else {
-        throw new Error(response.data.message || "Payment failed");
+        // If success is false, throw error
+        throw new Error(response.data?.message || "Payment failed");
       }
     } catch (error) {
       console.error("Payment submission error:", error);
@@ -508,7 +579,7 @@ const StudentPaymentStatus = ({ userData }) => {
             </div>
           </div>
 
-          {/* Payment Summary Table – shows actual values from API, now includes payment_per_period */}
+          {/* Payment Summary Table */}
           <div className="bg-gray-50 rounded-xl p-4 mb-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>

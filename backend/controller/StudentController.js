@@ -64,31 +64,12 @@ const getCheckStudentIfEnrolled = async (req, res) => {
   }
 };
 
-const postEnrollStudent = async (req, res) => {
-  try {
-    const result = await postEnrollStudentModel(req.body);
-
-    return globalResponseHandler(res, result, {
-      message: result
-        ? "Enrollment process submitted"
-        : "Student already enrolled for the current academic year",
-      statusCode: result ? 201 : 400,
-    });
-  } catch (error) {
-    return errorResponseHandler(
-      res,
-      new Error(error.message || "Enrollment Process failed"),
-      400,
-    );
-  }
-};
-
 const getCheckStudentPayment = async (req, res) => {
   try {
     const data = await getCheckStudentPaymentModel(req.params);
 
     const isEmpty = data.length === 0;
-
+    console.log(isEmpty, req.params);
     return globalResponseHandler(res, data[0] || null, {
       message: isEmpty
         ? "Student not enrolled yet for this semester year."
@@ -102,20 +83,48 @@ const getCheckStudentPayment = async (req, res) => {
   }
 };
 
-const postPayment = async (req, res) => {
+const postEnrollStudent = async (req, res) => {
   try {
-    const result = await postPaymentModel(req.body);
+    const result = await postEnrollStudentModel(req.body);
 
     return globalResponseHandler(res, result, {
       message: result
-        ? "Proof of payment under review process"
-        : "Proof of payment invalid",
+        ? "Enrollment process submitted"
+        : "Student already enrolled for the current academic year.",
       statusCode: result ? 201 : 400,
     });
   } catch (error) {
     return errorResponseHandler(
       res,
       new Error(error.message || "Enrollment Process failed"),
+      400,
+    );
+  }
+};
+
+const postPayment = async (req, res) => {
+  try {
+    const result = await postPaymentModel(req.body);
+
+    // Different messages based on scenario
+    let customMessage = "Proof of payment under review process";
+
+    if (req.body.scenario === "1") {
+      customMessage = "Payment completed! Moving to next period: Mid-Term";
+    } else if (req.body.scenario === "2") {
+      customMessage = "Partial payment submitted successfully!";
+    } else if (req.body.scenario === "3") {
+      customMessage = "Payment submitted! Fetching latest data...";
+    }
+
+    return globalResponseHandler(res, result.data, {
+      message: customMessage,
+      statusCode: 201,
+    });
+  } catch (error) {
+    return errorResponseHandler(
+      res,
+      new Error(error.message || "Payment process failed"),
       400,
     );
   }

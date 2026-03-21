@@ -48,120 +48,13 @@ const getAcademicYearlistModel = async () => {
   }
 };
 
-const postEnrollStudentModel = async (data) => {
-  try {
-    const studentTypeMap = {
-      old: "old_student",
-      new: "new",
-      transferee: "transferee",
-    };
-
-    const dbStudentType = studentTypeMap[data.studentType];
-
-    if (!dbStudentType) {
-      throw new Error(`Invalid student type: ${data.studentType}`);
-    }
-
-    // First, get the course tuition fee
-    const courseResult = await db.query(
-      `SELECT tuition_fee FROM courses WHERE id = $1`,
-      [data.course],
-    );
-
-    if (courseResult.rows.length === 0) {
-      throw new Error("Course not found");
-    }
-
-    const tuitionFee = courseResult.rows[0].tuition_fee;
-    const paymentPerPeriod = tuitionFee / 5;
-
-    // Insert enrollment profile
-    const enrollmentResult = await db.query(
-      `
-      INSERT INTO enrollment_profile (
-        course_code_id,
-        user_id,
-        enrollment_year_code,
-        enrollment_status,
-        student_type,
-        year_level,
-        created_at,
-        updated_at
-      )
-      SELECT $1, $2, $3, $4, $5, $6, NOW(), NOW()
-      WHERE 
-        -- ensure academic year is open
-        EXISTS (
-          SELECT 1 
-          FROM academic_year 
-          WHERE id = $3 
-          AND enrollment_open = true
-        )
-      AND 
-        -- ensure student is not already enrolled in an open year
-        NOT EXISTS (
-          SELECT 1
-          FROM enrollment_profile ep
-          INNER JOIN academic_year ay 
-            ON ep.enrollment_year_code = ay.id
-          WHERE ep.user_id = $2
-          AND ay.enrollment_open = true
-        )
-      RETURNING *;
-      `,
-      [
-        data.course,
-        data.studentId,
-        data.academicYearId,
-        "documents_approved",
-        dbStudentType,
-        data.yearLevel,
-      ],
-    );
-
-    // Check if enrollment was successful
-    if (enrollmentResult.rows.length > 0) {
-      const enrollment = enrollmentResult.rows[0];
-
-      // Insert transaction record
-      await db.query(
-        `INSERT INTO transaction_table (
-          enrollment_id,
-          period, 
-          course_tuition_fee,
-          paid, 
-          balance, 
-          payment_per_period,
-          payment_type
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7);`,
-        [
-          enrollment.enrollment_id,
-          "enrollment",
-          enrollment.course_code_id,
-          0.0,
-          tuitionFee,
-          paymentPerPeriod,
-          data.paymentType || null,
-        ],
-      );
-    }
-
-    return {
-      inserted: enrollmentResult.rowCount > 0,
-      userId: enrollmentResult.rows[0]?.user_id || null,
-    };
-  } catch (error) {
-    throw error;
-  }
-};
-
 const getCheckStudentPaymentModel = async (data) => {
   try {
     const result = await db.query(
       `SELECT * 
           FROM transaction_table 
           WHERE enrollment_id = $1
-          ORDER BY created_at DESC 
+          ORDER BY created_at ASC
           LIMIT 1;`,
       [data.enrollment_id],
     );
@@ -175,90 +68,157 @@ const getCheckStudentPaymentModel = async (data) => {
   }
 };
 
-//*******************finalized*****************************/
-
-const postPaymentModel = async (data) => {
+const postEnrollStudentModel = async (data) => {
   try {
-    const paymentData = data.paymentDetails;
-
-    // --- Parse amount ---
-    let amount;
-    if (typeof paymentData.amount === "string") {
-      amount = parseFloat(paymentData.amount);
-    } else if (typeof paymentData.amount === "number") {
-      amount = paymentData.amount;
-    } else {
-      throw new Error("Invalid amount format");
-    }
-
-    if (isNaN(amount) || amount <= 0) {
-      throw new Error("Amount must be a positive number");
-    }
-
-    // 1️⃣ Find pending transaction
-    const findTransaction = await db.query(
-      `SELECT *
-       FROM transaction_table
-       WHERE enrollment_id = $1
-         AND period = $2
-         AND balance > 0;`,
-      [data.user.activeEnrollmentId, paymentData.period],
-    );
-
-    const paymentFor = findTransaction.rows;
-    if (!paymentFor.length) {
-      throw new Error("No pending transaction found for this period.");
-    }
-
-    const transaction = paymentFor[0];
-
-    // 2️⃣ Parse all numeric fields from the database row
-    const paid = parseFloat(transaction.paid);
-    const balance = parseFloat(transaction.balance);
-
-    // 3️⃣ Calculate new balances using parsed numbers
-    const remainingBalance = balance - amount;
-
-    if (remainingBalance < 0) {
-      throw new Error("Payment amount exceeds remaining balance.");
-    }
-
-    // 4️⃣ Compute next payment (avoid negative)
-    const nextPayment = Math.min(remainingBalance * 0.2 - remainingBalance);
-
-    console.log("Next Payment:", nextPayment);
-
-    const aiAgentValidation = {
-      validationResult: false,
-      remarkNote: "need to validate by the ai agent",
-      message: "",
+    const facultyDefaultValidation = {
+      document: false,
+      isProfileAreValidated: false,
+      remarkNote: "wait for the validation team from faculty office.",
     };
 
-    const query = `
-      UPDATE transaction_table
-      SET 
-          paid = $1,
-          balance = $2,
-          payment_per_period = $3,
-          payment_type = $4,
-          remark = $5
-      WHERE id = $6
-      RETURNING *;
-    `;
+    const statusMap = {
+      old_student: "payment_pending",
+      new: "documents_approved",
+      transferee: "documents_approved",
+    };
 
-    // Use parsed numbers in the query parameters
-    const updatedTransaction = await db.query(query, [
-      paid + amount,
-      remainingBalance,
-      nextPayment,
-      paymentData.paymentMethod,
-      aiAgentValidation,
-      transaction.id,
-    ]);
+    const enrollStatus = statusMap[data.studentType];
 
-    console.log(updatedTransaction.rows[0]);
+    // Begin transaction
+    await db.query("BEGIN");
 
-    return updatedTransaction.rows[0];
+    // 1️⃣ Insert enrollment profile if not exists
+    const result = await db.query(
+      `INSERT INTO enrollment_profile (
+          course_code_id, user_id, enrollment_year_code, enrollment_status, student_type, year_level, remarks
+        )
+       SELECT $1, $2, $3, $4, $5, $6, $7::jsonb
+       WHERE NOT EXISTS (
+         SELECT 1 FROM enrollment_profile 
+         WHERE user_id = $2 AND enrollment_year_code = $3
+       )
+       RETURNING *;`,
+      [
+        data.course,
+        data.studentId,
+        data.academicYearId,
+        enrollStatus,
+        data.studentType,
+        data.yearLevel,
+        JSON.stringify(facultyDefaultValidation),
+      ],
+    );
+
+    // 2️⃣ Insert transactions if enrollment was created
+    if (result.rows.length > 0) {
+      const enrollmentId = result.rows[0].enrollment_id;
+
+      // Fetch tuition fee
+      const courseResult = await db.query(
+        `SELECT tuition_fee FROM courses WHERE id = $1`,
+        [data.course],
+      );
+      const tuitionFee = parseFloat(courseResult.rows[0].tuition_fee);
+
+      // 3️⃣ Insert 6-period transactions
+      await db.query(
+        `INSERT INTO transaction_table (
+      enrollment_id,
+      period,
+      course_tuition_fee,
+      paid,
+      balance,
+      payment_per_period
+    )
+   SELECT
+      $1 AS enrollment_id,
+      period,
+      $2 AS course_tuition_fee,
+      0.00 AS paid,
+      CASE WHEN period = 'enrollment' THEN $3 ELSE 0 END AS balance,
+      CASE WHEN period = 'enrollment' THEN $4 ELSE 0 END AS payment_per_period
+   FROM (VALUES 
+        ('enrollment'),
+        ('prelim'),
+        ('mid-term'),
+        ('pre-final'),
+        ('final'), 
+        ('summer')
+   ) AS periods(period);`,
+        [enrollmentId, data.course, tuitionFee, 0],
+      );
+    }
+
+    // Commit transaction
+    await db.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    // Rollback on error
+    await db.query("ROLLBACK");
+    throw error;
+  }
+};
+
+//*******************finalized*****************************/
+const postPaymentModel = async (data) => {
+  try {
+    const scenario = data?.scenario || "1";
+
+    const SCENARIO_1 = {
+      data: {
+        data: {
+          nextPayment: {
+            period: "prelim",
+            amount: 1000.0,
+          },
+          paymentSummary: {
+            totalTuition: 5000.0,
+            remainingBalance: 4000.0,
+          },
+        },
+      },
+    };
+
+    const SCENARIO_2 = {
+      data: {
+        transaction: {
+          id: "PAY-TEST-001",
+          enrollment_id: "ENR-TEST-001",
+          period: "prelim",
+          course_tuition_fee: 25000.0,
+          paid: 2000.0,
+          balance: 23000.0,
+          payment_per_period: 5000.0,
+          payment_type: "gcash",
+          remark: {
+            reference_number: "REF123456",
+            remarks: "Test partial payment",
+          },
+          updated_at: new Date().toISOString(),
+        },
+      },
+    };
+
+    const SCENARIO_3 = {
+      data: null, // No data, will force refetch
+    };
+
+    let result;
+    switch (scenario) {
+      case "1":
+        result = SCENARIO_1;
+        break;
+      case "2":
+        result = SCENARIO_2;
+        break;
+      case "3":
+        result = SCENARIO_3;
+        break;
+      default:
+        result = SCENARIO_1;
+    }
+
+    return result;
   } catch (error) {
     throw error;
   }
