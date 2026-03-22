@@ -294,9 +294,11 @@ CREATE TABLE transaction_table (
     course_tuition_fee UUID NOT NULL,
     
     -- Payment Information
-    paid DECIMAL(12, 2) DEFAULT 0.00,
+    paid_amount DECIMAL(12, 2) DEFAULT 0.00,
+    paid_status BOOLEAN DEFAULT false,
     balance DECIMAL(12, 2) DEFAULT 0.00,
     payment_per_period DECIMAL(12, 2) DEFAULT 0.00,
+   
     
     -- Payment method
     payment_type VARCHAR(50) 
@@ -330,7 +332,7 @@ CREATE TABLE transaction_table (
         CHECK (balance >= 0),
     
     CONSTRAINT chk_paid_non_negative 
-        CHECK (paid >= 0)
+        CHECK (paid_amount >= 0)
 );
 
 -- Indexes for transaction_table

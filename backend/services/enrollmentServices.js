@@ -8,10 +8,10 @@ const enrollmentTransactionServices = async (tuition_fee, semester) => {
       case "Summer Class":
         enrollmentFee = tuition_fee;
         transactionQuery = `INSERT INTO transaction_table (
-                        enrollment_id,
+                        enrollment_id, 
                         period,
                         course_tuition_fee,
-                        paid,
+                        paid_amount,
                         balance,
                         payment_per_period
                       )
@@ -33,7 +33,7 @@ const enrollmentTransactionServices = async (tuition_fee, semester) => {
                         enrollment_id,
                         period,
                         course_tuition_fee,
-                        paid,
+                        paid_amount,
                         balance,
                         payment_per_period
                       )
@@ -49,8 +49,8 @@ const enrollmentTransactionServices = async (tuition_fee, semester) => {
                     ) AS periods(period);`;
         break;
     }
-    const parsedTuitionFee = parseFloat(enrollmentFee);
-    return { transactionQuery, parsedTuitionFee };
+
+    return { transactionQuery, enrollmentFee };
   } catch (error) {
     console.error("enrollmentTransactionServices error:", error);
     throw error;

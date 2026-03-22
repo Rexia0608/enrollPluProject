@@ -58,7 +58,8 @@ const getCheckStudentPaymentModel = async (data) => {
     const result = await db.query(
       `SELECT * 
           FROM transaction_table 
-          WHERE enrollment_id = $1
+          WHERE enrollment_id = $1 
+          AND paid_status = false
           ORDER BY created_at ASC
           LIMIT 1;`,
       [data.enrollment_id],
@@ -75,32 +76,37 @@ const getCheckStudentPaymentModel = async (data) => {
 
 const postEnrollStudentModel = async (data) => {
   try {
+    console.log(data);
     const findCourse = await db.query(
-      `
-      SELECT 
-          c.tuition_fee,
-          ay.semester
-      FROM courses c
-      JOIN academic_year ay ON ay.id = $2
-      WHERE c.id = $1
-      `,
-      [data.course, data.academicYearId],
+      `SELECT id, tuition_fee FROM courses WHERE id = $1`,
+      [data.course],
     );
+
+    const findActiveSemester = await db.query(
+      `SELECT semester FROM academic_year WHERE id = $1`,
+      [data.academicYearId],
+    );
+
     const { profileQuery, profileValue } =
       await enrollmentProfileServices(data);
-    const { tuition_fee, semester } = findCourse.rows[0];
+
     const { transactionQuery, enrollmentFee } =
-      await enrollmentTransactionServices(tuition_fee, semester);
-    const parsedTuitionFee = parseFloat(tuition_fee);
+      await enrollmentTransactionServices(
+        findCourse.rows[0].tuition_fee,
+        findActiveSemester.rows[0].semester,
+      );
+
+    const parsedEnrollmentFee = parseFloat(enrollmentFee);
+    const parsedBalance = parseFloat(findCourse.rows[0].tuition_fee);
     await db.query("BEGIN");
 
     const result = await db.query(profileQuery, profileValue);
-
+    console.log(findCourse.rows[0].id);
     await db.query(transactionQuery, [
       result.rows[0].enrollment_id,
-      data.course,
-      parsedTuitionFee,
-      enrollmentFee,
+      findCourse.rows[0].id,
+      parsedBalance,
+      parsedEnrollmentFee,
     ]);
 
     const users = await db.query(
@@ -191,8 +197,7 @@ const postEnrollStudentModel = async (data) => {
 
 const postPaymentModel = async (data) => {
   try {
-    const { pass } = await paymentService(data);
-    console.log(pass);
+    console.log(data);
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
   } catch (error) {
     console.log(error);
