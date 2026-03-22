@@ -1,4 +1,9 @@
 import db from "../config/db.js";
+import { paymentService } from "../services/paymentService.js";
+import {
+  enrollmentProfileServices,
+  enrollmentTransactionServices,
+} from "../services/enrollmentServices.js";
 
 //*******************finalized*****************************/
 const getCheckStudentIfEnrolledModel = async (userId) => {
@@ -70,156 +75,127 @@ const getCheckStudentPaymentModel = async (data) => {
 
 const postEnrollStudentModel = async (data) => {
   try {
-    const facultyDefaultValidation = {
-      document: false,
-      isProfileAreValidated: false,
-      remarkNote: "wait for the validation team from faculty office.",
-    };
-
-    const statusMap = {
-      old_student: "payment_pending",
-      new: "documents_approved",
-      transferee: "documents_approved",
-    };
-
-    const enrollStatus = statusMap[data.studentType];
-
-    // Begin transaction
+    const findCourse = await db.query(
+      `
+      SELECT 
+          c.tuition_fee,
+          ay.semester
+      FROM courses c
+      JOIN academic_year ay ON ay.id = $2
+      WHERE c.id = $1
+      `,
+      [data.course, data.academicYearId],
+    );
+    const { profileQuery, profileValue } =
+      await enrollmentProfileServices(data);
+    const { tuition_fee, semester } = findCourse.rows[0];
+    const { transactionQuery, enrollmentFee } =
+      await enrollmentTransactionServices(tuition_fee, semester);
+    const parsedTuitionFee = parseFloat(tuition_fee);
     await db.query("BEGIN");
 
-    // 1️⃣ Insert enrollment profile if not exists
-    const result = await db.query(
-      `INSERT INTO enrollment_profile (
-          course_code_id, user_id, enrollment_year_code, enrollment_status, student_type, year_level, remarks
-        )
-       SELECT $1, $2, $3, $4, $5, $6, $7::jsonb
-       WHERE NOT EXISTS (
-         SELECT 1 FROM enrollment_profile 
-         WHERE user_id = $2 AND enrollment_year_code = $3
-       )
-       RETURNING *;`,
-      [
-        data.course,
-        data.studentId,
-        data.academicYearId,
-        enrollStatus,
-        data.studentType,
-        data.yearLevel,
-        JSON.stringify(facultyDefaultValidation),
-      ],
+    const result = await db.query(profileQuery, profileValue);
+
+    await db.query(transactionQuery, [
+      result.rows[0].enrollment_id,
+      data.course,
+      parsedTuitionFee,
+      enrollmentFee,
+    ]);
+
+    const users = await db.query(
+      `UPDATE users SET address = $1 WHERE id = $2 RETURNING first_name, last_name`,
+      [data.address, data.studentId],
     );
 
-    // 2️⃣ Insert transactions if enrollment was created
-    if (result.rows.length > 0) {
-      const enrollmentId = result.rows[0].enrollment_id;
+    const { first_name, last_name } = users.rows[0];
 
-      // Fetch tuition fee
-      const courseResult = await db.query(
-        `SELECT tuition_fee FROM courses WHERE id = $1`,
-        [data.course],
-      );
-      const tuitionFee = parseFloat(courseResult.rows[0].tuition_fee);
-
-      // 3️⃣ Insert 6-period transactions
-      await db.query(
-        `INSERT INTO transaction_table (
-      enrollment_id,
-      period,
-      course_tuition_fee,
-      paid,
-      balance,
-      payment_per_period
-    )
-   SELECT
-      $1 AS enrollment_id,
-      period,
-      $2 AS course_tuition_fee,
-      0.00 AS paid,
-      CASE WHEN period = 'enrollment' THEN $3 ELSE 0 END AS balance,
-      CASE WHEN period = 'enrollment' THEN $4 ELSE 0 END AS payment_per_period
-   FROM (VALUES 
-        ('enrollment'),
-        ('prelim'),
-        ('mid-term'),
-        ('pre-final'),
-        ('final'), 
-        ('summer')
-   ) AS periods(period);`,
-        [enrollmentId, data.course, tuitionFee, 0],
-      );
-    }
-
-    // Commit transaction
+    await db.query(
+      `UPDATE credentials SET mobile_number = $1 WHERE user_id = $2 `,
+      [data.contactNumber, data.studentId],
+    );
     await db.query("COMMIT");
+    console.log(`new enrollees added, name: ${first_name} ${last_name}`);
     return result.rows[0];
   } catch (error) {
-    // Rollback on error
     await db.query("ROLLBACK");
+    console.error(error);
     throw error;
   }
 };
 
 //*******************finalized*****************************/
+// const postPaymentModel = async (data) => {
+//   try {
+//     const scenario = data?.scenario || "1";
+
+//     const SCENARIO_1 = {
+//       data: {
+//         data: {
+//           nextPayment: {
+//             period: "prelim",
+//             amount: 1000.0,
+//           },
+//           paymentSummary: {
+//             totalTuition: 5000.0,
+//             remainingBalance: 4000.0,
+//           },
+//         },
+//       },
+//     };
+
+//     const SCENARIO_2 = {
+//       data: {
+//         transaction: {
+//           id: "PAY-TEST-001",
+//           enrollment_id: "ENR-TEST-001",
+//           period: "prelim",
+//           course_tuition_fee: 25000.0,
+//           paid: 2000.0,
+//           balance: 23000.0,
+//           payment_per_period: 5000.0,
+//           payment_type: "gcash",
+//           remark: {
+//             reference_number: "REF123456",
+//             remarks: "Test partial payment",
+//           },
+//           updated_at: new Date().toISOString(),
+//         },
+//       },
+//     };
+
+//     const SCENARIO_3 = {
+//       data: null, // No data, will force refetch
+//     };
+
+//     let result;
+//     switch (scenario) {
+//       case "1":
+//         result = SCENARIO_1;
+//         break;
+//       case "2":
+//         result = SCENARIO_2;
+//         break;
+//       case "3":
+//         result = SCENARIO_3;
+//         break;
+//       default:
+//         result = SCENARIO_1;
+//     }
+
+//     return result;
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
 const postPaymentModel = async (data) => {
   try {
-    const scenario = data?.scenario || "1";
-
-    const SCENARIO_1 = {
-      data: {
-        data: {
-          nextPayment: {
-            period: "prelim",
-            amount: 1000.0,
-          },
-          paymentSummary: {
-            totalTuition: 5000.0,
-            remainingBalance: 4000.0,
-          },
-        },
-      },
-    };
-
-    const SCENARIO_2 = {
-      data: {
-        transaction: {
-          id: "PAY-TEST-001",
-          enrollment_id: "ENR-TEST-001",
-          period: "prelim",
-          course_tuition_fee: 25000.0,
-          paid: 2000.0,
-          balance: 23000.0,
-          payment_per_period: 5000.0,
-          payment_type: "gcash",
-          remark: {
-            reference_number: "REF123456",
-            remarks: "Test partial payment",
-          },
-          updated_at: new Date().toISOString(),
-        },
-      },
-    };
-
-    const SCENARIO_3 = {
-      data: null, // No data, will force refetch
-    };
-
-    let result;
-    switch (scenario) {
-      case "1":
-        result = SCENARIO_1;
-        break;
-      case "2":
-        result = SCENARIO_2;
-        break;
-      case "3":
-        result = SCENARIO_3;
-        break;
-      default:
-        result = SCENARIO_1;
-    }
-
-    return result;
+    const { pass } = await paymentService(data);
+    console.log(pass);
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };

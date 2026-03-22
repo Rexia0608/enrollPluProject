@@ -91,7 +91,6 @@ const maintenanceCheckerModel = async () => {
     return { ...maintenanceState }; // Same as your original - returns a copy
   } catch (error) {
     console.error("maintenanceCheckerModel error:", error);
-    // Fallback to in-memory state if DB fails
     return { ...maintenanceState };
   }
 };

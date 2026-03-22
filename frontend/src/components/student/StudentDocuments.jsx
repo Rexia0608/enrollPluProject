@@ -199,6 +199,13 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
   const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 1));
 
+  const handleAfterSubmit = () => {
+    window.location.reload();
+    setTimeout(() => {
+      setSubmitSuccess(false);
+    }, 1500);
+  };
+
   const handleSubmit = async () => {
     const isValid = validateStep(3, { studentType, formData, documents });
     if (!isValid) return;
@@ -249,9 +256,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
       if (enrollmentResultRes.data.success) {
         setSubmitSuccess(true);
-        setTimeout(() => {
-          setMyEnrollment(enrollmentCheckResult.data.data);
-        }, 1800);
+        setMyEnrollment(enrollmentCheckResult.data.data);
         onSuccess?.();
       } else {
         setSubmitError(response.data.message || "Submission failed.");
@@ -373,7 +378,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
         iconColor: "text-yellow-600",
         title: "Application Under Review",
         message:
-          "Your enrollment is being processed. You'll be notified once approved.",
+          "Your enrollment is being processed. You'll be notified once approved via email.",
         gradient: "from-yellow-600 to-yellow-700",
       },
     };
@@ -487,10 +492,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
           You'll receive an email confirmation shortly.
         </p>
         <button
-          onClick={() => {
-            setSubmitSuccess(false);
-            // Keep myEnrollment as pending
-          }}
+          onClick={() => handleAfterSubmit()}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           View Status
