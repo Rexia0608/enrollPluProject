@@ -8,45 +8,47 @@ const enrollmentTransactionServices = async (tuition_fee, semester) => {
       case "Summer Class":
         enrollmentFee = tuition_fee;
         transactionQuery = `INSERT INTO transaction_table (
-                        enrollment_id, 
-                        period,
-                        course_tuition_fee,
-                        paid_amount,
-                        balance,
-                        payment_per_period
-                      )
-                    SELECT
-                        $1 AS enrollment_id,
-                        period,
-                        $2 AS course_tuition_fee,
-                        0.00 AS paid,
-                        CASE WHEN period = 'summer' THEN $3 ELSE 0 END AS balance,
-                        CASE WHEN period = 'summer' THEN $4 ELSE 0 END AS payment_per_period
-                    FROM (VALUES
-                          ('summer')
-                    ) AS periods(period);`;
+                            enrollment_id, 
+                            period,
+                            payment_status,
+                            paid_amount,
+                            balance,
+                            payment_per_period
+                        )
+                        SELECT
+                            $1 AS enrollment_id,
+                            period,
+                            'pending' AS payment_status,
+                            0.00 AS paid_amount,
+                            CASE WHEN period = 'summer' THEN $2 ELSE 0 END AS balance,
+                            CASE WHEN period = 'summer' THEN $3 ELSE 0 END AS payment_per_period
+                        FROM (VALUES ('summer')) AS periods(period);`;
         break;
 
       default:
         enrollmentFee = tuition_fee / 5;
         transactionQuery = `INSERT INTO transaction_table (
-                        enrollment_id,
-                        period,
-                        course_tuition_fee,
-                        paid_amount,
-                        balance,
-                        payment_per_period
-                      )
-                    SELECT
-                        $1 AS enrollment_id,
-                        period,
-                        $2 AS course_tuition_fee,
-                        0.00 AS paid,
-                        CASE WHEN period = 'enrollment' THEN $3 ELSE 0 END AS balance,
-                        CASE WHEN period = 'enrollment' THEN $4 ELSE 0 END AS payment_per_period
-                    FROM (VALUES
-                          ('enrollment')
-                    ) AS periods(period);`;
+                              enrollment_id,
+                              period,
+                              payment_status,
+                              paid_amount,
+                              balance,
+                              payment_per_period
+                          )
+                          SELECT
+                              $1 AS enrollment_id,
+                              period,
+                              'pending' AS payment_status,
+                              0.00 AS paid_amount,  
+                              CASE WHEN period = 'enrollment' THEN $2 ELSE 0 END AS balance,
+                              CASE WHEN period = 'enrollment' THEN $3 ELSE 0 END AS payment_per_period
+                          FROM (VALUES
+                              ('enrollment'),
+                              ('prelim'),
+                              ('mid-term'),
+                              ('pre-final'),
+                              ('final')
+                          ) AS periods(period);`;
         break;
     }
 

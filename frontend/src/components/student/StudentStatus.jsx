@@ -484,7 +484,7 @@ function StudentStatus() {
   // Handle start enrollment button click
   const handleStartEnrollment = () => {
     toast.info("Starting enrollment application...");
-    navigate("/student/dashboard/enrollement");
+    navigate("/student/dashboard/enrollment");
   };
 
   // Retry fetching data

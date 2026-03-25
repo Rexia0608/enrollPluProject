@@ -59,7 +59,7 @@ const getCheckStudentPaymentModel = async (data) => {
       `SELECT * 
           FROM transaction_table 
           WHERE enrollment_id = $1 
-          AND paid_status = false
+          AND payment_status = 'pending'
           ORDER BY created_at ASC
           LIMIT 1;`,
       [data.enrollment_id],
@@ -76,7 +76,6 @@ const getCheckStudentPaymentModel = async (data) => {
 
 const postEnrollStudentModel = async (data) => {
   try {
-    console.log(data);
     const findCourse = await db.query(
       `SELECT id, tuition_fee FROM courses WHERE id = $1`,
       [data.course],
@@ -101,10 +100,9 @@ const postEnrollStudentModel = async (data) => {
     await db.query("BEGIN");
 
     const result = await db.query(profileQuery, profileValue);
-    console.log(findCourse.rows[0].id);
+
     await db.query(transactionQuery, [
       result.rows[0].enrollment_id,
-      findCourse.rows[0].id,
       parsedBalance,
       parsedEnrollmentFee,
     ]);
@@ -120,8 +118,11 @@ const postEnrollStudentModel = async (data) => {
       `UPDATE credentials SET mobile_number = $1 WHERE user_id = $2 `,
       [data.contactNumber, data.studentId],
     );
+
     await db.query("COMMIT");
+
     console.log(`new enrollees added, name: ${first_name} ${last_name}`);
+
     return result.rows[0];
   } catch (error) {
     await db.query("ROLLBACK");
@@ -131,69 +132,6 @@ const postEnrollStudentModel = async (data) => {
 };
 
 //*******************finalized*****************************/
-// const postPaymentModel = async (data) => {
-//   try {
-//     const scenario = data?.scenario || "1";
-
-//     const SCENARIO_1 = {
-//       data: {
-//         data: {
-//           nextPayment: {
-//             period: "prelim",
-//             amount: 1000.0,
-//           },
-//           paymentSummary: {
-//             totalTuition: 5000.0,
-//             remainingBalance: 4000.0,
-//           },
-//         },
-//       },
-//     };
-
-//     const SCENARIO_2 = {
-//       data: {
-//         transaction: {
-//           id: "PAY-TEST-001",
-//           enrollment_id: "ENR-TEST-001",
-//           period: "prelim",
-//           course_tuition_fee: 25000.0,
-//           paid: 2000.0,
-//           balance: 23000.0,
-//           payment_per_period: 5000.0,
-//           payment_type: "gcash",
-//           remark: {
-//             reference_number: "REF123456",
-//             remarks: "Test partial payment",
-//           },
-//           updated_at: new Date().toISOString(),
-//         },
-//       },
-//     };
-
-//     const SCENARIO_3 = {
-//       data: null, // No data, will force refetch
-//     };
-
-//     let result;
-//     switch (scenario) {
-//       case "1":
-//         result = SCENARIO_1;
-//         break;
-//       case "2":
-//         result = SCENARIO_2;
-//         break;
-//       case "3":
-//         result = SCENARIO_3;
-//         break;
-//       default:
-//         result = SCENARIO_1;
-//     }
-
-//     return result;
-//   } catch (error) {
-//     throw error;
-//   }
-// };
 
 const postPaymentModel = async (data) => {
   try {

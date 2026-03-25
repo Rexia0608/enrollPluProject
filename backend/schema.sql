@@ -290,15 +290,19 @@ CREATE TABLE transaction_table (
             'summer'
         )),
     
-    -- Fee Information
-    course_tuition_fee UUID NOT NULL,
+    -- Payment status Information
+    payment_status VARCHAR(50)   
+        CHECK (payment_status IN (
+            'review',
+            'pending',
+            'paid',
+            'rejected'
+        )),
     
     -- Payment Information
     paid_amount DECIMAL(12, 2) DEFAULT 0.00,
-    paid_status BOOLEAN DEFAULT false,
     balance DECIMAL(12, 2) DEFAULT 0.00,
     payment_per_period DECIMAL(12, 2) DEFAULT 0.00,
-   
     
     -- Payment method
     payment_type VARCHAR(50) 
@@ -314,17 +318,12 @@ CREATE TABLE transaction_table (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
     -- Optional remarks
-    remark JSONB DEFAULT '{}',
+    remarks TEXT, 
     
     -- Foreign Key Constraints
     CONSTRAINT fk_transaction_enrollment 
         FOREIGN KEY (enrollment_id) 
         REFERENCES enrollment_profile(enrollment_id)
-        ON DELETE RESTRICT,
-    
-    CONSTRAINT fk_transaction_course 
-        FOREIGN KEY (course_tuition_fee) 
-        REFERENCES courses(id)
         ON DELETE RESTRICT,
     
     -- Validation constraints
@@ -368,9 +367,9 @@ VALUES ('2024-2025', 'First Semester', '2024-08-15', '2024-12-15', false, true);
 -- Insert sample courses
 INSERT INTO courses (course_code, course_name, duration_type, tuition_fee, course_status)
 VALUES 
-    ('CS101', 'Bachelor of Science in Computer Science', '4 years', 45000.00, 'active'),
-    ('IT101', 'Bachelor of Science in Information Technology', '4 years', 42000.00, 'active'),
-    ('ENG101', 'Bachelor of Arts in English', '4 years', 38000.00, 'active');
+    ('CS101', 'Bachelor of Science in Computer Science', '4 years', 5000.00, 'active'),
+    ('IT101', 'Bachelor of Science in Information Technology', '4 years', 5000.00, 'active'),
+    ('ENG101', 'Bachelor of Arts in English', '4 years', 5000.00, 'active');
 
 
 -- ============================================
