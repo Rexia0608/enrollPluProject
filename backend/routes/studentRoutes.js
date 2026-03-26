@@ -16,7 +16,7 @@ const router = express.Router();
 router.get("/course-list", getCourses);
 router.get("/enrollment-open-status", getAcademicYear);
 router.get("/validate-enrolled-student/:user_id", getCheckStudentIfEnrolled);
-router.get("/validate-current-payment/:enrollment_id", getCheckStudentPayment);
+router.get("/payments-all-periods/:enrollment_id", getCheckStudentPayment);
 
 router.post(
   "/enrollment-upload-documents-process",

@@ -429,7 +429,7 @@ const PromiseNoteForm = ({ onSubmit, onCancel, amount }) => {
 
 // Payment Form Component
 const PaymentForm = ({ selectedPeriod, onSubmit, onCancel, isSubmitting }) => {
-  const [amount, setAmount] = useState(selectedPeriod?.balance || 0);
+  const [amount, setAmount] = useState(selectedPeriod?.due || 0);
   const [referenceNumber, setReferenceNumber] = useState("");
   const [remarks, setRemarks] = useState("");
   const [file, setFile] = useState(null);
@@ -497,12 +497,12 @@ const PaymentForm = ({ selectedPeriod, onSubmit, onCancel, isSubmitting }) => {
           <span className="absolute left-3 top-2 text-gray-500">₱</span>
           <input
             type="number"
-            step="0.01"
+            step="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Enter amount"
-            max={selectedPeriod?.balance}
+            max={selectedPeriod}
             required
           />
         </div>
@@ -660,7 +660,6 @@ const StudentPaymentStatus = () => {
     setState((prev) => ({ ...prev, ...updates }));
   };
 
-  // Fetch Data
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) return;
@@ -682,33 +681,29 @@ const StudentPaymentStatus = () => {
         const enrollment = enrollmentRes.data.data;
         updateState({ enrollment });
 
-        // Step 2: Fetch ALL payments for this enrollment
         if (enrollment?.enrollment_id) {
-          // You'll need to create an endpoint to get all periods
-          // For now, let's simulate with the data you have
           const allPaymentRes = await axios.get(
-            `http://localhost:3000/student/validate-current-payment/${enrollment?.enrollment_id}`,
+            `http://localhost:3000/student/payments-all-periods/${enrollment.enrollment_id}`,
+            getAuthHeaders(),
           );
 
-          const {
-            period,
-            payment_status,
-            paid_amount,
-            balance,
-            payment_per_period,
-          } = allPaymentRes.data.data;
+          if (allPaymentRes.data.success && allPaymentRes.data.data.items) {
+            const payments = allPaymentRes.data.data.items.map((item) => ({
+              period: item.period,
+              payment_status: item.payment_status,
+              paid_amount: parseFloat(item.paid_amount || 0),
+              balance: parseFloat(item.balance || 0),
+              payment_per_period: parseFloat(item.payment_per_period || 0),
+              id: item.id,
+              remarks: item.remarks,
+            }));
 
-          const allPayments = [
-            {
-              period: period,
-              payment_status: payment_status,
-              paid_amount: paid_amount,
-              balance: balance,
-              payment_per_period: payment_per_period,
-            },
-          ];
-
-          updateState({ payments: allPayments });
+            console.log("Transformed payments:", payments);
+            updateState({ payments: payments });
+          } else {
+            console.warn("No payment records found");
+            updateState({ payments: [] });
+          }
         }
       } catch (error) {
         console.error("Fetch error:", error);
@@ -723,7 +718,6 @@ const StudentPaymentStatus = () => {
     fetchData();
   }, [user, getAuthHeaders]);
 
-  // Handle Payment Submission
   const handlePaymentSubmit = async (paymentData) => {
     updateState({ isSubmitting: true, submitStatus: null });
 
@@ -760,6 +754,7 @@ const StudentPaymentStatus = () => {
       }
 
       formData.append("promiseNote", JSON.stringify({ promiseStatus: false }));
+
       const response = await axios.post(
         "http://localhost:3000/student/enrollment-payment-upload-process",
         formData,
@@ -806,21 +801,73 @@ const StudentPaymentStatus = () => {
 
     try {
       const submitData = {
-        period: state.selectedPeriod.period,
-        amount: state.selectedPeriod.balance,
-        referenceNumber: "PROMISE-NOTE-" + Date.now(),
-        remarks: promiseData.notes,
-        file: null,
-        promiseData: promiseData,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          isEnrolled: !!state.enrollment,
+          activeEnrollmentId: state.enrollment?.enrollment_id,
+        },
+        paymentDetails: {
+          period: state.selectedPeriod.period,
+          amount: state.selectedPeriod.balance,
+          paymentStatus: "review",
+          referenceNumber: `PROMISE-${Date.now()}`,
+          remarks: promiseData.notes,
+          paymentMethod: "",
+          remainingBalance: state.selectedPeriod.balance,
+        },
+        promiseNote: {
+          promiseStatus: true,
+          date: promiseData.promiseDate,
+          note: promiseData.notes,
+        },
       };
 
-      await handlePaymentSubmit(submitData);
+      console.log("Submitting promise note:", submitData);
+
+      const response = await axios.post(
+        "http://localhost:3000/student/enrollment-payment-upload-process",
+        submitData,
+        getAuthHeaders(),
+      );
+
+      if (response.data?.success) {
+        updateState({
+          submitStatus: {
+            type: "success",
+            message:
+              response.data.message || "Promise to pay submitted successfully!",
+          },
+          currentStep: 0,
+          selectedPeriod: null,
+          selectedMethod: null,
+          showPromiseForm: false,
+        });
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        throw new Error(
+          response.data?.message || "Failed to submit promise to pay",
+        );
+      }
+    } catch (error) {
+      console.error("Promise submission error:", error);
+      updateState({
+        submitStatus: {
+          type: "error",
+          message:
+            error.response?.data?.message ||
+            "Failed to submit promise to pay. Please try again.",
+        },
+      });
     } finally {
-      updateState({ isSubmitting: false, showPromiseForm: false });
+      updateState({ isSubmitting: false });
     }
   };
 
-  // Render Logic
   if (state.isLoading) return <LoadingPage />;
   if (state.error) {
     return (

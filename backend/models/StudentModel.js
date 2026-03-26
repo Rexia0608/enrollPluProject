@@ -59,9 +59,7 @@ const getCheckStudentPaymentModel = async (data) => {
       `SELECT * 
           FROM transaction_table 
           WHERE enrollment_id = $1 
-          AND payment_status = 'pending'
-          ORDER BY created_at ASC
-          LIMIT 1;`,
+          AND payment_status = 'pending'`,
       [data.enrollment_id],
     );
 
