@@ -104,10 +104,9 @@ const postEnrollStudent = async (req, res) => {
 
 const postPayment = async (req, res) => {
   try {
-    const result = await postPaymentModel(req.body);
-
-    return globalResponseHandler(res, result.data, {
-      message: customMessage,
+    const response = await postPaymentModel(req.body);
+    return globalResponseHandler(res, response, {
+      message: response.next_steps.message,
       statusCode: 201,
     });
   } catch (error) {

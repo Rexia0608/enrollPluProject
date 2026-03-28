@@ -318,7 +318,7 @@ CREATE TABLE transaction_table (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
     -- Optional remarks
-    remarks TEXT, 
+    remarks JSONB, 
     
     -- Foreign Key Constraints
     CONSTRAINT fk_transaction_enrollment 
@@ -367,9 +367,9 @@ VALUES ('2024-2025', 'First Semester', '2024-08-15', '2024-12-15', false, true);
 -- Insert sample courses
 INSERT INTO courses (course_code, course_name, duration_type, tuition_fee, course_status)
 VALUES 
-    ('CS101', 'Bachelor of Science in Computer Science', '4 years', 5000.00, 'active'),
-    ('IT101', 'Bachelor of Science in Information Technology', '4 years', 5000.00, 'active'),
-    ('ENG101', 'Bachelor of Arts in English', '4 years', 5000.00, 'active');
+    ('CS101', 'Bachelor of Science in Computer Science', '4 years', 1000.00, 'active'),
+    ('IT101', 'Bachelor of Science in Information Technology', '4 years', 1000.00, 'active'),
+    ('ENG101', 'Bachelor of Arts in English', '4 years', 1000.00, 'active');
 
 
 -- ============================================

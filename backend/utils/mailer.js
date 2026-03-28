@@ -90,7 +90,7 @@ const getEmailConfig = (type, message) => {
   switch (type) {
     case "sending_OTP":
       return {
-        subject: "Your EnrollPlus Verification Code",
+        subject: "Your EnrollPlus Verification Code.",
         html: sendOtp(message),
       };
 
@@ -102,8 +102,20 @@ const getEmailConfig = (type, message) => {
 
     case "verified_email":
       return {
-        subject: "✅ Your Account Has Been Verified",
+        subject: "✅ Your Account Has Been Verified.",
         html: verifiedMsg(message),
+      };
+
+    case "payment-validation":
+      return {
+        subject: "✅ Payment validation update.",
+        html: paymentValidation(message),
+      };
+
+    case "promised-note-validation":
+      return {
+        subject: "✅ Promised note validation update.",
+        html: promisedNote(message),
       };
 
     default:
@@ -233,6 +245,96 @@ const sendOtp = (otpCode) => {
  * Template: Announcement/Broadcast
  */
 const announcement = (message) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td align="center" style="padding: 20px 0;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; line-height: 1.6; color: #1f2937; text-align: left;">
+              
+              <div style="border-left: 4px solid #2563eb; padding-left: 16px; margin-bottom: 24px;">
+                <h2 style="color: #2563eb; margin: 0; font-size: 24px;">School Announcement</h2>
+                <p style="color: #6b7280; margin: 4px 0 0; font-size: 14px;">From EnrollPlus Administration</p>
+              </div>
+
+              <p style="font-size: 16px; color: #374151; line-height: 1.8;">
+                ${message.replace(/\n/g, "<br>")}
+              </p>
+
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 13px; color: #6b7280; font-style: italic; margin: 0;">
+                  📧 This is an automated message — please don't reply to this email.
+                </p>
+              </div>
+
+              <p style="font-size: 12px; color: #9ca3af; margin: 24px 0 0;">
+                © ${new Date().getFullYear()} EnrollPlus. All rights reserved.
+              </p>
+              
+            </div>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Template: Promised note validation
+ */
+const promisedNote = (message) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td align="center" style="padding: 20px 0;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; line-height: 1.6; color: #1f2937; text-align: left;">
+              
+              <div style="border-left: 4px solid #2563eb; padding-left: 16px; margin-bottom: 24px;">
+                <h2 style="color: #2563eb; margin: 0; font-size: 24px;">School Announcement</h2>
+                <p style="color: #6b7280; margin: 4px 0 0; font-size: 14px;">From EnrollPlus Administration</p>
+              </div>
+
+              <p style="font-size: 16px; color: #374151; line-height: 1.8;">
+                ${message.replace(/\n/g, "<br>")}
+              </p>
+
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 13px; color: #6b7280; font-style: italic; margin: 0;">
+                  📧 This is an automated message — please don't reply to this email.
+                </p>
+              </div>
+
+              <p style="font-size: 12px; color: #9ca3af; margin: 24px 0 0;">
+                © ${new Date().getFullYear()} EnrollPlus. All rights reserved.
+              </p>
+              
+            </div>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Template: Payment note validation
+ */
+const paymentValidation = (message) => {
   return `
     <!DOCTYPE html>
     <html>

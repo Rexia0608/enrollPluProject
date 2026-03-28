@@ -427,9 +427,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500 block">Student Type</span>
+                    <span className="text-gray-500 block">Year Level</span>
                     <span className="font-semibold text-gray-900 capitalize">
-                      {myEnrollment?.student_type?.replace("_", " ") || "N/A"}
+                      {myEnrollment?.year_level?.replace("_", " ") || "TBA"}
                     </span>
                   </div>
                   <div>

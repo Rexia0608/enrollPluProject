@@ -1,5 +1,9 @@
 import db from "../config/db.js";
-import { paymentService } from "../services/paymentService.js";
+import {
+  paymentUpdateService,
+  paymentPeriodService,
+  paymentService,
+} from "../services/paymentService.js";
 import {
   enrollmentProfileServices,
   enrollmentTransactionServices,
@@ -133,8 +137,26 @@ const postEnrollStudentModel = async (data) => {
 
 const postPaymentModel = async (data) => {
   try {
-    console.log(data);
-    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+    let result;
+    let response;
+
+    const { query, value, paid } = await paymentUpdateService(data);
+
+    if (paid) {
+      result = await db.query(query, value);
+      response = await paymentService(result.rows[0], paid, data);
+      return response;
+    }
+
+    if (!paid) {
+      result = await db.query(query, value);
+      response = await paymentService(result.rows[0], paid, data);
+      const { nextQuery, nextValue } = await paymentPeriodService(
+        result.rows[0],
+      );
+      await db.query(nextQuery, nextValue);
+      return response;
+    }
   } catch (error) {
     console.log(error);
     throw error;
