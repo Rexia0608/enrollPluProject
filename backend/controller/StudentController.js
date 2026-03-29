@@ -30,7 +30,6 @@ const getAcademicYear = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getAcademicYear:", error);
-
     return errorResponseHandler(res, error, 500);
   }
 };

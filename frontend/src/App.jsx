@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { AdminProvider } from "./context/AdminContext";
 import { StudentProvider } from "./context/StudentContext";
 import { MaintenanceProvider } from "./context/MaintenanceContext";
+import { FacultyProvider } from "./context/FacultyContext";
 
 function App() {
   return (
@@ -12,9 +13,11 @@ function App() {
       <AuthProvider>
         <MaintenanceProvider>
           <AdminProvider>
-            <StudentProvider>
-              <Views />
-            </StudentProvider>
+            <FacultyProvider>
+              <StudentProvider>
+                <Views />
+              </StudentProvider>
+            </FacultyProvider>
           </AdminProvider>
         </MaintenanceProvider>
       </AuthProvider>

@@ -32,7 +32,6 @@ export const StudentProvider = ({ children }) => {
           axios.get(API_URL_ENROLLMENT_OPEN, getAuthHeaders()),
         ]);
 
-        // Check the actual structure of courses response
         let courses = [];
         if (Array.isArray(coursesRes.data)) {
           courses = coursesRes.data;
@@ -40,26 +39,21 @@ export const StudentProvider = ({ children }) => {
           coursesRes.data?.data &&
           Array.isArray(coursesRes.data.data)
         ) {
-          // If response is { data: [...] }
           courses = coursesRes.data.data;
         } else if (
           coursesRes.data?.courses &&
           Array.isArray(coursesRes.data.courses)
         ) {
-          // If response is { courses: [...] }
           courses = coursesRes.data.courses;
         } else if (
           coursesRes.data?.Response &&
           Array.isArray(coursesRes.data.Response)
         ) {
-          // If response has Response property (like your enrollment API)
           courses = coursesRes.data.Response;
         }
 
         setInitialCourses(courses);
 
-        // FIXED: Access Response array correctly (capital R)
-        // The API returns { message, Response: [...] }
         const enrollment = enrollmentRes.data?.Response?.[0] || null;
         setEnrollmentStatus(enrollment);
       } catch (err) {

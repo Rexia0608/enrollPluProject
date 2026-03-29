@@ -3,7 +3,7 @@ import {
   loginUserModel,
   registerUserModel,
   checkIfTheUserExist,
-} from "../models/usersAuthModel.js";
+} from "../models/UsersAuthModel.js";
 import {
   globalResponseHandler,
   errorResponseHandler,

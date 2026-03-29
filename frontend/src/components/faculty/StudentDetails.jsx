@@ -7,7 +7,6 @@ import {
   Calendar,
   MapPin,
   Book,
-  Clock,
   FileText,
   CreditCard,
   Download,
@@ -135,40 +134,7 @@ function StudentDetails() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Student List Sidebar */}
-        <div className="lg:col-span-1">
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Students
-            </h3>
-            <div className="space-y-2">
-              {students.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setSelectedStudent(s.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    selectedStudent === s.id
-                      ? "bg-blue-50 border border-blue-200"
-                      : "hover:bg-gray-50 border border-transparent"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">{s.name}</p>
-                      <p className="text-sm text-gray-600">{s.studentId}</p>
-                    </div>
-                    <StatusBadge
-                      status={s.status.split("_").join(" ")}
-                      size="sm"
-                    />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </Card>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {/* Student Details Main Content */}
         <div className="lg:col-span-3 space-y-6">
           {/* Student Header */}

@@ -1,5 +1,5 @@
 // components/faculty/DocumentReview.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -7,90 +7,134 @@ import {
   FileText,
   Clock,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
+import axios from "axios";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import SecondaryButton from "../ui/SecondaryButton";
 import StatusBadge from "../ui/StatusBadge";
 import DocumentReviewCard from "./DocumentReviewCard";
+import { useFaculty } from "../../context/FacultyContext";
 
 function DocumentReview() {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { getAuthHeaders } = useFaculty();
 
-  const reviewQueue = [
-    {
-      id: 1,
-      studentName: "John Doe",
-      studentId: "S2024001",
-      type: "document",
-      submitted: "2 hours ago",
-      status: "pending",
-      priority: "high",
-      documents: 3,
-      details: {
-        email: "john.doe@example.com",
-        program: "Computer Science",
-        semester: "Fall 2024",
-      },
-    },
-    {
-      id: 2,
-      studentName: "Jane Smith",
-      studentId: "S2024002",
-      type: "payment",
-      submitted: "4 hours ago",
-      status: "pending",
-      priority: "medium",
-      amount: "$1,500",
-      details: {
-        email: "jane.smith@example.com",
-        program: "Business Administration",
-        semester: "Fall 2024",
-      },
-    },
-    {
-      id: 3,
-      studentName: "Robert Johnson",
-      studentId: "S2024003",
-      type: "document",
-      submitted: "1 day ago",
-      status: "pending",
-      priority: "low",
-      documents: 2,
-      details: {
-        email: "robert.j@example.com",
-        program: "Engineering",
-        semester: "Spring 2024",
-      },
-    },
-    {
-      id: 4,
-      studentName: "Sarah Williams",
-      studentId: "S2024004",
-      type: "document",
-      submitted: "2 days ago",
-      status: "pending",
-      priority: "medium",
-      documents: 4,
-      details: {
-        email: "sarah.w@example.com",
-        program: "Medicine",
-        semester: "Fall 2024",
-      },
-    },
-  ];
+  // --- API CALL ---
+  useEffect(() => {
+    const fetchReviewQueue = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(
+          "http://localhost:3000/faculty/review-queue",
+          getAuthHeaders(),
+        );
+
+        // Check if API call succeeded
+        if (response.data.success && response.data.data?.items) {
+          const mappedQueue = response.data.data.items.map((item) => {
+            // Determine type based on enrollment_status
+            let type = "document";
+            if (item.enrollment_status === "payment_pending") {
+              type = "payment";
+            } else if (item.enrollment_status.includes("document")) {
+              type = "document";
+            }
+
+            // Priority: new students get high priority
+            const priority = item.student_type === "new" ? "high" : "medium";
+
+            // Documents count (API doesn't provide exact number, use 1 as placeholder)
+            const documentsCount = type === "document" ? 1 : 0;
+
+            return {
+              id: item.enrollment_id,
+              studentName: `${item.first_name} ${item.last_name}`,
+              studentId: item.user_id || item.enrollment_id, // fallback to enrollment_id
+              type: type,
+              submitted: "Awaiting review", // No timestamp from API
+              status: "pending",
+              priority: priority,
+              documents: documentsCount,
+              amount: type === "payment" ? "Pending" : undefined,
+              details: {
+                email: item.email,
+                program: item.course_name,
+                semester: item.semester,
+                yearLevel: item.year_level,
+                studentType: item.student_type,
+                enrollmentStatus: item.enrollment_status,
+                yearSeries: item.year_series,
+              },
+            };
+          });
+
+          setReviewQueue(mappedQueue);
+        } else {
+          // API returned success false or no items
+          setReviewQueue([]);
+          if (!response.data.success) {
+            setError(response.data.message || "Failed to load review queue");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch review queue:", err);
+        setError(err.response?.data?.message || err.message);
+
+        // Fallback mock data for development (remove in production)
+        setReviewQueue([
+          {
+            id: "MOCK1",
+            studentName: "John Doe",
+            studentId: "S2024001",
+            type: "document",
+            submitted: "2 hours ago",
+            status: "pending",
+            priority: "high",
+            documents: 3,
+            details: {
+              email: "john.doe@example.com",
+              program: "Computer Science",
+              semester: "Fall 2024",
+            },
+          },
+          {
+            id: "MOCK2",
+            studentName: "Jane Smith",
+            studentId: "S2024002",
+            type: "payment",
+            submitted: "1 day ago",
+            status: "pending",
+            priority: "medium",
+            amount: "$500",
+            details: {
+              email: "jane.smith@example.com",
+              program: "Business Administration",
+              semester: "Fall 2024",
+            },
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviewQueue();
+  }, [getAuthHeaders]);
+  // --- END API CALL ---
 
   const getFilteredQueue = () => {
     let filtered = reviewQueue;
-
-    // Apply type filter
     if (filter !== "all") {
       filtered = filtered.filter((item) => item.type === filter);
     }
-
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -100,7 +144,6 @@ function DocumentReview() {
           item.details.email.toLowerCase().includes(query),
       );
     }
-
     return filtered;
   };
 
@@ -134,13 +177,39 @@ function DocumentReview() {
     const highPriority = reviewQueue.filter(
       (item) => item.priority === "high",
     ).length;
-
     return { total, documents, payments, highPriority };
   };
 
   const stats = getStats();
   const filteredQueue = getFilteredQueue();
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-400px">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <span className="ml-2 text-gray-600">Loading review queue...</span>
+      </div>
+    );
+  }
+
+  // Error state (only if we have no data to fall back on)
+  if (error && reviewQueue.length === 0) {
+    return (
+      <Card className="p-6 text-center">
+        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          Unable to load review queue
+        </h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <PrimaryButton onClick={() => window.location.reload()}>
+          Retry
+        </PrimaryButton>
+      </Card>
+    );
+  }
+
+  // Main UI
   return (
     <div>
       <div className="mb-6">
@@ -244,7 +313,6 @@ function DocumentReview() {
                     <option value="payment">Payments</option>
                   </select>
                 </div>
-                <SecondaryButton icon={Filter}>More Filters</SecondaryButton>
               </div>
             </div>
           </Card>
@@ -294,10 +362,6 @@ function DocumentReview() {
                           </div>
                           <div className="space-y-1 text-sm">
                             <div className="flex items-center space-x-4">
-                              <span className="text-gray-600">
-                                ID: {student.studentId}
-                              </span>
-                              <span className="text-gray-400">•</span>
                               <span className="text-gray-600">
                                 {student.details.email}
                               </span>

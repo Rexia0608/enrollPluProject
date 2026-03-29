@@ -4,7 +4,6 @@ import { FileText, CreditCard, Clock, CheckCircle } from "lucide-react";
 import Card from "../ui/Card";
 import StatCard from "../ui/StatCard";
 import ReviewQueueCard from "./ReviewQueueCard";
-import FacultyNotificationsCard from "./FacultyNotificationsCard";
 
 function FacultyOverview() {
   const stats = [
@@ -44,30 +43,9 @@ function FacultyOverview() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         <div className="lg:col-span-2">
           <ReviewQueueCard />
-        </div>
-
-        <div className="space-y-6">
-          <FacultyNotificationsCard />
-
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                View All Students
-              </button>
-              <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                Generate Review Report
-              </button>
-              <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                Set Availability
-              </button>
-            </div>
-          </Card>
         </div>
       </div>
     </div>
