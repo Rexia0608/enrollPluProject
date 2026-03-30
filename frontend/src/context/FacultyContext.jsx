@@ -34,7 +34,6 @@ export const FacultyProvider = ({ children }) => {
     setLoading(false);
   }, [user, authLoading]);
 
-  console.log(facultyProfile);
   return (
     <FacultyContext.Provider
       value={{

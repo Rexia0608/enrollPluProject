@@ -5,15 +5,9 @@ import {
 import { getReviewQueueModel } from "../models/FacultyModel.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here +++++++++++++++++++//
-
 const getReviewQueue = async (req, res) => {
   try {
     const data = await getReviewQueueModel();
-    console.log(data);
 
     return globalResponseHandler(res, data, {
       message: data ? "Workload successfully fetch." : "No pending to review.",
@@ -25,5 +19,9 @@ const getReviewQueue = async (req, res) => {
     return errorResponseHandler(res, error, 500);
   }
 };
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here +++++++++++++++++++//
 
 export { getReviewQueue };

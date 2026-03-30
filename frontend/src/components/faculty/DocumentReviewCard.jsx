@@ -14,150 +14,168 @@ import {
   Paperclip,
   ExternalLink,
   Mail,
+  Image as ImageIcon,
 } from "lucide-react";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import SecondaryButton from "../ui/SecondaryButton";
 import StatusBadge from "../ui/StatusBadge";
 
+// API base URL – adjust to your backend URL
+const API_BASE_URL = "http://localhost:3000";
+
 function DocumentReviewCard({ student }) {
   const [documents, setDocuments] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
-  const [action, setAction] = useState(null); // 'approved' or 'rejected'
+  const [action, setAction] = useState(null);
   const [actionMessage, setActionMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState({});
 
-  // Document templates based on student type
-  const getDocumentTemplate = (studentType) => {
+  console.log("Student in DocumentReviewCard:", student);
+
+  // Define required documents with their file keys (matching backend filenames)
+  const getRequiredDocuments = (studentType) => {
+    const commonDocs = [
+      {
+        id: "birthCertificate",
+        name: "Birth Certificate",
+        category: "Identity",
+        fileKey: "birthCertificate",
+      },
+      {
+        id: "photoId",
+        name: "1x1 Photo ID (White Background)",
+        category: "Identification",
+        fileKey: "PhotoId",
+      },
+    ];
+
     if (studentType === "transferee") {
       return [
+        ...commonDocs,
         {
-          id: 1,
-          name: "Birth Certificate",
-          type: "PDF",
-          size: "1.8 MB",
-          uploaded: "2024-01-15 14:32",
-          status: "pending",
-          category: "Identity",
-          previewUrl: "#",
-          downloadUrl: "#",
-        },
-        {
-          id: 2,
+          id: "transcript",
           name: "Transcript of Records",
-          type: "PDF",
-          size: "3.2 MB",
-          uploaded: "2024-01-14 11:15",
-          status: "pending",
           category: "Academic",
-          previewUrl: "#",
-          downloadUrl: "#",
+          fileKey: null,
         },
         {
-          id: 3,
+          id: "honorableDismissal",
           name: "Honorable Dismissal",
-          type: "PDF",
-          size: "1.2 MB",
-          uploaded: "2024-01-14 11:20",
-          status: "pending",
           category: "Academic",
-          previewUrl: "#",
-          downloadUrl: "#",
-        },
-        {
-          id: 4,
-          name: "1x1 Photo ID (White Background)",
-          type: "JPG",
-          size: "0.5 MB",
-          uploaded: "2024-01-13 09:45",
-          status: "pending",
-          category: "Identification",
-          previewUrl: "#",
-          downloadUrl: "#",
+          fileKey: null,
         },
       ];
     }
-    // Default: New Student
+    // New student
     return [
       {
-        id: 1,
+        id: "form138",
         name: "Form 138 / 137",
-        type: "PDF",
-        size: "2.4 MB",
-        uploaded: "2024-01-15 14:30",
-        status: "pending",
         category: "Academic",
-        previewUrl: "#",
-        downloadUrl: "#",
+        fileKey: "form138",
       },
-      {
-        id: 2,
-        name: "Birth Certificate",
-        type: "PDF",
-        size: "1.8 MB",
-        uploaded: "2024-01-15 14:32",
-        status: "pending",
-        category: "Identity",
-        previewUrl: "#",
-        downloadUrl: "#",
-      },
-      {
-        id: 3,
-        name: "1x1 Photo ID (White Background)",
-        type: "JPG",
-        size: "0.5 MB",
-        uploaded: "2024-01-13 09:45",
-        status: "pending",
-        category: "Identification",
-        previewUrl: "#",
-        downloadUrl: "#",
-      },
+      ...commonDocs,
     ];
   };
 
-  // Simulate fetching documents from an API based on student type
-  const fetchDocuments = useCallback(async (studentId, studentType) => {
+  // Build image URL using student.studentId (the UUID)
+  const getImageUrl = (fileKey) => {
+    if (!student?.studentId || !fileKey) {
+      console.warn("Missing studentId or fileKey", {
+        studentId: student?.studentId,
+        fileKey,
+      });
+      return null;
+    }
+    const url = `${API_BASE_URL}/faculty/review-document/${student.studentId}-${fileKey}.jpg`;
+    console.log("Constructed image URL:", url);
+    return url;
+  };
+
+  // Initialize documents with real URLs
+  const initializeDocuments = useCallback(async () => {
+    if (!student?.studentId) {
+      setDocuments([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Replace with actual API call: const response = await fetch(`/api/students/${studentId}/documents`);
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
-      const mockDocs = getDocumentTemplate(studentType);
-      // In a real app, you would map the API response to match your document structure
-      setDocuments(mockDocs);
+      const studentType = student.type === "transferee" ? "transferee" : "new";
+      const requiredDocs = getRequiredDocuments(studentType);
+
+      const docsWithUrls = requiredDocs.map((doc) => {
+        const imageUrl = doc.fileKey ? getImageUrl(doc.fileKey) : null;
+        return {
+          id: doc.id,
+          name: doc.name,
+          type: doc.fileKey ? "JPG" : "PDF",
+          size: doc.fileKey ? "Loading..." : "N/A",
+          uploaded: new Date().toLocaleDateString(),
+          status: "pending",
+          category: doc.category,
+          previewUrl: imageUrl,
+          downloadUrl: imageUrl,
+          fileKey: doc.fileKey,
+        };
+      });
+
+      setDocuments(docsWithUrls);
     } catch (error) {
-      console.error("Failed to fetch documents:", error);
+      console.error("Failed to initialize documents:", error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [student?.studentId, student?.type]);
 
   useEffect(() => {
-    if (student?.id) {
-      // Determine student type; default to 'new' if not provided
-      const studentType = student.type === "transferee" ? "transferee" : "new";
-      fetchDocuments(student.id, studentType);
-    } else {
-      setDocuments([]);
-      setIsLoading(false);
-    }
-  }, [student?.id, student?.type, fetchDocuments]);
+    initializeDocuments();
+  }, [initializeDocuments]);
 
-  const getDocumentIcon = (type) => {
+  const getDocumentIcon = (type, hasUrl) => {
+    if (!hasUrl) return "text-gray-400 bg-gray-100";
     if (type === "PDF") return "text-red-600 bg-red-50";
     if (type === "JPG" || type === "PNG") return "text-green-600 bg-green-50";
-    if (type === "DOC") return "text-blue-600 bg-blue-50";
     return "text-gray-600 bg-gray-50";
+  };
+
+  const handleViewDocument = (doc) => {
+    if (doc.previewUrl) {
+      window.open(doc.previewUrl, "_blank");
+    } else {
+      alert(
+        "Document preview not available. The student may not have uploaded this document.",
+      );
+    }
+  };
+
+  const handleDownloadDocument = async (doc) => {
+    if (!doc.downloadUrl) {
+      alert("Document not available for download.");
+      return;
+    }
+    try {
+      window.open(doc.downloadUrl, "_blank");
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download document.");
+    }
+  };
+
+  const handleImageError = (docId) => {
+    setImageErrors((prev) => ({ ...prev, [docId]: true }));
   };
 
   const handleApprove = async () => {
     if (isSubmitting) return;
-
     setIsSubmitting(true);
     setFeedbackError("");
     try {
-      // In real app, would call API to approve all documents
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setAction("approved");
       setActionMessage("All documents approved successfully.");
@@ -179,16 +197,13 @@ function DocumentReviewCard({ student }) {
 
   const handleReject = async () => {
     if (isSubmitting) return;
-
     if (!feedback.trim()) {
       setFeedbackError("Please provide feedback for rejection.");
       return;
     }
     setFeedbackError("");
-
     setIsSubmitting(true);
     try {
-      // In real app, would call API to reject documents with feedback
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setAction("rejected");
       setActionMessage("Documents rejected. Feedback sent to student.");
@@ -208,28 +223,19 @@ function DocumentReviewCard({ student }) {
     }
   };
 
-  const handleViewDocument = (documentId) => {
-    console.log("View document:", documentId);
-    alert(`Preview document ID: ${documentId} (mock)`);
-  };
-
-  const handleDownloadDocument = (documentId) => {
-    console.log("Download document:", documentId);
-    alert(`Download document ID: ${documentId} (mock)`);
-  };
-
   const getStudentData = () => {
     if (student) return student;
+    // Fallback mock data
     return {
       id: 1,
       studentName: "John Doe",
-      studentId: "S2024001",
+      studentId: "c069768b-e7a6-4f46-9d64-1af0263a634b",
       email: "john.doe@example.com",
       program: "Computer Science",
       semester: "Fall 2024",
       enrollmentDate: "2024-01-15",
       status: "documents_pending",
-      type: "new", // default
+      type: "new",
     };
   };
 
@@ -263,8 +269,8 @@ function DocumentReviewCard({ student }) {
               </h2>
               <div className="flex flex-wrap items-center gap-3 mt-1">
                 <div className="flex items-center text-sm text-gray-600">
-                  <span className="font-medium">ID:</span>{" "}
-                  {currentStudent.studentId}
+                  <span className="font-medium">ENROLLMENT ID: </span>{" "}
+                  {currentStudent.id}
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <Mail className="w-4 h-4 mr-1" />
@@ -286,7 +292,7 @@ function DocumentReviewCard({ student }) {
           </div>
           <div className="flex flex-col items-end">
             <StatusBadge
-              status={currentStudent.status.split("_").join(" ")}
+              status={currentStudent.status?.split("_").join(" ") || "pending"}
               size="lg"
             />
             <p className="text-sm text-gray-600 mt-2">
@@ -308,94 +314,138 @@ function DocumentReviewCard({ student }) {
         </div>
 
         <div className="space-y-4">
-          {documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start space-x-4">
-                  <div
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center ${getDocumentIcon(doc.type)}`}
-                  >
-                    <FileText className="w-6 h-6" />
+          {documents.map((doc) => {
+            const hasValidUrl = doc.previewUrl && !imageErrors[doc.id];
+            // Show image preview only if it's a JPG with a valid URL
+            const showPreview = hasValidUrl && doc.fileKey;
+
+            return (
+              <div
+                key={doc.id}
+                className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start space-x-4">
+                    <div
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center ${getDocumentIcon(doc.type, hasValidUrl)}`}
+                    >
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-gray-900">
+                          {doc.name}
+                        </h4>
+                        {doc.status !== "pending" && (
+                          <StatusBadge status={doc.status} size="sm" />
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
+                        <span className="flex items-center">
+                          <Paperclip className="w-4 h-4 mr-1" />
+                          {doc.type} • {doc.size}
+                        </span>
+                        <span>•</span>
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                          {doc.category}
+                        </span>
+                        <span>•</span>
+                        <span>Uploaded: {doc.uploaded}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-gray-900">{doc.name}</h4>
-                      {doc.status !== "pending" && (
-                        <StatusBadge status={doc.status} size="sm" />
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
-                      <span className="flex items-center">
-                        <Paperclip className="w-4 h-4 mr-1" />
-                        {doc.type} • {doc.size}
-                      </span>
-                      <span>•</span>
-                      <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                        {doc.category}
-                      </span>
-                      <span>•</span>
-                      <span>Uploaded: {doc.uploaded}</span>
-                    </div>
+
+                  <div className="flex items-center space-x-2 self-start md:self-center">
+                    <button
+                      type="button"
+                      onClick={() => handleViewDocument(doc)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Preview"
+                      aria-label={`Preview ${doc.name}`}
+                      disabled={!hasValidUrl}
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadDocument(doc)}
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Download"
+                      aria-label={`Download ${doc.name}`}
+                      disabled={!hasValidUrl}
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                    {hasValidUrl && (
+                      <a
+                        href={doc.previewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Open in new tab"
+                      >
+                        <ExternalLink className="w-5 h-5" />
+                      </a>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 self-start md:self-center">
-                  <button
-                    type="button"
-                    onClick={() => handleViewDocument(doc.id)}
-                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Preview"
-                    aria-label={`Preview ${doc.name}`}
-                  >
-                    <Eye className="w-5 h-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadDocument(doc.id)}
-                    className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                    title="Download"
-                    aria-label={`Download ${doc.name}`}
-                  >
-                    <Download className="w-5 h-5" />
-                  </button>
-                  <a
-                    href={doc.previewUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                    title="Open in new tab"
-                    aria-label={`Open ${doc.name} in new tab`}
-                  >
-                    <ExternalLink className="w-5 h-5" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Document Preview Placeholder */}
-              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    Document Preview
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Click buttons above to view full document
-                  </span>
-                </div>
-                <div className="flex items-center justify-center p-6 bg-white border border-gray-300 rounded">
-                  <FileText className="w-12 h-12 text-gray-400" />
-                  <div className="ml-4">
-                    <p className="font-medium">{doc.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {doc.type} • {doc.size}
-                    </p>
+                {/* Document Preview / Thumbnail */}
+                <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">
+                      Document Preview
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Click buttons above to view full document
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-6 bg-white border border-gray-300 rounded">
+                    {showPreview ? (
+                      <img
+                        src={doc.previewUrl}
+                        alt={doc.name}
+                        className="max-w-full max-h-48 object-contain"
+                        onError={() => handleImageError(doc.id)}
+                      />
+                    ) : (
+                      <div className="text-center">
+                        {!doc.fileKey ? (
+                          <>
+                            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-500">
+                              Document not available digitally
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Student must submit physical copy.
+                            </p>
+                          </>
+                        ) : imageErrors[doc.id] ? (
+                          <>
+                            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-500">
+                              Failed to load image
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              The file may be missing or corrupted.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-500">{doc.name}</p>
+                            <p className="text-xs text-gray-400">
+                              {doc.type} • {doc.size}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Document Statistics */}
