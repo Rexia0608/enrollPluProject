@@ -24,7 +24,7 @@ import StatusBadge from "../ui/StatusBadge";
 // API base URL – adjust to your backend URL
 const API_BASE_URL = "http://localhost:3000";
 
-function DocumentReviewCard({ student }) {
+function DocumentReviewCard({ student, backpage }) {
   const [documents, setDocuments] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
@@ -33,8 +33,6 @@ function DocumentReviewCard({ student }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState({});
-
-  console.log("Student in DocumentReviewCard:", student);
 
   // Define required documents with their file keys (matching backend filenames)
   const getRequiredDocuments = (studentType) => {
@@ -91,8 +89,8 @@ function DocumentReviewCard({ student }) {
       });
       return null;
     }
-    const url = `${API_BASE_URL}/faculty/review-document/${student.studentId}-${fileKey}.jpg`;
-    console.log("Constructed image URL:", url);
+    const url = `${API_BASE_URL}/faculty/review-document/${student.studentId}-${fileKey}`;
+
     return url;
   };
 
@@ -173,9 +171,11 @@ function DocumentReviewCard({ student }) {
 
   const handleApprove = async () => {
     if (isSubmitting) return;
+
     setIsSubmitting(true);
     setFeedbackError("");
     try {
+      console.log(feedback);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setAction("approved");
       setActionMessage("All documents approved successfully.");
@@ -185,6 +185,7 @@ function DocumentReviewCard({ student }) {
       setTimeout(() => {
         setAction(null);
         setActionMessage("");
+        backpage(null);
       }, 5000);
     } catch (error) {
       console.error("Failed to approve:", error);
@@ -204,6 +205,7 @@ function DocumentReviewCard({ student }) {
     setFeedbackError("");
     setIsSubmitting(true);
     try {
+      console.log(`rejected`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setAction("rejected");
       setActionMessage("Documents rejected. Feedback sent to student.");

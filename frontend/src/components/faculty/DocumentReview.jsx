@@ -227,7 +227,10 @@ function DocumentReview() {
               ← Back to Review Queue
             </button>
           </div>
-          <DocumentReviewCard student={selectedStudent} />
+          <DocumentReviewCard
+            backpage={setSelectedStudent}
+            student={selectedStudent}
+          />
         </div>
       ) : (
         <div className="space-y-6">

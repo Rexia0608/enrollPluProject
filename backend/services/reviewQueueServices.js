@@ -23,7 +23,8 @@ const fetchReviewQueue = async (passData) => {
             ON ep.course_code_id = c.id
         JOIN academic_year ay 
             ON ep.enrollment_year_code = ay.id
-        WHERE ep.enrollment_year_code = $1;
+        WHERE ep.enrollment_year_code = $1
+        AND ep.enrollment_status = 'documents_review';
         `;
 
     return { query, value };

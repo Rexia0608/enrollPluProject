@@ -133,8 +133,6 @@ const postEnrollStudentModel = async (data) => {
   }
 };
 
-//*******************finalized*****************************/
-
 const postPaymentModel = async (data) => {
   try {
     let result;
@@ -162,6 +160,8 @@ const postPaymentModel = async (data) => {
     throw error;
   }
 };
+
+//*******************finalized*****************************/
 
 export {
   postPaymentModel,

@@ -9,29 +9,11 @@ const uploadDir = path.join(__dirname, "../uploads/requirements");
 
 const fetchDocument = async (req, res) => {
   try {
-    let { filename } = req.params;
+    const { filename } = req.params;
 
-    // Sanitize filename (allow letters, numbers, dash, underscore, optional dot)
+    // Sanitize filename to prevent path traversal
     if (!filename.match(/^[a-zA-Z0-9-_\.]+$/)) {
       return res.status(400).json({ message: "Invalid filename" });
-    }
-
-    // If filename has no extension, try .jpg first, then .png
-    const ext = path.extname(filename);
-    if (!ext) {
-      const jpgFile = `${filename}.jpg`;
-      const pngFile = `${filename}.png`;
-      const padfFile = `${filename}.pdf`;
-
-      if (fs.existsSync(path.join(uploadDir, jpgFile))) {
-        filename = jpgFile;
-      } else if (fs.existsSync(path.join(uploadDir, pngFile))) {
-        filename = pngFile;
-      } else if (fs.existsSync(path.join(uploadDir, padfFile))) {
-        filename = padfFile;
-      } else {
-        return res.status(404).json({ message: "File not found" });
-      }
     }
 
     const filePath = path.join(uploadDir, filename);
@@ -40,7 +22,7 @@ const fetchDocument = async (req, res) => {
       return res.status(404).json({ message: "File not found" });
     }
 
-    // Serve the file
+    // Serve file inline (works for PDF + images)
     res.sendFile(filePath);
   } catch (error) {
     console.error("Error in fetchDocument:", error);

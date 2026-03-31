@@ -69,8 +69,8 @@ const enrollmentProfileServices = async (data) => {
 
     const statusMap = {
       old_student: "payment_pending",
-      new: "documents_approved",
-      transferee: "documents_approved",
+      new: "documents_review",
+      transferee: "documents_review",
     };
 
     const enrollStatus = statusMap[data.studentType];

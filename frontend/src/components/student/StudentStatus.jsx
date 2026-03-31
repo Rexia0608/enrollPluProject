@@ -35,6 +35,7 @@ function StudentStatus() {
   // Define valid enrollment stages (matches API enrollment_status values)
   const validStages = [
     "not_started",
+    "documents_review",
     "documents_pending",
     "documents_approved",
     "payment_pending",
@@ -54,17 +55,17 @@ function StudentStatus() {
     },
     {
       id: 2,
-      key: "documents_pending",
+      key: "documents_review",
       label: "Document Submission",
-      description: "Upload required documents",
+      description: "Documents under review",
       icon: FileText,
       color: "blue",
     },
     {
       id: 3,
       key: "documents_approved",
-      label: "Document Review",
-      description: "Documents under review",
+      label: "Document Accepted",
+      description: "Docuement passed the evaluation",
       icon: CheckCircle,
       color: "green",
     },
@@ -650,6 +651,8 @@ function StudentStatus() {
                   <p className="text-sm text-gray-600 mt-1">
                     {enrollmentStage === "not_started" &&
                       "You haven't started your enrollment yet."}
+                    {enrollmentStage === "documents_review" &&
+                      "Your documents are being process for review."}
                     {enrollmentStage === "documents_pending" &&
                       "Your documents are pending submission."}
                     {enrollmentStage === "documents_approved" &&
@@ -701,6 +704,8 @@ function StudentStatus() {
                     Next Step:
                   </p>
                   <p className="text-sm text-blue-700">
+                    {enrollmentStage === "documents_review" &&
+                      "Your document are under evaluation."}
                     {enrollmentStage === "documents_pending" &&
                       "Upload your required documents."}
                     {enrollmentStage === "documents_approved" &&

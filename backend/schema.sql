@@ -181,6 +181,7 @@ CREATE TABLE enrollment_profile (
         CHECK (enrollment_status IN (
             'not_started',
             'documents_pending',
+            'documents_review',
             'documents_approved',
             'payment_pending',
             'payment_validated',
