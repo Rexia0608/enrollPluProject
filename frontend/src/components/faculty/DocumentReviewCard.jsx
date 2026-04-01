@@ -1,4 +1,3 @@
-// components/faculty/DocumentReviewCard.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   FileText,
@@ -20,11 +19,12 @@ import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import SecondaryButton from "../ui/SecondaryButton";
 import StatusBadge from "../ui/StatusBadge";
+import axios from "axios";
 
 // API base URL – adjust to your backend URL
 const API_BASE_URL = "http://localhost:3000";
 
-function DocumentReviewCard({ student, backpage }) {
+function DocumentReviewCard({ student, backpage, onReviewComplete }) {
   const [documents, setDocuments] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
@@ -34,7 +34,6 @@ function DocumentReviewCard({ student, backpage }) {
   const [isLoading, setIsLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState({});
 
-  // Define required documents with their file keys (matching backend filenames)
   const getRequiredDocuments = (studentType) => {
     const commonDocs = [
       {
@@ -68,7 +67,7 @@ function DocumentReviewCard({ student, backpage }) {
         },
       ];
     }
-    // New student
+
     return [
       {
         id: "form138",
@@ -90,7 +89,6 @@ function DocumentReviewCard({ student, backpage }) {
       return null;
     }
     const url = `${API_BASE_URL}/faculty/review-document/${student.studentId}-${fileKey}`;
-
     return url;
   };
 
@@ -169,24 +167,38 @@ function DocumentReviewCard({ student, backpage }) {
     setImageErrors((prev) => ({ ...prev, [docId]: true }));
   };
 
-  const handleApprove = async () => {
+  const handleApprove = async (fileId, studentId) => {
     if (isSubmitting) return;
-
+    const fileData = {
+      fileId,
+      studentId,
+      feedback,
+      status: true,
+    };
     setIsSubmitting(true);
     setFeedbackError("");
     try {
-      console.log(feedback);
+      const response = await axios.post(
+        `${API_BASE_URL}/faculty/verified-document`,
+        fileData,
+      );
+
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
       setAction("approved");
       setActionMessage("All documents approved successfully.");
       setDocuments((docs) =>
         docs.map((doc) => ({ ...doc, status: "approved" })),
       );
+
+      // Refresh the review queue in the parent component
+      if (onReviewComplete) onReviewComplete();
+
       setTimeout(() => {
         setAction(null);
         setActionMessage("");
         backpage(null);
-      }, 5000);
+      }, 2500);
     } catch (error) {
       console.error("Failed to approve:", error);
       setAction("error");
@@ -196,7 +208,7 @@ function DocumentReviewCard({ student, backpage }) {
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = async (fileId, studentId) => {
     if (isSubmitting) return;
     if (!feedback.trim()) {
       setFeedbackError("Please provide feedback for rejection.");
@@ -204,18 +216,33 @@ function DocumentReviewCard({ student, backpage }) {
     }
     setFeedbackError("");
     setIsSubmitting(true);
+    const fileData = {
+      fileId,
+      studentId,
+      feedback,
+      status: false,
+    };
     try {
-      console.log(`rejected`);
+      const response = await axios.post(
+        `${API_BASE_URL}/faculty/verified-document`,
+        fileData,
+      );
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
       setAction("rejected");
       setActionMessage("Documents rejected. Feedback sent to student.");
       setDocuments((docs) =>
         docs.map((doc) => ({ ...doc, status: "rejected" })),
       );
+
+      // Refresh the review queue in the parent component
+      if (onReviewComplete) onReviewComplete();
+
       setTimeout(() => {
         setAction(null);
         setActionMessage("");
-      }, 5000);
+        backpage(null);
+      }, 2500);
     } catch (error) {
       console.error("Failed to reject:", error);
       setAction("error");
@@ -550,7 +577,9 @@ function DocumentReviewCard({ student, backpage }) {
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <PrimaryButton
                 type="button"
-                onClick={handleApprove}
+                onClick={() =>
+                  handleApprove(currentStudent.id, student.studentId)
+                }
                 icon={CheckCircle}
                 disabled={isSubmitting}
                 className="sm:flex-1"
@@ -559,7 +588,9 @@ function DocumentReviewCard({ student, backpage }) {
               </PrimaryButton>
               <SecondaryButton
                 type="button"
-                onClick={handleReject}
+                onClick={() =>
+                  handleReject(currentStudent.id, student.studentId)
+                }
                 icon={XCircle}
                 disabled={isSubmitting || !feedback.trim()}
                 className="sm:flex-1 border-red-300 text-red-700 hover:bg-red-50"

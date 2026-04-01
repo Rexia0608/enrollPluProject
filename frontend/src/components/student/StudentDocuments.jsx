@@ -902,7 +902,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                                   <span className="text-red-500 ml-1">*</span>
                                 </h4>
                                 <p className="text-xs text-gray-500">
-                                  PDF, JPG, or PNG (Max 5MB)
+                                  JPG, or PNG (Max 10MB)
                                 </p>
                               </div>
                             </div>
@@ -946,7 +946,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
                                   type="file"
                                   id={`doc-${docType}`}
                                   className="hidden"
-                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  accept=".jpg,.jpeg,.png"
                                   onChange={(e) =>
                                     handleFileSelect(docType, e.target.files[0])
                                   }

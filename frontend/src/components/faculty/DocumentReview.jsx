@@ -1,5 +1,4 @@
-// components/faculty/DocumentReview.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Filter,
@@ -26,109 +25,66 @@ function DocumentReview() {
   const [error, setError] = useState(null);
   const { getAuthHeaders } = useFaculty();
 
-  // --- API CALL ---
-  useEffect(() => {
-    const fetchReviewQueue = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axios.get(
-          "http://localhost:3000/faculty/review-queue",
-          getAuthHeaders(),
-        );
-
-        // Check if API call succeeded
-        if (response.data.success && response.data.data?.items) {
-          const mappedQueue = response.data.data.items.map((item) => {
-            // Determine type based on enrollment_status
-            let type = "document";
-            if (item.enrollment_status === "payment_pending") {
-              type = "payment";
-            } else if (item.enrollment_status.includes("document")) {
-              type = "document";
-            }
-
-            // Priority: new students get high priority
-            const priority = item.student_type === "new" ? "high" : "medium";
-
-            // Documents count (API doesn't provide exact number, use 1 as placeholder)
-            const documentsCount = type === "document" ? 1 : 0;
-
-            return {
-              id: item.enrollment_id,
-              studentName: `${item.first_name} ${item.last_name}`,
-              studentId: item.user_id || item.enrollment_id, // fallback to enrollment_id
-              type: type,
-              submitted: "Awaiting review", // No timestamp from API
-              status: "pending",
-              priority: priority,
-              documents: documentsCount,
-              amount: type === "payment" ? "Pending" : undefined,
-              details: {
-                email: item.email,
-                program: item.course_name,
-                semester: item.semester,
-                yearLevel: item.year_level,
-                studentType: item.student_type,
-                enrollmentStatus: item.enrollment_status,
-                yearSeries: item.year_series,
-              },
-            };
-          });
-
-          setReviewQueue(mappedQueue);
-        } else {
-          // API returned success false or no items
-          setReviewQueue([]);
-          if (!response.data.success) {
-            setError(response.data.message || "Failed to load review queue");
-          }
+  // Fetch review queue from API
+  const fetchReviewQueue = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        "http://localhost:3000/faculty/review-queue",
+        getAuthHeaders(),
+      );
+      if (response.data.success && response.data.data?.items) {
+        const mappedQueue = response.data.data.items.map((item) => ({
+          id: item.enrollment_id,
+          studentName: `${item.first_name} ${item.last_name}`,
+          studentId: item.user_id || item.enrollment_id,
+          type:
+            item.enrollment_status === "payment_pending"
+              ? "payment"
+              : "document",
+          submitted: "Awaiting review",
+          status: "pending",
+          priority: item.student_type === "new" ? "high" : "medium",
+          documents: item.enrollment_status.includes("document") ? 1 : 0,
+          amount:
+            item.enrollment_status === "payment_pending"
+              ? "Pending"
+              : undefined,
+          details: {
+            email: item.email,
+            program: item.course_name,
+            semester: item.semester,
+            yearLevel: item.year_level,
+            studentType: item.student_type,
+            enrollmentStatus: item.enrollment_status,
+            yearSeries: item.year_series,
+          },
+        }));
+        setReviewQueue(mappedQueue);
+      } else {
+        setReviewQueue([]);
+        if (!response.data.success) {
+          setError(response.data.message || "Failed to load review queue");
         }
-      } catch (err) {
-        console.error("Failed to fetch review queue:", err);
-        setError(err.response?.data?.message || err.message);
-
-        // Fallback mock data for development (remove in production)
-        setReviewQueue([
-          {
-            id: "MOCK1",
-            studentName: "John Doe",
-            studentId: "S2024001",
-            type: "document",
-            submitted: "2 hours ago",
-            status: "pending",
-            priority: "high",
-            documents: 3,
-            details: {
-              email: "john.doe@example.com",
-              program: "Computer Science",
-              semester: "Fall 2024",
-            },
-          },
-          {
-            id: "MOCK2",
-            studentName: "Jane Smith",
-            studentId: "S2024002",
-            type: "payment",
-            submitted: "1 day ago",
-            status: "pending",
-            priority: "medium",
-            amount: "$500",
-            details: {
-              email: "jane.smith@example.com",
-              program: "Business Administration",
-              semester: "Fall 2024",
-            },
-          },
-        ]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchReviewQueue();
+    } catch (err) {
+      console.error("Failed to fetch review queue:", err);
+      setError(err.response?.data?.message || err.message);
+      setReviewQueue([]);
+    } finally {
+      setLoading(false);
+    }
   }, [getAuthHeaders]);
-  // --- END API CALL ---
+
+  useEffect(() => {
+    fetchReviewQueue();
+  }, [fetchReviewQueue]);
+
+  // Refresh queue after a review action
+  const refreshQueue = () => {
+    fetchReviewQueue();
+  };
 
   const getFilteredQueue = () => {
     let filtered = reviewQueue;
@@ -183,7 +139,6 @@ function DocumentReview() {
   const stats = getStats();
   const filteredQueue = getFilteredQueue();
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-400px">
@@ -193,7 +148,6 @@ function DocumentReview() {
     );
   }
 
-  // Error state (only if we have no data to fall back on)
   if (error && reviewQueue.length === 0) {
     return (
       <Card className="p-6 text-center">
@@ -209,7 +163,6 @@ function DocumentReview() {
     );
   }
 
-  // Main UI
   return (
     <div>
       <div className="mb-6">
@@ -228,8 +181,9 @@ function DocumentReview() {
             </button>
           </div>
           <DocumentReviewCard
-            backpage={setSelectedStudent}
+            backpage={handleBackToList}
             student={selectedStudent}
+            onReviewComplete={refreshQueue} // <-- refresh queue after action
           />
         </div>
       ) : (

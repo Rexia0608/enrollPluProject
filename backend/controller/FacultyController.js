@@ -2,7 +2,10 @@ import {
   globalResponseHandler,
   errorResponseHandler,
 } from "../middleware/responseHandler.js";
-import { getReviewQueueModel } from "../models/FacultyModel.js";
+import {
+  getReviewQueueModel,
+  postVerifiedDocumentModel,
+} from "../models/FacultyModel.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 const getReviewQueue = async (req, res) => {
@@ -24,4 +27,20 @@ const getReviewQueue = async (req, res) => {
 
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 
-export { getReviewQueue };
+const postVerifiedDocument = async (req, res) => {
+  try {
+    const data = await postVerifiedDocumentModel(req.body);
+
+    return globalResponseHandler(res, data, {
+      message: data
+        ? `Enrollment ID: ${req.params.fileNumber} are successssfully verified`
+        : `Enrollment ID ${req.params.fileNumber} are not successssfully verified`,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getReviewQueue:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+export { getReviewQueue, postVerifiedDocument };

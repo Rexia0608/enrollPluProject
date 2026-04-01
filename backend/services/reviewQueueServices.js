@@ -18,7 +18,7 @@ const fetchReviewQueue = async (passData) => {
         JOIN users u 
             ON ep.user_id = u.id
         JOIN credentials cr 
-            ON cr.user_id = u.id   -- or ep.user_id (same result)
+            ON cr.user_id = u.id  
         JOIN courses c 
             ON ep.course_code_id = c.id
         JOIN academic_year ay 

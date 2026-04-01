@@ -40,7 +40,6 @@ const fetchDocument = async (req, res) => {
       return res.status(404).json({ message: "File not found" });
     }
 
-    // Serve the file
     res.sendFile(filePath);
   } catch (error) {
     console.error("Error in fetchDocument:", error);
