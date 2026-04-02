@@ -429,14 +429,9 @@ const PaymentForm = ({ selectedPeriod, onSubmit, onCancel, isSubmitting }) => {
   const [file, setFile] = useState(null);
   const handleFileUpload = (e) => {
     const f = e.target.files[0];
-    if (
-      f &&
-      ["image/png", "image/jpeg", "image/jpg", "application/pdf"].includes(
-        f.type,
-      )
-    )
+    if (f && ["image/png", "image/jpeg", "image/jpg"].includes(f.type))
       setFile(f);
-    else alert("Please upload only PNG, JPG, or PDF files");
+    else alert("Please upload only PNG, or JPG files");
   };
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -533,7 +528,7 @@ const PaymentForm = ({ selectedPeriod, onSubmit, onCancel, isSubmitting }) => {
                   <input
                     type="file"
                     className="sr-only"
-                    accept=".png,.jpg,.jpeg,.pdf"
+                    accept=".png,.jpg,.jpeg"
                     onChange={handleFileUpload}
                   />
                 </label>

@@ -38,7 +38,7 @@ export const AdminProvider = ({ children }) => {
           ]);
 
         setInitialCourses(initialCoursesRes.data);
-        setUserList(userListRes.data);
+        setUserList(userListRes.data.data.items);
         setOverView(overViewRes.data);
         setAcademicYear(academicYearRes.data);
       } catch (err) {

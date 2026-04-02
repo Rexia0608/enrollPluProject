@@ -178,10 +178,7 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
     setIsSubmitting(true);
     setFeedbackError("");
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/faculty/verified-document`,
-        fileData,
-      );
+      await axios.post(`${API_BASE_URL}/faculty/verified-document`, fileData);
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 

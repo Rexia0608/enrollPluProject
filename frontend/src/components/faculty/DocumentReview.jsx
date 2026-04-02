@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   Filter,
@@ -7,6 +7,7 @@ import {
   Clock,
   AlertCircle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import axios from "axios";
 import Card from "../ui/Card";
@@ -21,69 +22,84 @@ function DocumentReview() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [reviewQueue, setReviewQueue] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { getAuthHeaders } = useFaculty();
+  const intervalRef = useRef(null);
 
   // Fetch review queue from API
-  const fetchReviewQueue = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get(
-        "http://localhost:3000/faculty/review-queue",
-        getAuthHeaders(),
-      );
-      if (response.data.success && response.data.data?.items) {
-        const mappedQueue = response.data.data.items.map((item) => ({
-          id: item.enrollment_id,
-          studentName: `${item.first_name} ${item.last_name}`,
-          studentId: item.user_id || item.enrollment_id,
-          type:
-            item.enrollment_status === "payment_pending"
-              ? "payment"
-              : "document",
-          submitted: "Awaiting review",
-          status: "pending",
-          priority: item.student_type === "new" ? "high" : "medium",
-          documents: item.enrollment_status.includes("document") ? 1 : 0,
-          amount:
-            item.enrollment_status === "payment_pending"
-              ? "Pending"
-              : undefined,
-          details: {
-            email: item.email,
-            program: item.course_name,
-            semester: item.semester,
-            yearLevel: item.year_level,
-            studentType: item.student_type,
-            enrollmentStatus: item.enrollment_status,
-            yearSeries: item.year_series,
-          },
-        }));
-        setReviewQueue(mappedQueue);
-      } else {
-        setReviewQueue([]);
-        if (!response.data.success) {
-          setError(response.data.message || "Failed to load review queue");
+  const fetchReviewQueue = useCallback(
+    async (showRefreshing = false) => {
+      if (showRefreshing) setIsRefreshing(true);
+      setError(null);
+      try {
+        const response = await axios.get(
+          "http://localhost:3000/faculty/review-queue",
+          getAuthHeaders(),
+        );
+        if (response.data.success && response.data.data?.items) {
+          const mappedQueue = response.data.data.items.map((item) => ({
+            id: item.enrollment_id,
+            studentName: `${item.first_name} ${item.last_name}`,
+            studentId: item.user_id || item.enrollment_id,
+            type:
+              item.enrollment_status === "payment_pending"
+                ? "payment"
+                : "document",
+            submitted: "Awaiting review",
+            status: "pending",
+            priority: item.student_type === "new" ? "high" : "medium",
+            documents: item.enrollment_status.includes("document") ? 1 : 0,
+            amount:
+              item.enrollment_status === "payment_pending"
+                ? "Pending"
+                : undefined,
+            details: {
+              email: item.email,
+              program: item.course_name,
+              semester: item.semester,
+              yearLevel: item.year_level,
+              studentType: item.student_type,
+              enrollmentStatus: item.enrollment_status,
+              yearSeries: item.year_series,
+            },
+          }));
+          setReviewQueue(mappedQueue);
+        } else {
+          setReviewQueue([]);
+          if (!response.data.success) {
+            setError(response.data.message || "Failed to load review queue");
+          }
         }
+      } catch (err) {
+        console.error("Failed to fetch review queue:", err);
+        setError(err.response?.data?.message || err.message);
+        setReviewQueue([]);
+      } finally {
+        setIsRefreshing(false);
+        setIsInitialLoad(false);
       }
-    } catch (err) {
-      console.error("Failed to fetch review queue:", err);
-      setError(err.response?.data?.message || err.message);
-      setReviewQueue([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [getAuthHeaders]);
+    },
+    [getAuthHeaders],
+  );
 
+  // Initial load (show refreshing indicator)
   useEffect(() => {
-    fetchReviewQueue();
+    fetchReviewQueue(true);
   }, [fetchReviewQueue]);
 
-  // Refresh queue after a review action
+  // Background polling every 30 minutes (no indicator)
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      fetchReviewQueue(false);
+    }, 1800000);
+    return () => clearInterval(intervalRef.current);
+  }, [fetchReviewQueue]);
+
+  // Manual refresh (show indicator)
   const refreshQueue = () => {
-    fetchReviewQueue();
+    fetchReviewQueue(true);
   };
 
   const getFilteredQueue = () => {
@@ -139,7 +155,8 @@ function DocumentReview() {
   const stats = getStats();
   const filteredQueue = getFilteredQueue();
 
-  if (loading) {
+  // Show a subtle loading state only on initial load
+  if (isInitialLoad) {
     return (
       <div className="flex justify-center items-center min-h-400px">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -156,7 +173,7 @@ function DocumentReview() {
           Unable to load review queue
         </h3>
         <p className="text-gray-600 mb-4">{error}</p>
-        <PrimaryButton onClick={() => window.location.reload()}>
+        <PrimaryButton onClick={() => fetchReviewQueue(true)}>
           Retry
         </PrimaryButton>
       </Card>
@@ -165,9 +182,21 @@ function DocumentReview() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Document Review</h1>
-        <p className="text-gray-600">Review and validate student documents</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Document Review</h1>
+          <p className="text-gray-600">Review and validate student documents</p>
+        </div>
+        <button
+          onClick={refreshQueue}
+          disabled={isRefreshing}
+          className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+        >
+          <RefreshCw
+            className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          {isRefreshing ? "Updating..." : "Refresh"}
+        </button>
       </div>
 
       {selectedStudent ? (
@@ -183,13 +212,14 @@ function DocumentReview() {
           <DocumentReviewCard
             backpage={handleBackToList}
             student={selectedStudent}
-            onReviewComplete={refreshQueue} // <-- refresh queue after action
+            onReviewComplete={refreshQueue}
           />
         </div>
       ) : (
         <div className="space-y-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* ... stats cards unchanged ... */}
             <Card>
               <div className="flex items-center justify-between">
                 <div>
@@ -304,6 +334,7 @@ function DocumentReview() {
                     key={student.id}
                     className="p-6 hover:bg-gray-50 transition-colors"
                   >
+                    {/* ... same student card as before ... */}
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div className="flex items-start space-x-4">
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center shrink-0">

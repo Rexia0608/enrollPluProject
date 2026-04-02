@@ -1,20 +1,16 @@
 import db from "../config/db.js";
 
-const getAllUsersList = async () => {
+import {
+  getAllUsersListServices,
+  getAllCoursesListServices,
+} from "../services/adminServices.js";
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+const getAllUsersListModel = async () => {
   try {
-    const result = await db.query(
-      `SELECT 
-    users.id,
-    users.first_name,
-    users.last_name,
-    credentials.email,
-    users.role,
-    users.status,
-    credentials.created_at
-FROM credentials
-INNER JOIN users
-    ON credentials.user_id = users.id;`,
-    );
+    const { query } = getAllUsersListServices();
+    const result = await db.query(query);
     return result.rows;
   } catch (error) {
     console.error("Error in getAllUsersList:", error);
@@ -22,15 +18,18 @@ INNER JOIN users
   }
 };
 
-const getAllCoursesList = async () => {
+const getAllCoursesListModel = async () => {
   try {
-    const result = await db.query(`SELECT * FROM courses`);
+    const { query } = getAllCoursesListServices();
+    const result = await db.query(query);
     return result.rows;
   } catch (error) {
     console.error("Error in getAllCoursesList:", error);
     throw error;
   }
 };
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
 
 const updateCourses = async (id, data) => {
   try {
@@ -256,8 +255,8 @@ const switchClassStatusAcademicYear = async (data, id) => {
 };
 
 export {
-  getAllUsersList,
-  getAllCoursesList,
+  getAllUsersListModel,
+  getAllCoursesListModel,
   updateCourses,
   addNewCourses,
   deleteCourses,

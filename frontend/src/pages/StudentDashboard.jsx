@@ -6,7 +6,7 @@ import Sidebar from "../components/layout/Sidebar";
 import MobileNav from "../components/layout/MobileNav";
 import DashboardContainer from "../components/layout/DashboardContainer";
 import StudentStatus from "../components/student/StudentStatus";
-import StudentDocuments from "../components/student/StudentDocuments";
+import EnrollmentProfiling from "../components/student/EnrollmentProfiling";
 import StudentPaymentStatus from "../components/student/StudentPaymentStatus";
 import NotFound from "./NotFound";
 
@@ -28,7 +28,7 @@ function StudentDashboard() {
           <DashboardContainer>
             <Routes>
               <Route index element={<StudentStatus />} />
-              <Route path="enrollment" element={<StudentDocuments />} />
+              <Route path="enrollment" element={<EnrollmentProfiling />} />
               <Route path="payments" element={<StudentPaymentStatus />} />
 
               {/* 404 response when someone crawiling it will catch here */}

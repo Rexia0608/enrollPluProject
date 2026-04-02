@@ -1,6 +1,9 @@
 import db from "../config/db.js";
-import { fetchReviewQueue } from "../services/reviewQueueServices.js";
-import documentReviewServices from "../services/DocumentReviewServices.js";
+
+import {
+  fetchReviewQueueServices,
+  documentReviewServices,
+} from "../services/facultyServices.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 const getReviewQueueModel = async () => {
@@ -8,10 +11,13 @@ const getReviewQueueModel = async () => {
     const activeSemester = await db.query(
       `SELECT ID FROM academic_year WHERE enrollment_open = 'true' LIMIT 1;`,
     );
-    const { query, value } = await fetchReviewQueue(activeSemester.rows[0].id);
+    const { query, value } = fetchReviewQueueServices(
+      activeSemester.rows[0].id,
+    );
     const fetchQueueItems = await db.query(query, value);
 
     const data = fetchQueueItems.rows;
+
     return data;
   } catch (error) {
     console.error("Error in getReviewQueueModel:", error);
@@ -21,13 +27,9 @@ const getReviewQueueModel = async () => {
   }
 };
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here +++++++++++++++++++//
-
 const postVerifiedDocumentModel = async (passData) => {
   try {
-    const { queries, values, message } = await documentReviewServices(passData);
+    const { queries, values } = documentReviewServices(passData);
 
     await db.query("BEGIN");
 
@@ -46,5 +48,9 @@ const postVerifiedDocumentModel = async (passData) => {
     throw new Error(`Failed to process verified Document: ${error.message}`);
   }
 };
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here +++++++++++++++++++//
 
 export { getReviewQueueModel, postVerifiedDocumentModel };

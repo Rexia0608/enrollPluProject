@@ -7,7 +7,7 @@ import {
 import {
   enrollmentProfileServices,
   enrollmentTransactionServices,
-} from "../services/enrollmentServices.js";
+} from "../services/studentServices.js";
 
 //*******************finalized*****************************/
 const getCheckStudentIfEnrolledModel = async (userId) => {
@@ -88,14 +88,12 @@ const postEnrollStudentModel = async (data) => {
       [data.academicYearId],
     );
 
-    const { profileQuery, profileValue } =
-      await enrollmentProfileServices(data);
+    const { profileQuery, profileValue } = enrollmentProfileServices(data);
 
-    const { transactionQuery, enrollmentFee } =
-      await enrollmentTransactionServices(
-        findCourse.rows[0].tuition_fee,
-        findActiveSemester.rows[0].semester,
-      );
+    const { transactionQuery, enrollmentFee } = enrollmentTransactionServices(
+      findCourse.rows[0].tuition_fee,
+      findActiveSemester.rows[0].semester,
+    );
 
     const parsedEnrollmentFee = parseFloat(enrollmentFee);
     const parsedBalance = parseFloat(findCourse.rows[0].tuition_fee);
@@ -138,7 +136,7 @@ const postPaymentModel = async (data) => {
     let result;
     let response;
 
-    const { query, value, paid } = await paymentUpdateService(data);
+    const { query, value, paid } = paymentUpdateService(data);
 
     if (paid) {
       result = await db.query(query, value);
@@ -149,9 +147,7 @@ const postPaymentModel = async (data) => {
     if (!paid) {
       result = await db.query(query, value);
       response = await paymentService(result.rows[0], paid, data);
-      const { nextQuery, nextValue } = await paymentPeriodService(
-        result.rows[0],
-      );
+      const { nextQuery, nextValue } = paymentPeriodService(result.rows[0]);
       await db.query(nextQuery, nextValue);
       return response;
     }

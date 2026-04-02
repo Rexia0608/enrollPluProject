@@ -1,6 +1,5 @@
 // components/student/EnrollmentProfiling.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import LoadingPage from "../../pages/LoadingPage";
 import FailedLoadData from "../../pages/FailedLoadData";
 import { useAuth } from "../../context/AuthContext";

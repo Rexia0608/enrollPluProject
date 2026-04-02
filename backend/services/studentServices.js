@@ -1,4 +1,4 @@
-const enrollmentTransactionServices = async (tuition_fee, semester) => {
+const enrollmentTransactionServices = (tuition_fee, semester) => {
   try {
     let transactionQuery;
 
@@ -59,7 +59,7 @@ const enrollmentTransactionServices = async (tuition_fee, semester) => {
   }
 };
 
-const enrollmentProfileServices = async (data) => {
+const enrollmentProfileServices = (data) => {
   try {
     const facultyDefaultValidation = {
       document: false,

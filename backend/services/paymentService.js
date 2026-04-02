@@ -1,6 +1,6 @@
 import { sendEmail } from "../utils/mailer.js";
 
-const paymentUpdateService = async (data) => {
+const paymentUpdateService = (data) => {
   try {
     const { promiseNote, paymentDetails, user } = data;
     let query;
@@ -47,7 +47,7 @@ const paymentUpdateService = async (data) => {
   }
 };
 
-const paymentPeriodService = async (data) => {
+const paymentPeriodService = (data) => {
   const { period, balance, paid_amount, enrollment_id } = data;
 
   const roundToTwoDecimals = (value) => parseFloat(value.toFixed(2));

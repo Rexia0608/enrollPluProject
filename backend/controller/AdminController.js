@@ -1,13 +1,18 @@
 // controllers/adminController.js
 import {
   maintenanceCheckerModel,
-  maintenanceModel,
   maintenanceMessageModel,
-} from "../services/maintenanceServices.js";
+  maintenanceModel,
+} from "../models/maintenanceModel.js";
 
 import {
-  getAllUsersList,
-  getAllCoursesList,
+  globalResponseHandler,
+  errorResponseHandler,
+} from "../middleware/responseHandler.js";
+
+import {
+  getAllUsersListModel,
+  getAllCoursesListModel,
   updateCourses,
   addNewCourses,
   deleteCourses,
@@ -18,65 +23,33 @@ import {
   switchClassStatusAcademicYear,
 } from "../models/AdminModel.js";
 
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
 const getAllUsers = async (req, res) => {
   try {
-    const result = await getAllUsersList();
-    // Return JSON response
-    res.status(200).json(result);
+    const data = await getAllUsersListModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
   } catch (error) {
     console.error("Error in getUserList:", error);
-    res.status(500).json({ message: "Server error" });
+    return errorResponseHandler(res, error, 500);
   }
 };
 
 const getCourses = async (req, res) => {
   try {
-    const result = await getAllCoursesList();
+    const result = await getAllCoursesListModel();
     res.status(200).json(result);
   } catch (error) {
     console.error("Error in getUserList:", error);
-    res.status(500).json({ message: "Server error" });
+    return errorResponseHandler(res, error, 500);
   }
 };
 
-const overView = async (req, res) => {
-  try {
-    const systemOverview = [
-      {
-        title: "Total Students",
-        value: "1,248",
-        change: 12,
-        icon: "Users",
-        color: "blue",
-      },
-      {
-        title: "Pending Documents",
-        value: "42",
-        change: -5,
-        icon: "FileText",
-        color: "yellow",
-      },
-      {
-        title: "Pending Payments",
-        value: "28",
-        change: 8,
-        icon: "CreditCard",
-        color: "red",
-      },
-      {
-        title: "Enrolled Students",
-        value: "876",
-        change: 15,
-        icon: "CheckCircle",
-        color: "green",
-      },
-    ];
-    res.status(200).json(systemOverview);
-  } catch (error) {
-    console.error("Error in overView:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here +++++++++++++++++++//
 
 const setMaintenance = async (req, res) => {
   try {
@@ -90,9 +63,11 @@ const setMaintenance = async (req, res) => {
     res.status(200).json(maintenance);
   } catch (error) {
     console.error("Error in setMaintenance:", error);
-    res.status(500).json({ message: "Server error" });
+    return errorResponseHandler(res, error, 500);
   }
 };
+
+//++++++++++++++++++ TEST here +++++++++++++++++++//
 
 const checkMaintenance = async (req, res) => {
   try {
@@ -256,6 +231,45 @@ const setClassStatusAcademicYear = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in setStatusAcademicYear:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const overView = async (req, res) => {
+  try {
+    const systemOverview = [
+      {
+        title: "Total Students",
+        value: "1,248",
+        change: 12,
+        icon: "Users",
+        color: "blue",
+      },
+      {
+        title: "Pending Documents",
+        value: "42",
+        change: -5,
+        icon: "FileText",
+        color: "yellow",
+      },
+      {
+        title: "Pending Payments",
+        value: "28",
+        change: 8,
+        icon: "CreditCard",
+        color: "red",
+      },
+      {
+        title: "Enrolled Students",
+        value: "876",
+        change: 15,
+        icon: "CheckCircle",
+        color: "green",
+      },
+    ];
+    res.status(200).json(systemOverview);
+  } catch (error) {
+    console.error("Error in overView:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
