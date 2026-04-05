@@ -56,9 +56,13 @@ export const globalResponseHandler = (res, data, options = {}) => {
       responseData = { value: data };
     }
 
-    return res
-      .status(statusCode)
-      .json(createResponse(true, message, responseData, null, meta));
+    return res.status(statusCode).json({
+      success: true,
+      message,
+      ...(responseData || {}),
+      error: null,
+      meta,
+    });
   } catch (err) {
     console.error("Error in globalResponseHandler:", err);
     if (res.headersSent) return;
@@ -99,14 +103,13 @@ export const errorResponseHandler = (res, error, statusCode = 500) => {
     }),
   };
 
-  return res
-    .status(statusCode)
-    .json(
-      createResponse(
-        false,
-        errorObj.message || "Error occurred",
-        null,
-        errorData,
-      ),
-    );
+  return res.status(statusCode).json({
+    success: false,
+    message: errorObj.message || "Error occurred",
+    items: null,
+    error: errorData,
+    meta: {
+      timestamp: new Date().toISOString(),
+    },
+  });
 };

@@ -3,6 +3,10 @@ import bcrypt from "bcrypt";
 import { sendEmail } from "../utils/mailer.js";
 import authCodeGenerator from "../utils/AuthCodeGenerator.js";
 import jwtGenerator from "../utils/jwtGenerator.js";
+import {
+  UsersAuthtokenServices,
+  userAuthSetPasswordServices,
+} from "../services/securityServices.js";
 
 const registerUserModel = async (data) => {
   try {
@@ -139,4 +143,44 @@ const firstUserAdminSetRole = async (userId) => {
   }
 };
 
-export { registerUserModel, checkIfTheUserExist, loginUserModel };
+const userAuthPasswordModel = async (passData) => {
+  try {
+    const { query, value, isTokenValid } = UsersAuthtokenServices(passData);
+    const data = await db.query(query, value);
+    const otpExpires = new Date(data.rows[0].otp_expires_at);
+    const now = new Date();
+    return isTokenValid && otpExpires > now ? true : false;
+  } catch (error) {
+    console.error("userAuthPasswordModel error:", error);
+    throw error;
+  }
+};
+
+const userAuthSetPasswordModel = async (id, passData) => {
+  try {
+    const hashPassword = await bcrypt.hash(passData, 10);
+
+    const { query, values } = userAuthSetPasswordServices(id, hashPassword);
+
+    const updatedData = await db.query(query, values);
+
+    await sendEmail(
+      "password-set",
+      updatedData.rows[0].email,
+      updatedData.rows[0].email,
+    );
+
+    return updatedData.rows[0].email;
+  } catch (error) {
+    console.error("userAuthPasswordModel error:", error);
+    throw error;
+  }
+};
+
+export {
+  userAuthSetPasswordModel,
+  registerUserModel,
+  checkIfTheUserExist,
+  loginUserModel,
+  userAuthPasswordModel,
+};

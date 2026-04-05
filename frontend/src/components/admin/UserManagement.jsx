@@ -1,5 +1,5 @@
 // components/admin/UserManagement.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Shield,
@@ -29,11 +29,8 @@ function EditUserForm({ user, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
-    email: user?.email || "",
     role: user?.role || "student",
     status: user?.status === true ? "active" : "inactive",
-    phone: user?.phone || "",
-    department: user?.department || "",
   });
 
   const handleChange = (e) =>
@@ -87,46 +84,6 @@ function EditUserForm({ user, onSave, onCancel }) {
               placeholder="Doe"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className={inputClasses}
-              placeholder="john@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className={inputClasses}
-              placeholder="+1 234 567 8900"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Department
-            </label>
-            <input
-              type="text"
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              className={inputClasses}
-              placeholder="Computer Science"
-            />
-          </div>
         </div>
       </div>
 
@@ -135,23 +92,6 @@ function EditUserForm({ user, onSave, onCancel }) {
           Account Settings
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Role
-            </label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className={`${inputClasses} bg-white`}
-            >
-              {["student", "faculty", "admin"].map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Status
@@ -168,6 +108,25 @@ function EditUserForm({ user, onSave, onCancel }) {
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className={`${inputClasses} bg-white`}
+              >
+                {["student", "faculty", "admin"].map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -193,7 +152,7 @@ function EditUserForm({ user, onSave, onCancel }) {
 }
 
 function UserManagement() {
-  const { userList, refreshUsers, getAuthHeaders } = useAdmin();
+  const { getAuthHeaders } = useAdmin();
   const [users, setUsers] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -205,37 +164,47 @@ function UserManagement() {
     direction: "ascending",
   });
 
-  // Transform userList data to match component expectations
-  useEffect(() => {
-    if (userList && userList.length > 0) {
-      const transformedUsers = userList.map((user) => ({
-        id: user.id,
-        // Create full name from first_name and last_name
-        name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        role: user.role,
-        // Convert boolean status to string
-        status: user.status === true ? "active" : "inactive",
-        // Use created_at for joined date (since lastLogin might not exist)
-        lastLogin: user.lastLogin || user.created_at,
-        joinedDate: user.created_at,
-        // Include other fields if they exist
-        phone: user.phone || "",
-        department: user.department || "",
-        // For display ID - use the actual UUID as fallback
-        displayId:
-          user.studentId ||
-          user.facultyId ||
-          user.adminId ||
-          user.id.slice(0, 8),
-      }));
-      setUsers(transformedUsers);
-    } else {
+  // --- Extract fetch logic to a reusable function ---
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:3000/admin/usersList",
+        getAuthHeaders(),
+      );
+
+      const items = response.data.items;
+
+      if (items && items.length > 0) {
+        const transformedUsers = items.map((user) => ({
+          id: user.id,
+          name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+          first_name: user.first_name,
+          last_name: user.last_name,
+          role: user.role,
+          status: user.status === true ? "active" : "inactive",
+          lastLogin: user.lastLogin || user.created_at,
+          joinedDate: user.created_at,
+          displayId:
+            user.studentId ||
+            user.facultyId ||
+            user.adminId ||
+            user.id.slice(0, 8),
+        }));
+
+        setUsers(transformedUsers);
+      } else {
+        setUsers([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
       setUsers([]);
     }
-  }, [userList]);
+  }, [getAuthHeaders]);
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleSort = (key) =>
     setSortConfig({
@@ -287,98 +256,43 @@ function UserManagement() {
       (roleFilter === "all" || user.role === roleFilter),
   );
 
-  const handleStatusChange = async (id, newStatus) => {
-    try {
-      // Find the original user data
-      const originalUser = userList.find((u) => u.id === id);
-      if (!originalUser) return;
-
-      // Convert string status back to boolean for API
-      const updatedStatus = newStatus === "active";
-
-      // Make API call to update the status
-      await axios.patch(
-        `http://localhost:3000/admin/switchStatus/${id}`,
-        { status: updatedStatus },
-        getAuthHeaders(),
-      );
-
-      // Update local state optimistically
-      setUsers(
-        users.map((u) => (u.id === id ? { ...u, status: newStatus } : u)),
-      );
-
-      toast.success(`User status updated to ${newStatus}`);
-
-      // Refresh users from API to ensure sync
-      await refreshUsers();
-    } catch (err) {
-      console.error("Error updating status", err);
-      toast.error("Failed to update user status");
-      // Revert on error by refreshing
-      await refreshUsers();
-    }
-  };
-
   const handleResetPassword = async (id) => {
-    try {
-      // Make API call to reset password
-      await axios.post(
-        `http://localhost:3000/admin/resetPassword/${id}`,
-        {},
-        getAuthHeaders(),
-      );
-      toast.success(`Password reset link sent to user`);
-    } catch (err) {
-      console.error("Error resetting password", err);
-      toast.error("Failed to send password reset link");
-    }
-  };
-
-  const handleDeleteUser = async (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to send Password Reset for this user?",
+      )
+    ) {
       try {
-        // Make API call to delete the user
-        await axios.delete(
-          `http://localhost:3000/admin/deleteUser/${id}`,
+        await axios.patch(
+          `http://localhost:3000/admin/password-reset/${id}`,
           getAuthHeaders(),
         );
 
-        // Update local state
-        setUsers(users.filter((u) => u.id !== id));
-
         toast.success("User deleted successfully");
-
-        // Refresh users from API
-        await refreshUsers();
+        await fetchUsers();
       } catch (err) {
         console.error("Error deleting user", err);
         toast.error("Failed to delete user");
-        await refreshUsers();
+        await fetchUsers();
       }
     }
   };
 
   const handleEditClick = (user) => {
-    // Find original user data from userList
-    const originalUser = userList.find((u) => u.id === user.id);
-    setSelectedUser(originalUser);
+    setSelectedUser(user);
     setIsEditModalOpen(true);
   };
 
   const handleSaveUser = async (data) => {
     try {
-      // Make API call to update the user
       await axios.put(
-        `http://localhost:3000/admin/editUser/${selectedUser.id}`,
+        `http://localhost:3000/admin/updateUser/${selectedUser.id}`,
         data,
         getAuthHeaders(),
       );
 
       toast.success("User updated successfully");
-
-      // Refresh users from API to get updated data
-      await refreshUsers();
+      await fetchUsers();
 
       setIsEditModalOpen(false);
       setSelectedUser(null);
@@ -489,33 +403,16 @@ function UserManagement() {
                   <div className="flex items-center space-x-1">
                     {[
                       {
-                        icon: user.status === "active" ? EyeOff : Eye,
-                        onClick: () =>
-                          handleStatusChange(
-                            user.id,
-                            user.status === "active" ? "inactive" : "active",
-                          ),
-                        color: user.status === "active" ? "yellow" : "green",
-                        title:
-                          user.status === "active" ? "Deactivate" : "Activate",
-                      },
-                      {
-                        icon: Key,
-                        onClick: () => handleResetPassword(user.id),
-                        color: "blue",
-                        title: "Reset Password",
-                      },
-                      {
                         icon: Edit2,
                         onClick: () => handleEditClick(user),
                         color: "blue",
                         title: "Edit User",
                       },
                       {
-                        icon: Trash2,
-                        onClick: () => handleDeleteUser(user.id),
-                        color: "red",
-                        title: "Delete User",
+                        icon: Key,
+                        onClick: () => handleResetPassword(user.id),
+                        color: "blue",
+                        title: "Reset Password",
                       },
                     ].map(({ icon: Icon, onClick, color, title }, i) => (
                       <button

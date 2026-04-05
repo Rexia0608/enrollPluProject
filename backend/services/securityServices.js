@@ -79,4 +79,44 @@ const resendOtp = async ({ email }) => {
   }
 };
 
-export { verifyingOtpServices, resendOtp };
+const UsersAuthtokenServices = (passData) => {
+  try {
+    let isTokenValid;
+    let query;
+    let value;
+    const regex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    isTokenValid = regex.test(passData);
+    query = `SELECT * 
+              FROM credentials 
+              WHERE user_id = $1
+              LIMIT 1;`;
+    value = [passData];
+    return { query, value, isTokenValid };
+  } catch (error) {
+    console.error("error UsersAuthtokenServices:", error);
+    throw error;
+  }
+};
+
+const userAuthSetPasswordServices = (id, passData) => {
+  try {
+    let query = `UPDATE credentials
+                 SET password = $1
+                 WHERE user_id = $2
+                 RETURNING email;
+    `;
+    let values = [passData, id];
+    return { query, values };
+  } catch (error) {
+    console.error("error UsersAuthtokenServices:", error);
+    throw error;
+  }
+};
+
+export {
+  verifyingOtpServices,
+  resendOtp,
+  UsersAuthtokenServices,
+  userAuthSetPasswordServices,
+};

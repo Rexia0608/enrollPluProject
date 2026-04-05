@@ -577,7 +577,7 @@ function CourseManagement() {
 
       // Reload courses from DB and map them
       const res = await axios.get("http://localhost:3000/admin/courseList");
-      const mappedCourses = res.data.map(mapServerToComponent);
+      const mappedCourses = res.data.items.map(mapServerToComponent);
       setCourses(mappedCourses);
 
       handleCloseModal();

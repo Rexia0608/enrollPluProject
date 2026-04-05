@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Plus,
   Edit2,
@@ -204,7 +204,7 @@ const AcademicYearForm = ({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function EnrollmentControl() {
-  const { academicYear, refreshAcademicYears, getAuthHeaders } = useAdmin();
+  const { getAuthHeaders } = useAdmin();
 
   // Local State
   const [years, setYears] = useState([]);
@@ -253,19 +253,30 @@ export default function EnrollmentControl() {
     }
   }, [isConfirmClassStatus]);
 
-  // Sync Context Data to Local State
-  useEffect(() => {
-    if (
-      academicYear?.AcademicYear &&
-      Array.isArray(academicYear.AcademicYear)
-    ) {
-      const transformed =
-        academicYear.AcademicYear.map(transformApiData).filter(Boolean);
-      setYears(transformed);
-    } else {
+  // --- Extract fetch logic to a reusable function ---
+  const fetchAcademicYears = useCallback(async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:3000/admin/academicYear",
+        getAuthHeaders(),
+      );
+      const items = response.data.items;
+      if (items && Array.isArray(items)) {
+        const transformed = items.map(transformApiData).filter(Boolean);
+        setYears(transformed);
+      } else {
+        setYears([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch academic year:", error);
       setYears([]);
     }
-  }, [academicYear]);
+  }, [getAuthHeaders]);
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchAcademicYears();
+  }, [fetchAcademicYears]);
 
   // Handlers
   const handleOpenAdd = () => {
@@ -329,7 +340,7 @@ export default function EnrollmentControl() {
 
       setSuccessMessage("Academic year added successfully");
       setIsAddModalOpen(false);
-      await refreshAcademicYears();
+      await fetchAcademicYears(); // Refresh data
     } catch (err) {
       setError(err.response?.data?.message || "Failed to add academic year");
     } finally {
@@ -344,7 +355,7 @@ export default function EnrollmentControl() {
     setIsSubmitting(true);
     try {
       await axios.patch(
-        `${API_BASE}/admin/updateAcademicYear/${formData.id}`,
+        `${API_BASE}/admin/updateSemesterYear/${formData.id}`,
         {
           year_series: formData.academicYear,
           semester: formData.semester,
@@ -356,7 +367,7 @@ export default function EnrollmentControl() {
 
       setSuccessMessage("Academic year updated successfully");
       setIsEditModalOpen(false);
-      await refreshAcademicYears();
+      await fetchAcademicYears(); // Refresh data
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update academic year");
     } finally {
@@ -373,7 +384,7 @@ export default function EnrollmentControl() {
     setIsConfirmOpenEnrollment(true);
   };
 
-  // Updated: Handle class status toggle click with validation
+  // Handle class status toggle click with validation
   const handleClassStatusClick = (year, newStatus) => {
     // Prevent toggling if there's already an active class and we're trying to start another
     if (
@@ -413,7 +424,7 @@ export default function EnrollmentControl() {
 
       setSuccessMessage("Enrollment opened successfully");
       setIsConfirmOpenEnrollment(false);
-      await refreshAcademicYears();
+      await fetchAcademicYears(); // Refresh data
     } catch (err) {
       setError(err.response?.data?.message || "Failed to open enrollment");
     } finally {
@@ -421,7 +432,7 @@ export default function EnrollmentControl() {
     }
   };
 
-  // Updated: Confirm class status change with better error handling
+  // Confirm class status change with better error handling
   const confirmClassStatusChange = async () => {
     if (!selectedYear || pendingClassStatus === null) {
       setError("Invalid class status change request");
@@ -447,9 +458,7 @@ export default function EnrollmentControl() {
             ? `Classes started successfully for ${selectedYear.semester} ${selectedYear.year_series}`
             : `Classes ended successfully for ${selectedYear.semester} ${selectedYear.year_series}`,
         );
-
-        // Refresh the data
-        await refreshAcademicYears();
+        await fetchAcademicYears(); // Refresh data
       }
     } catch (err) {
       // Handle specific error cases
@@ -486,7 +495,7 @@ export default function EnrollmentControl() {
       setSuccessMessage(
         `Enrollment ${!year.enrollmentOpen ? "opened" : "closed"} successfully`,
       );
-      await refreshAcademicYears();
+      await fetchAcademicYears(); // Refresh data
     } catch (err) {
       setError(err.response?.data?.message || "Failed to toggle enrollment");
     } finally {
@@ -497,7 +506,7 @@ export default function EnrollmentControl() {
   const handleRefresh = async () => {
     setLoading(true);
     try {
-      await refreshAcademicYears();
+      await fetchAcademicYears();
       setSuccessMessage("Data refreshed successfully");
     } catch (err) {
       setError("Failed to refresh data");
@@ -576,7 +585,7 @@ export default function EnrollmentControl() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">
-                    Enrollment Open: {activeYear.academicYear}
+                    Enrollment Open: {activeYear.year_series}
                   </h3>
                   <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
                     <span className="flex items-center">
@@ -605,7 +614,7 @@ export default function EnrollmentControl() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">
-                    Classes Ongoing: {ongoingClassYear.academicYear}
+                    Classes Ongoing: {ongoingClassYear.year_series}
                   </h3>
                   <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
                     <span className="flex items-center">
@@ -714,7 +723,6 @@ export default function EnrollmentControl() {
                         )}
                       </button>
                     </td>
-                    {/* Updated: Class Status with loading states and validation */}
                     <td className={tableCellClasses}>
                       {year.isClassOngoing ? (
                         <button
@@ -855,7 +863,7 @@ export default function EnrollmentControl() {
         isConfirming={isSubmitting}
       />
 
-      {/* Updated: Dynamic Class Status Confirmation Dialog with better messaging */}
+      {/* Dynamic Class Status Confirmation Dialog with better messaging */}
       <ConfirmDialog
         isOpen={isConfirmClassStatus}
         onClose={handleCloseConfirmDialog}

@@ -14,9 +14,13 @@ const port = 3000;
 
 app.use(express.json());
 app.use(cors());
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+app.use("/admin", AdminRouter);
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
 
 app.use("/enrollplus", userAuthRouter);
-app.use("/admin", AdminRouter);
+
 app.use("/student", StudentRouter);
 app.use("/faculty", FacultyRouter);
 

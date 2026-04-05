@@ -10,6 +10,8 @@ import NotFound from "../pages/NotFound";
 import MaintenancePage from "../pages/MaintenancePage";
 import UnauthorizedPage from "../pages/UnAuthorizedPage";
 import EmailValidationPage from "../pages/EmailValidationPage";
+import PasswordResetPage from "../pages/PasswordResetPage";
+import PasswordResetExpiredPage from "../pages/PassworResetExpiredPage";
 
 import ProtectedRoute from "../routes/ProtectedRoutes";
 import PublicRoute from "../routes/PublicRoute";
@@ -31,6 +33,11 @@ const Views = () => {
         {/* Other public pages - also bypass MaintenanceGuard */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/email-validation" element={<EmailValidationPage />} />
+        <Route path="/password-reset/:token" element={<PasswordResetPage />} />
+        <Route
+          path="/password-reset-expired"
+          element={<PasswordResetExpiredPage />}
+        />
 
         {/* PROTECTED ROUTES - These are wrapped with MaintenanceGuard */}
         <Route element={<MaintenanceGuard />}>

@@ -39,7 +39,7 @@ const initializeMaintenanceState = async () => {
 // Call initialization immediately
 initializeMaintenanceState();
 
-const maintenanceModel = async ({ isActive, message }) => {
+const updateMaintenanceModel = async ({ isActive, message }) => {
   try {
     // Validate inputs
     if (typeof isActive !== "boolean") {
@@ -67,12 +67,12 @@ const maintenanceModel = async ({ isActive, message }) => {
 
     return maintenanceState; // Return same format as your original
   } catch (error) {
-    console.error("Maintenance error:", error);
+    console.error("error updateMaintenanceMode:", error);
     throw error;
   }
 };
 
-const maintenanceCheckerModel = async () => {
+const getMaintenanceModel = async () => {
   try {
     // Optional: Refresh from DB to ensure latest data
     // You can comment this out if you want pure in-memory like your original
@@ -88,14 +88,14 @@ const maintenanceCheckerModel = async () => {
       };
     }
 
-    return { ...maintenanceState }; // Same as your original - returns a copy
+    return { maintenanceState }; // Same as your original - returns a copy
   } catch (error) {
     console.error("maintenanceCheckerModel error:", error);
-    return { ...maintenanceState };
+    return { maintenanceState };
   }
 };
 
-const maintenanceMessageModel = async () => {
+const getmaintenanceMessageModel = async () => {
   try {
     // Optional: Refresh from DB to ensure latest data
     // You can comment this out if you want pure in-memory like your original
@@ -114,4 +114,8 @@ const maintenanceMessageModel = async () => {
   }
 };
 
-export { maintenanceModel, maintenanceCheckerModel, maintenanceMessageModel };
+export {
+  updateMaintenanceModel,
+  getMaintenanceModel,
+  getmaintenanceMessageModel,
+};

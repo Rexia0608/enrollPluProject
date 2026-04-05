@@ -1,8 +1,8 @@
 // controllers/adminController.js
 import {
-  maintenanceCheckerModel,
-  maintenanceMessageModel,
-  maintenanceModel,
+  getMaintenanceModel,
+  getmaintenanceMessageModel,
+  updateMaintenanceModel,
 } from "../models/maintenanceModel.js";
 
 import {
@@ -11,226 +11,73 @@ import {
 } from "../middleware/responseHandler.js";
 
 import {
+  updatePasswordModel,
+  updateSemesterModel,
+  updateUserModel,
   getAllUsersListModel,
-  getAllCoursesListModel,
-  updateCourses,
-  addNewCourses,
-  deleteCourses,
-  switchStatusMode,
-  switchStatusAcademicYear,
-  addAcademicYear,
-  getAcademicYearlist,
-  switchClassStatusAcademicYear,
+  getAllCoursesModel,
+  updateCoursesModel,
+  postNewCoursesModel,
+  deleteCoursesModel,
+  updateCredentialsModel,
+  updateStatusAcademicYearModel,
+  postAcademicYearModel,
+  getAcademicYearModel,
+  updateClassStatusAcademicYearModel,
 } from "../models/AdminModel.js";
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-const getAllUsers = async (req, res) => {
+//******************  NEED TO REFACTOR ***********************//
+const updateCredentials = async (req, res) => {
   try {
-    const data = await getAllUsersListModel();
+    const data = await updateCredentialsModel(req.params.id, req.body);
+
     return globalResponseHandler(res, data || null, {
       statusCode: 200,
     });
   } catch (error) {
-    console.error("Error in getUserList:", error);
+    console.error("Error in deleteCourse:", error);
     return errorResponseHandler(res, error, 500);
   }
 };
 
-const getCourses = async (req, res) => {
-  try {
-    const result = await getAllCoursesListModel();
-    res.status(200).json(result);
-  } catch (error) {
-    console.error("Error in getUserList:", error);
-    return errorResponseHandler(res, error, 500);
-  }
-};
-
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here +++++++++++++++++++//
-
-const setMaintenance = async (req, res) => {
+const updateMaintenance = async (req, res) => {
   try {
     const { maintenanceMode, message } = req.body;
 
-    const maintenance = await maintenanceModel({
+    const maintenance = await updateMaintenanceModel({
       isActive: maintenanceMode,
       message: message,
     });
-
-    res.status(200).json(maintenance);
+    return globalResponseHandler(res, maintenance || null, {
+      statusCode: 200,
+    });
   } catch (error) {
-    console.error("Error in setMaintenance:", error);
+    console.error("Error in updateMaintenance:", error);
     return errorResponseHandler(res, error, 500);
-  }
-};
-
-//++++++++++++++++++ TEST here +++++++++++++++++++//
-
-const checkMaintenance = async (req, res) => {
-  try {
-    const maintenance = await maintenanceCheckerModel();
-    res.status(200).json(maintenance);
-  } catch (error) {
-    console.error("Error in checkMaintenance:", error);
-    res.status(500).json({ message: "Server error" });
   }
 };
 
 const getMaintenanceMessege = async (req, res) => {
   try {
-    const message = await maintenanceMessageModel();
-    res.status(200).json(message);
+    const message = await getmaintenanceMessageModel();
+    return globalResponseHandler(res, message || null, {
+      statusCode: 200,
+    });
   } catch (error) {
-    console.error("Error in checkMaintenance:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in  getMaintenanceMessege:", error);
+    return errorResponseHandler(res, error, 500);
   }
 };
 
-const editCourses = async (req, res) => {
+const getMaintenance = async (req, res) => {
   try {
-    const id = req.params.id;
-    const data = req.body;
+    const { maintenanceState } = await getMaintenanceModel();
 
-    const result = await updateCourses(id, data);
-
-    if (!result) {
-      return res.status(404).json({ message: "Course not found" });
-    }
-
-    res.status(200).json({
-      message: "Course updated successfully",
-      course: result,
+    return globalResponseHandler(res, maintenanceState || null, {
+      statusCode: 200,
     });
   } catch (error) {
-    console.error("Error in editCourses:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const addNewCourse = async (req, res) => {
-  try {
-    const result = await addNewCourses(req.body);
-
-    if (!result) {
-      return res.status(404).json({ message: "Course not found" });
-    }
-
-    res.status(200).json({
-      message: "New Course added successfully",
-      course: result,
-    });
-  } catch (error) {
-    console.error("Error in addNewCourses:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const deleteCourse = async (req, res) => {
-  try {
-    const result = await deleteCourses(req.params.id);
-
-    if (!result) {
-      return res.status(404).json({ message: "Course not found" });
-    }
-
-    res.status(200).json({
-      message: "Course deleted successfully",
-      course: result,
-    });
-  } catch (error) {
-    console.error("Error in editCourses:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const switchStatus = async (req, res) => {
-  try {
-    const result = await switchStatusMode(req.params.id, req.body);
-
-    if (!result) {
-      return res.status(404).json({ message: "Course not found" });
-    }
-
-    return res.status(200).json({
-      message: "Status updated successfully",
-      course: result,
-    });
-  } catch (error) {
-    console.error("Error in switchStatus:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getAcademicYear = async (req, res) => {
-  try {
-    const result = await getAcademicYearlist();
-    res.status(200).json({
-      message: "Academic Year loaded successfully",
-      AcademicYear: result,
-    });
-  } catch (error) {
-    console.error("Error in setAcademicYear:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const setAcademicYear = async (req, res) => {
-  try {
-    const result = await addAcademicYear(req.body);
-
-    if (!result) {
-      return res.status(404).json({ message: "Academic Year not added" });
-    }
-
-    res.status(200).json({
-      message: "New Academic Year added successfully",
-      AcademicYear: result,
-    });
-  } catch (error) {
-    console.error("Error in setAcademicYear:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const setStatusAcademicYear = async (req, res) => {
-  try {
-    const result = await switchStatusAcademicYear(req.body, req.params.id);
-
-    if (!result) {
-      return res
-        .status(404)
-        .json({ message: "Academic Year are fail to updated" });
-    }
-
-    res.status(200).json({
-      message: "Academic Year updated status successfully",
-      AcademicYear: result,
-    });
-  } catch (error) {
-    console.error("Error in setStatusAcademicYear:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const setClassStatusAcademicYear = async (req, res) => {
-  try {
-    const result = await switchClassStatusAcademicYear(req.body, req.params.id);
-
-    if (!result) {
-      return res
-        .status(404)
-        .json({ message: "Academic Year are fail to updated" });
-    }
-
-    res.status(200).json({
-      message: "Academic Year updated status successfully",
-      AcademicYear: result,
-    });
-  } catch (error) {
-    console.error("Error in setStatusAcademicYear:", error);
+    console.error("Error in getMaintenance:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -274,19 +121,187 @@ const overView = async (req, res) => {
   }
 };
 
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+const getAllUsers = async (req, res) => {
+  try {
+    const data = await getAllUsersListModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getAllUsers:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const getCourses = async (req, res) => {
+  try {
+    const data = await getAllCoursesModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getCourses:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const getAcademicYear = async (req, res) => {
+  try {
+    const data = await getAcademicYearModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getAcademicYear:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    const { data } = await updateUserModel(req.params, req.body);
+
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in updateUser:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const updateCourses = async (req, res) => {
+  try {
+    await updateCoursesModel(req.params.course_id, req.body);
+
+    return globalResponseHandler(res, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in updateCourses:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const postNewCourses = async (req, res) => {
+  try {
+    const { data } = await postNewCoursesModel(req.body);
+
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in postNewCourses:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const deleteCourse = async (req, res) => {
+  try {
+    const { data } = await deleteCoursesModel(req.params.id);
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in deleteCourse:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const postAcademicYear = async (req, res) => {
+  try {
+    const data = await postAcademicYearModel(req.body);
+
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in postAcademicYear:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const updateStatusAcademicYear = async (req, res) => {
+  try {
+    const data = await updateStatusAcademicYearModel(
+      req.params.year_id,
+      req.body.enrollment_open,
+    );
+
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in updateStatusAcademicYear:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const updateClassStatusAcademicYear = async (req, res) => {
+  try {
+    const data = await updateClassStatusAcademicYearModel(
+      req.body,
+      req.params.id,
+    );
+
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in updateClassStatusAcademicYear:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const updateSemester = async (req, res) => {
+  try {
+    const data = await updateSemesterModel(req.params.id, req.body);
+
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in updateSemester:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const updatePassword = async (req, res) => {
+  try {
+    const data = await updatePasswordModel(req.params.user_id);
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in updatePassword:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here  +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here +++++++++++++++++++//
+
 export {
+  updatePassword,
+  updateSemester,
+  updateUser,
   getAllUsers,
   getCourses,
   overView,
-  checkMaintenance,
-  setMaintenance,
+  getMaintenance,
+  updateMaintenance,
   getMaintenanceMessege,
-  addNewCourse,
-  editCourses,
+  postNewCourses,
+  updateCourses,
   deleteCourse,
-  switchStatus,
-  setAcademicYear,
+  updateCredentials,
+  postAcademicYear,
   getAcademicYear,
-  setStatusAcademicYear,
-  setClassStatusAcademicYear,
+  updateStatusAcademicYear,
+  updateClassStatusAcademicYear,
 };

@@ -102,7 +102,7 @@ const getEmailConfig = (type, message) => {
 
     case "verified_email":
       return {
-        subject: "✅ Your Account Has Been Verified.",
+        subject: "Your Account Has Been Verified.",
         html: verifiedMsg(message),
       };
 
@@ -116,6 +116,18 @@ const getEmailConfig = (type, message) => {
       return {
         subject: "✅ Promised note validation update.",
         html: promisedNote(message),
+      };
+
+    case "password-reset":
+      return {
+        subject: "🔑 Password Reset.",
+        html: passwordReset(message),
+      };
+
+    case "password-set":
+      return {
+        subject: "🔑 Password Reset success.",
+        html: passwordSet(message),
       };
 
     default:
@@ -219,7 +231,7 @@ const sendOtp = (otpCode) => {
         </div>
 
         <p style="text-align: center; color: #dc2626; font-weight: 600;">
-          ⏰ This code will expire in 5 minutes
+          ⏰ This code will expire in 10 minutes
         </p>
 
         <p style="font-size: 14px; color: #6b7280; text-align: center;">
@@ -311,6 +323,100 @@ const promisedNote = (message) => {
               <p style="font-size: 16px; color: #374151; line-height: 1.8;">
                 ${message.replace(/\n/g, "<br>")}
               </p>
+
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 13px; color: #6b7280; font-style: italic; margin: 0;">
+                  📧 This is an automated message — please don't reply to this email.
+                </p>
+              </div>
+
+              <p style="font-size: 12px; color: #9ca3af; margin: 24px 0 0;">
+                © ${new Date().getFullYear()} EnrollPlus. All rights reserved.
+              </p>
+              
+            </div>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Template: Password Reset send
+ */
+const passwordReset = (message) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td align="center" style="padding: 20px 0;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; line-height: 1.6; color: #1f2937; text-align: left;">
+              
+              <div style="border-left: 4px solid #2563eb; padding-left: 16px; margin-bottom: 24px;">
+                <h2 style="color: #2563eb; margin: 0; font-size: 24px;">Password Reset</h2>
+                <p style="color: #6b7280; margin: 4px 0 0; font-size: 14px;">From EnrollPlus Administration</p>
+              </div>
+
+<p style="font-size: 16px; color: #374151; line-height: 1.8;">
+  You can now reset your password using this <a href="${message}">link</a>. Please note that it will only be active for 10 minutes. If the link expires, you will need to request a new one from the administrator.
+</p>
+
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 13px; color: #6b7280; font-style: italic; margin: 0;">
+                  📧 This is an automated message — please don't reply to this email.
+                </p>
+              </div>
+
+              <p style="font-size: 12px; color: #9ca3af; margin: 24px 0 0;">
+                © ${new Date().getFullYear()} EnrollPlus. All rights reserved.
+              </p>
+              
+            </div>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Template: Password Reset success
+ */
+const passwordSet = (email) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td align="center" style="padding: 20px 0;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; line-height: 1.6; color: #1f2937; text-align: left;">
+              
+              <div style="border-left: 4px solid #2563eb; padding-left: 16px; margin-bottom: 24px;">
+                <h2 style="color: #2563eb; margin: 0; font-size: 24px;">Password Reset Successful</h2>
+                <p style="color: #6b7280; margin: 4px 0 0; font-size: 14px;">From EnrollPlus Administration</p>
+              </div>
+
+<p style="font-size: 16px; color: #374151; line-height: 1.8;">
+  Your password for <strong>${email}</strong> has been successfully reset. You can now log in to your EnrollPlus account using your new password.
+</p>
+
+<p style="font-size: 14px; color: #4b5563; margin-top: 16px;">
+  If you did not request this change, please contact our support team immediately.
+</p>
 
               <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
                 <p style="font-size: 13px; color: #6b7280; font-style: italic; margin: 0;">

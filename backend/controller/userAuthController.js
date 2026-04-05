@@ -3,7 +3,10 @@ import {
   loginUserModel,
   registerUserModel,
   checkIfTheUserExist,
+  userAuthPasswordModel,
+  userAuthSetPasswordModel,
 } from "../models/UsersAuthModel.js";
+
 import {
   globalResponseHandler,
   errorResponseHandler,
@@ -124,7 +127,43 @@ const userAuthDetailCotnroller = async (req, res) => {
   }
 };
 
+const userAuthPasswordController = async (req, res) => {
+  try {
+    const data = await userAuthPasswordModel(req.params.token);
+    return globalResponseHandler(res, data, {
+      message: "User registered successfully",
+      statusCode: 201,
+    });
+  } catch (error) {
+    console.error("Controller error:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const userAuthSetPasswordController = async (req, res) => {
+  try {
+    const updatedData = await userAuthSetPasswordModel(
+      req.params.token,
+      req.body[0],
+    );
+
+    return globalResponseHandler(res, true, {
+      message: `User ${updatedData} password updated successfully`,
+      statusCode: 201,
+    });
+  } catch (error) {
+    console.error("Controller error:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+/*************************test **************************************/
+
+/*************************test **************************************/
+
 export {
+  userAuthSetPasswordController,
+  userAuthPasswordController,
   userAuthDetailCotnroller,
   userAuthController,
   userAuthResendOtpController,

@@ -1,5 +1,3 @@
-http://localhost:3000/faculty/review-document/c069768b-e7a6-4f46-9d64-1af0263a634b-birthCertificate.jpg 
-http://localhost:3000/faculty/review-document/c069768b-e7a6-4f46-9d64-1af0263a634b-form138.jpg
-http://localhost:3000/faculty/review-document/c069768b-e7a6-4f46-9d64-1af0263a634b-PhotoId.jpg
-
-`${BASEURL}${/review-document/studentId${filetype[form138, PhotoId, birthCertificate]}.jpg}`
+    await db.query("BEGIN");
+    await db.query("COMMIT");
+     await db.query("ROLLBACK");
