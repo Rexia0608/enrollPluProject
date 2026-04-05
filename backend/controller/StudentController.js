@@ -16,7 +16,7 @@ import {
 
 const getAcademicYear = async (req, res) => {
   try {
-    const data = await getAcademicYearlistModel(); // Returns array
+    const data = await getAcademicYearlistModel();
 
     // data is an array, not an object with .success
     const isEmpty = Array.isArray(data) && data.length === 0;
@@ -25,7 +25,7 @@ const getAcademicYear = async (req, res) => {
       message: isEmpty
         ? "No academic years found"
         : "Academic Year loaded successfully",
-      statusCode: 200, // 200 for GET success, 201 is for CREATED
+      statusCode: 200,
       meta: { count: data.length },
     });
   } catch (error) {

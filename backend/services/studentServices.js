@@ -1,3 +1,19 @@
+//++++++++++++++++++ finalized here  +++++++++++++++++++//
+
+//++++++++++++++++++ finalized here  +++++++++++++++++++//
+
+/********************************* TEST HERES ****************************************/
+
+const Templated = async () => {
+  try {
+  } catch (error) {
+    console.error("error Templated:", error);
+    throw error;
+  }
+};
+
+/********************************* TEST HERES ****************************************/
+
 const enrollmentTransactionServices = (tuition_fee, semester) => {
   try {
     let transactionQuery;
@@ -100,5 +116,9 @@ const enrollmentProfileServices = (data) => {
     throw error;
   }
 };
+
+//++++++++++++++++++ helper here +++++++++++++++++++//
+
+//++++++++++++++++++ helper here +++++++++++++++++++//
 
 export { enrollmentProfileServices, enrollmentTransactionServices };

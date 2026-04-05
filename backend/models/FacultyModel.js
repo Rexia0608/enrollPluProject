@@ -3,14 +3,19 @@ import db from "../config/db.js";
 import {
   fetchReviewQueueServices,
   documentReviewServices,
+  activeSemesterServices,
 } from "../services/facultyServices.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 const getReviewQueueModel = async () => {
   try {
-    const activeSemester = await db.query(
-      `SELECT ID FROM academic_year WHERE enrollment_open = 'true' LIMIT 1;`,
-    );
+    const { querySemester } = await activeSemesterServices();
+    const activeSemester = await db.query(querySemester);
+
+    if (activeSemester.rows.length === 0) {
+      return { error: "No Academic set yet by the Admin." };
+    }
+
     const { query, value } = fetchReviewQueueServices(
       activeSemester.rows[0].id,
     );
@@ -51,6 +56,20 @@ const postVerifiedDocumentModel = async (passData) => {
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
+//++++++++++++++++++ TEST here  +++++++++++++++++++//
+
+const Templated = async () => {
+  try {
+  } catch (error) {
+    console.error("error Templated:", error);
+    throw error;
+  }
+};
+
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 
-export { getReviewQueueModel, postVerifiedDocumentModel };
+export {
+  getReviewQueueModel,
+  postVerifiedDocumentModel,
+  activeSemesterServices,
+};

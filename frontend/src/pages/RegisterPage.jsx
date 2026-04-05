@@ -80,23 +80,21 @@ const RegisterPage = () => {
         return; // Stop submission
       }
 
-      // Prepare request body
       const body = inputs;
       const response = await axios.post(`${API_BASE_URL}`, body);
-
       // Success toast
-      toast(`User ${response.data.email} Registered`, {
+      toast(response.data.message, {
         toastId: "validation-success",
         type: "success",
-        autoClose: 2000,
+        autoClose: 3000,
       });
 
       // Navigate to email validation page
       setTimeout(() => {
         navigate("/email-validation", {
-          state: { currentEmail: inputs.email },
+          state: { currentEmail: response.data.value },
         });
-      }, 1500);
+      }, 2500);
     } catch (error) {
       // Handle server errors
       const errorMessage =

@@ -216,6 +216,12 @@ function EmailValidationPage() {
         type: "success",
       });
 
+      setTimeout(() => {
+        navigate("/login", {
+          state: { currentEmail: response.data.value },
+        });
+      }, REDIRECT_DELAY);
+
       setIsVerified(true);
       setOtp(Array(OTP_LENGTH).fill(""));
       sessionStorage.removeItem("currentEmail");

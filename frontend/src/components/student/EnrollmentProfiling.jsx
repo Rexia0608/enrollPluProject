@@ -110,7 +110,8 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
         // Process enrollment open status
         const statusData = enrollmentStatusRes.data;
-        if (statusData.success && statusData.data) {
+
+        if (statusData.success && statusData) {
           const {
             id,
             year_series,
@@ -118,7 +119,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
             start_date,
             end_date,
             enrollment_open,
-          } = statusData.data;
+          } = statusData;
           setAcademicYearInfo({
             id,
             year_series,
@@ -136,8 +137,9 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
         // Process enrollment check
         const checkData = enrollmentCheckRes.data;
-        if (checkData.success && checkData.data) {
-          setMyEnrollment(checkData.data); // contains enrollment object
+        console.log(enrollmentCheckRes);
+        if (checkData.success && checkData) {
+          setMyEnrollment(checkData);
         } else {
           setMyEnrollment(null); // not enrolled
         }

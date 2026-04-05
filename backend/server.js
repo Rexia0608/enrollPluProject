@@ -16,13 +16,11 @@ app.use(express.json());
 app.use(cors());
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 app.use("/admin", AdminRouter);
-
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
 app.use("/enrollplus", userAuthRouter);
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+app.use("/faculty", FacultyRouter);
 
 app.use("/student", StudentRouter);
-app.use("/faculty", FacultyRouter);
 
 app.listen(port, () => {
   console.log(`Server running in the port ${port}`);

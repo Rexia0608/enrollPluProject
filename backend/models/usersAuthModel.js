@@ -1,19 +1,24 @@
 import db from "../config/db.js";
-import bcrypt from "bcrypt";
-import { sendEmail } from "../utils/mailer.js";
-import authCodeGenerator from "../utils/AuthCodeGenerator.js";
+
 import jwtGenerator from "../utils/jwtGenerator.js";
 import {
+  registerCredentailsUserServices,
+  userAuthEmailSenderServices,
   UsersAuthtokenServices,
   userAuthSetPasswordServices,
+  checkIfTheUserExistServices,
+  registerUserServices,
+  verifyingOtpServices,
+  validPasswordServices,
+  resendOtpServices,
 } from "../services/securityServices.js";
 
-const registerUserModel = async (data) => {
-  try {
-    const { otp, otpExpires } = await authCodeGenerator();
+//++++++++++++++++++ finalized here +++++++++++++++++++//
 
-    // 1️⃣ Check if email exists
-    const isAlreadyRegistered = await checkIfTheUserExist(data.email);
+const registerUserModel = async (passData) => {
+  try {
+    const isAlreadyRegistered = await checkIfTheUserExist(passData.email);
+
     if (isAlreadyRegistered.length > 0) {
       return {
         error:
@@ -21,42 +26,112 @@ const registerUserModel = async (data) => {
       };
     }
 
-    // 2️⃣ Insert user (assumes id is UUID defaulted in DB)
-    const userQuery = `
-      INSERT INTO users (first_name, last_name, birthdate, gender)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id
-    `;
-    const userValues = [data.fName, data.lName, data.birthDate, data.gender];
-    const userResult = await db.query(userQuery, userValues);
+    const { query, values } = await registerUserServices(passData);
+
+    const userResult = await db.query(query, values);
     const userId = userResult.rows[0].id;
 
-    // 3️⃣ Insert credentials
-    const hashPassword = await bcrypt.hash(data.password, 10);
-    const credQuery = `
-      INSERT INTO credentials (
-        user_id, email, mobile_number, password, email_otp, otp_expires_at, is_verified
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, false)
-    `;
-    await db.query(credQuery, [
+    const { credQuery, credValues } = await registerCredentailsUserServices(
       userId,
-      data.email,
-      data.mNumber,
-      hashPassword,
-      otp,
-      otpExpires,
-    ]);
+      passData,
+    );
 
-    await sendEmail("sending_OTP", data.email, otp);
-    await firstUserAdminSetRole(userId);
+    const data = await db.query(credQuery, credValues);
+    await firstUserAdminSetRoleModel(userId);
 
-    return {
-      message: `OTP sent successfully to ${data.email}`,
-      email: data.email,
-    };
+    return data.rows[0].email;
   } catch (error) {
     console.error("Register error:", error);
+    throw error;
+  }
+};
+
+const userAuthSetPasswordModel = async (id, passData) => {
+  try {
+    const { query, values } = await userAuthSetPasswordServices(id, passData);
+    console.log(query, values);
+    const updatedData = await db.query(query, values);
+
+    await userAuthEmailSenderServices(
+      "password-set",
+      updatedData.rows[0].email,
+      updatedData.rows[0].email,
+    );
+
+    return updatedData.rows[0].email;
+  } catch (error) {
+    console.error("userAuthPasswordModel error:", error);
+    throw error;
+  }
+};
+
+const userAuthPasswordModel = async (passData) => {
+  try {
+    const { query, value, isTokenValid } =
+      await UsersAuthtokenServices(passData);
+    const data = await db.query(query, value);
+    const otpExpires = new Date(data.rows[0].otp_expires_at);
+    const now = new Date();
+    return isTokenValid && otpExpires > now ? true : false;
+  } catch (error) {
+    console.error("userAuthPasswordModel error:", error);
+    throw error;
+  }
+};
+
+const verifyingOtpModel = async ({ email, otp }) => {
+  try {
+    const users = await checkIfTheUserExist(email);
+
+    if (!users.length) {
+      return { error: "Email not found" };
+    }
+
+    const user = users[0];
+
+    if (user.is_verified) {
+      return { error: "Email already verified" };
+    }
+
+    // Check if OTP expired
+    const now = new Date();
+    if (user.otp_expires_at && now > user.otp_expires_at) {
+      return { error: "OTP has expired" };
+    }
+
+    // Check OTP match
+    if (user.email_otp !== otp) {
+      return { error: "Incorrect OTP" };
+    }
+
+    const { query, value } = await verifyingOtpServices(email);
+    await db.query(query, value);
+    await userAuthEmailSenderServices("verified_email", email, " ");
+
+    return email;
+  } catch (error) {
+    console.error("Verifying OTP error:", error);
+    throw error;
+  }
+};
+
+const resendOtpModel = async ({ email }) => {
+  try {
+    const users = await checkIfTheUserExist(email);
+
+    if (!users.length) {
+      return { error: "Email not found" };
+    }
+
+    const user = users[0];
+
+    const { query, values } = await resendOtpServices(user.email);
+
+    await db.query(query, values);
+
+    return user.email;
+  } catch (error) {
+    console.error("Sending OTP error:", error);
     throw error;
   }
 };
@@ -73,7 +148,10 @@ const loginUserModel = async (data) => {
       return { error: "Email is not yet verified.", user: user[0].email };
     }
 
-    const validPassword = await bcrypt.compare(data.password, user[0].password);
+    const { validPassword } = await validPasswordServices(
+      data.password,
+      user[0].password,
+    );
 
     if (!validPassword) {
       return { error: "Invalid credentials" };
@@ -101,31 +179,17 @@ const loginUserModel = async (data) => {
   }
 };
 
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ helper here +++++++++++++++++++//
 const checkIfTheUserExist = async (email) => {
-  const query = `SELECT 
-    users.id,
-	  users.role,
-    users.first_name,
-    users.last_name,
-    users.birthdate,
-    users.gender,
-    credentials.email,
-    credentials.mobile_number,
-    credentials.password,
-    credentials.login_attempts,
-    credentials.email_otp,
-    credentials.otp_expires_at,
-    credentials.is_verified
-FROM credentials
-INNER JOIN users ON credentials.user_id = users.id
-WHERE credentials.email = $1;`;
-  const result = await db.query(query, [email]);
-  return result.rows;
+  const { query, value } = checkIfTheUserExistServices(email);
+  const data = await db.query(query, value);
+  return data.rows;
 };
 
-const firstUserAdminSetRole = async (userId) => {
+const firstUserAdminSetRoleModel = async (userId) => {
   try {
-    console.log(userId);
     const result = await db.query(`SELECT COUNT(*) AS total_users FROM users;`);
 
     const totalUsers = parseInt(result.rows[0].total_users, 10);
@@ -143,41 +207,11 @@ const firstUserAdminSetRole = async (userId) => {
   }
 };
 
-const userAuthPasswordModel = async (passData) => {
-  try {
-    const { query, value, isTokenValid } = UsersAuthtokenServices(passData);
-    const data = await db.query(query, value);
-    const otpExpires = new Date(data.rows[0].otp_expires_at);
-    const now = new Date();
-    return isTokenValid && otpExpires > now ? true : false;
-  } catch (error) {
-    console.error("userAuthPasswordModel error:", error);
-    throw error;
-  }
-};
-
-const userAuthSetPasswordModel = async (id, passData) => {
-  try {
-    const hashPassword = await bcrypt.hash(passData, 10);
-
-    const { query, values } = userAuthSetPasswordServices(id, hashPassword);
-
-    const updatedData = await db.query(query, values);
-
-    await sendEmail(
-      "password-set",
-      updatedData.rows[0].email,
-      updatedData.rows[0].email,
-    );
-
-    return updatedData.rows[0].email;
-  } catch (error) {
-    console.error("userAuthPasswordModel error:", error);
-    throw error;
-  }
-};
+//++++++++++++++++++ helper here +++++++++++++++++++//
 
 export {
+  resendOtpModel,
+  verifyingOtpModel,
   userAuthSetPasswordModel,
   registerUserModel,
   checkIfTheUserExist,

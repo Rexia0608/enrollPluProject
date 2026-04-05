@@ -76,4 +76,22 @@ const documentReviewServices = (data) => {
   }
 };
 
-export { fetchReviewQueueServices, documentReviewServices };
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here +++++++++++++++++++//
+
+const activeSemesterServices = async () => {
+  try {
+    let querySemester = `SELECT id FROM academic_year WHERE enrollment_open = 'true' LIMIT 1;`;
+    return { querySemester };
+  } catch (error) {
+    console.error("error activeSemesterServices:", error);
+    throw error;
+  }
+};
+
+export {
+  fetchReviewQueueServices,
+  documentReviewServices,
+  activeSemesterServices,
+};
