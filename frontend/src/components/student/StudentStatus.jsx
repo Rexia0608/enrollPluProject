@@ -136,7 +136,7 @@ function StudentStatus() {
         });
 
         let enrollmentStatusResponse = { data: { data: null } };
-        let enrollmentResponse = { data: { data: null } };
+        let enrollmentResponse = { data: { items: [] } }; // ✅ fixed structure
 
         try {
           enrollmentStatusResponse = await api.get(
@@ -163,7 +163,13 @@ function StudentStatus() {
           }
         }
 
-        const enrollmentData = enrollmentResponse?.data?.data;
+        // ✅ FIX: Extract enrollment object from items array
+        const enrollmentData =
+          enrollmentResponse?.data?.items &&
+          enrollmentResponse.data.items.length > 0
+            ? enrollmentResponse.data.items[0]
+            : null;
+
         const enrollmentStatusData = enrollmentStatusResponse?.data?.data;
 
         const stage = determineEnrollmentStage(enrollmentData);

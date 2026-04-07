@@ -4,6 +4,7 @@ import {
   fetchReviewQueueServices,
   documentReviewServices,
   activeSemesterServices,
+  getReviewQueuePaymentServices,
 } from "../services/facultyServices.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
@@ -32,6 +33,17 @@ const getReviewQueueModel = async () => {
   }
 };
 
+const getReviewQueuePaymentModel = async () => {
+  try {
+    const { query } = await getReviewQueuePaymentServices();
+    const data = await db.query(query);
+    return data.rows;
+  } catch (error) {
+    console.error("error getReviewQueuePaymentModel:", error);
+    throw error;
+  }
+};
+
 const postVerifiedDocumentModel = async (passData) => {
   try {
     const { queries, values } = documentReviewServices(passData);
@@ -56,7 +68,16 @@ const postVerifiedDocumentModel = async (passData) => {
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here  +++++++++++++++++++//
+//++++++++++++++++++ TEST here postVerifiedPaymentModel +++++++++++++++++++//
+
+const postVerifiedPaymentModel = async (passData) => {
+  try {
+    console.log(passData);
+  } catch (error) {
+    console.error("error postVerifiedPaymentModel:", error);
+    throw error;
+  }
+};
 
 const Templated = async () => {
   try {
@@ -69,7 +90,9 @@ const Templated = async () => {
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 
 export {
+  getReviewQueuePaymentModel,
   getReviewQueueModel,
   postVerifiedDocumentModel,
   activeSemesterServices,
+  postVerifiedPaymentModel,
 };

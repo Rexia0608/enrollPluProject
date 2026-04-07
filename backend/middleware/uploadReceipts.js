@@ -44,19 +44,18 @@ const storage = multer.diskStorage({
       const user = JSON.parse(userStr);
       const pmtDetail = JSON.parse(pmtDetailsStr);
 
-      const fieldName = sanitizeFilename(file.fieldname);
       const enrollmentId = sanitizeFilename(
         String(user.activeEnrollmentId || "unknown"),
       );
       const period = sanitizeFilename(String(pmtDetail.period || "unknown"));
       const ext = path.extname(file.originalname).toLowerCase();
 
-      const newFilename = `${fieldName}-${enrollmentId}-${period}${ext}`;
+      const newFilename = `${enrollmentId}-${period}${ext}`;
 
       cb(null, newFilename);
     } catch (error) {
       console.error("Error generating filename:", error);
-      const fallbackName = `unknown-${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
+      const fallbackName = `unknown-${Date.now()}${path.extname(file.originalname)}`;
       cb(null, sanitizeFilename(fallbackName));
     }
   },
@@ -66,7 +65,7 @@ const uploadReceipts = multer({
   storage,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
-    files: 5, // Max number of files if using array
+    files: 5,
   },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();

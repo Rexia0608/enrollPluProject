@@ -38,7 +38,7 @@ function DocumentReview() {
           "http://localhost:3000/faculty/review-queue",
           getAuthHeaders(),
         );
-        console.log(response.data.success);
+
         if (response.data.success && response.data.items) {
           const mappedQueue = response.data.items.map((item) => ({
             id: item.enrollment_id,

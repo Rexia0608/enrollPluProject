@@ -5,9 +5,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadDir = path.join(__dirname, "../uploads/requirements");
+const uploadDir = path.join(__dirname, "../uploads/proof-of-payment");
 
-const fetchDocument = async (req, res) => {
+const fetchdocumentPayment = async (req, res) => {
   try {
     let { filename } = req.params;
     // Sanitize
@@ -35,4 +35,4 @@ const fetchDocument = async (req, res) => {
   }
 };
 
-export default fetchDocument;
+export default fetchdocumentPayment;

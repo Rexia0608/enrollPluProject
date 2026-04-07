@@ -10,10 +10,13 @@ const paymentUpdateService = (data) => {
     if (promiseNote.promiseStatus) {
       paid = true;
       query = `UPDATE transaction_table
-               SET remarks = $1
-               WHERE enrollment_id = $2
-               AND period = $3 
-               RETURNING *
+                SET
+                    remarks = $1,
+                    payment_status = 'review'
+                WHERE 
+                    enrollment_id = $2
+                    AND period = $3
+                RETURNING *;
                 `;
       value = [promiseNote, user.activeEnrollmentId, paymentDetails.period];
       return { query, value, paid };

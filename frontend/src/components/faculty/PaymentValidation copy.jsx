@@ -111,22 +111,38 @@ function PaymentValidation() {
   }, []);
 
   const handleValidate = async (id, status) => {
+    if (status === "rejected" && !feedback.trim()) {
+      alert("Please provide feedback for rejection");
+      return;
+    }
+    const payment = payments.find((p) => p.id === id);
+    if (!payment) return;
+    const originalPayments = [...payments];
+    setPayments(
+      payments.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              status: status === "validated" ? "validated" : "rejected",
+              feedback: status === "rejected" ? feedback : p.feedback,
+            }
+          : p,
+      ),
+    );
     setSelectedPayment(null);
     setFeedback("");
-    const fileData = {
-      paymentId: id,
-      action: status,
-      remark: feedback,
-    };
     try {
-      await axios.patch(
-        "http://localhost:3000/faculty/verified-payment",
-        fileData,
-      );
+      await axios.post("http://localhost:3000/faculty/validate-payment", {
+        paymentId: id,
+        enrollmentId: payment.studentId,
+        action: status,
+        feedback: status === "rejected" ? feedback : null,
+      });
       await fetchPaymentQueue(); // refresh
     } catch (err) {
       console.error(err);
       alert(`Failed to ${status} payment.`);
+      setPayments(originalPayments);
     }
   };
 
@@ -374,14 +390,16 @@ function PaymentValidation() {
             {selectedPayment.status === "pending" && (
               <div className="flex flex-col sm:flex-row gap-3">
                 <PrimaryButton
-                  onClick={() => handleValidate(selectedPayment.id, true)}
+                  onClick={() =>
+                    handleValidate(selectedPayment.id, "validated")
+                  }
                   icon={CheckCircle}
                   className="sm:flex-1"
                 >
                   Validate Payment
                 </PrimaryButton>
                 <SecondaryButton
-                  onClick={() => handleValidate(selectedPayment.id, false)}
+                  onClick={() => handleValidate(selectedPayment.id, "rejected")}
                   icon={XCircle}
                   className="sm:flex-1 border-red-300 text-red-700 hover:bg-red-50"
                 >

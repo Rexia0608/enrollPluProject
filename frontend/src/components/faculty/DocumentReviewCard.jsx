@@ -178,7 +178,7 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
     setIsSubmitting(true);
     setFeedbackError("");
     try {
-      await axios.post(`${API_BASE_URL}/faculty/verified-document`, fileData);
+      await axios.patch(`${API_BASE_URL}/faculty/verified-document`, fileData);
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -220,10 +220,7 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
       status: false,
     };
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/faculty/verified-document`,
-        fileData,
-      );
+      await axios.patch(`${API_BASE_URL}/faculty/verified-document`, fileData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setAction("rejected");

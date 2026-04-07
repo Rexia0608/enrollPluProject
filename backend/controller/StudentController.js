@@ -50,7 +50,7 @@ const getCheckStudentIfEnrolled = async (req, res) => {
 
     const isEmpty = data.length === 0;
 
-    return globalResponseHandler(res, data[0] || null, {
+    return globalResponseHandler(res, data || null, {
       message: isEmpty
         ? "Student not enrolled yet for this semester year."
         : "Student enrolled for this semester year.",

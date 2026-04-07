@@ -135,13 +135,17 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
           setAcademicYearInfo((prev) => ({ ...prev, enrollment_open: false }));
         }
 
-        // Process enrollment check
+        // ✅ FIX: Extract actual enrollment object from items array
         const checkData = enrollmentCheckRes.data;
-        console.log(enrollmentCheckRes);
-        if (checkData.success && checkData) {
-          setMyEnrollment(checkData);
+        console.log(checkData);
+        if (
+          checkData.success &&
+          checkData.items &&
+          checkData.items.length > 0
+        ) {
+          setMyEnrollment(checkData.items[0]); // enrollment record
         } else {
-          setMyEnrollment(null); // not enrolled
+          setMyEnrollment(null); // not enrolled / rejected
         }
 
         // Process courses list – the response is an array directly
@@ -211,7 +215,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     const isValid = validateStep(3, { studentType, formData, documents });
     if (!isValid) return;
 
-    // Check for existing non-rejected enrollment using enrollment_status
+    // ✅ FIX: Check enrollment status using the extracted object
     if (myEnrollment && myEnrollment.enrollment_status !== "rejected") {
       setSubmitError(
         `You already have an ${myEnrollment.enrollment_status} enrollment.`,
@@ -257,10 +261,22 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
       if (enrollmentResultRes.data.success) {
         setSubmitSuccess(true);
-        setMyEnrollment(enrollmentCheckResult.data.data);
+        // ✅ FIX: Re-extract enrollment object after successful submission
+        const checkData = enrollmentCheckResult.data;
+        if (
+          checkData.success &&
+          checkData.items &&
+          checkData.items.length > 0
+        ) {
+          setMyEnrollment(checkData.items[0]);
+        } else {
+          setMyEnrollment(null);
+        }
         onSuccess?.();
       } else {
-        setSubmitError(response.data.message || "Submission failed.");
+        setSubmitError(
+          enrollmentResultRes.data.message || "Submission failed.",
+        );
       }
     } catch (err) {
       setSubmitError(err.response?.data?.message || "Something went wrong.");
@@ -349,7 +365,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
     );
   }
 
-  // Existing enrollment (non-rejected) view - FIXED: using enrollment_status instead of status
+  // Existing enrollment (non-rejected) view
   if (myEnrollment && myEnrollment.enrollment_status !== "rejected") {
     const statusConfig = {
       enrolled: {
@@ -384,7 +400,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
       },
     };
 
-    // FIXED: using enrollment_status instead of status
     const config =
       statusConfig[myEnrollment.enrollment_status] || statusConfig.pending;
     const Icon = config.icon;
@@ -444,7 +459,6 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
             </div>
           </div>
 
-          {/* FIXED: using enrollment_status instead of status */}
           {myEnrollment.enrollment_status === "enrolled" && (
             <div className="bg-green-50 rounded-xl p-6 border border-green-200">
               <h4 className="font-semibold text-green-800 mb-3">
@@ -591,7 +605,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   {
-                    id: "old_student", // ✅ FIXED
+                    id: "old_student",
                     label: "Old Student",
                     description: "Continuing/returning student",
                     icon: "📚",

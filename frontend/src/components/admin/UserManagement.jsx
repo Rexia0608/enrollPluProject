@@ -51,14 +51,15 @@ function EditUserForm({ user, onSave, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Personal Information */}
       <div>
-        <h4 className="text-sm font-medium text-gray-900 mb-4">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">
           Personal Information
-        </h4>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              First Name
+              First Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -68,11 +69,12 @@ function EditUserForm({ user, onSave, onCancel }) {
               required
               className={inputClasses}
               placeholder="John"
+              autoComplete="given-name"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Last Name
+              Last Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -82,15 +84,17 @@ function EditUserForm({ user, onSave, onCancel }) {
               required
               className={inputClasses}
               placeholder="Doe"
+              autoComplete="family-name"
             />
           </div>
         </div>
       </div>
 
+      {/* Account Settings */}
       <div>
-        <h4 className="text-sm font-medium text-gray-900 mb-4">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">
           Account Settings
-        </h4>
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -110,27 +114,26 @@ function EditUserForm({ user, onSave, onCancel }) {
             </select>
           </div>
           <div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role
-              </label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className={`${inputClasses} bg-white`}
-              >
-                {["student", "faculty", "admin"].map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Role
+            </label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className={`${inputClasses} bg-white`}
+            >
+              {["student", "faculty", "admin"].map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
 
+      {/* Form Actions */}
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
         <button
           type="button"

@@ -490,19 +490,7 @@ const PaymentForm = ({ selectedPeriod, onSubmit, onCancel, isSubmitting }) => {
             Maximum amount: ₱{selectedPeriod?.balance.toLocaleString()}
           </p>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Reference Number *
-          </label>
-          <input
-            type="text"
-            value={referenceNumber}
-            onChange={(e) => setReferenceNumber(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter reference number from your payment"
-            required
-          />
-        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Payment Proof *
@@ -558,7 +546,7 @@ const PaymentForm = ({ selectedPeriod, onSubmit, onCancel, isSubmitting }) => {
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={isSubmitting || !amount || !referenceNumber || !file}
+            disabled={isSubmitting || !amount || !file}
             className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
@@ -615,7 +603,7 @@ const ErrorDisplay = ({ error, onRetry }) => (
 );
 
 // ============================================
-// 3. MAIN COMPONENT (shortened)
+// 3. MAIN COMPONENT (corrected)
 // ============================================
 const StudentPaymentStatus = () => {
   const navigate = useNavigate();
@@ -640,21 +628,37 @@ const StudentPaymentStatus = () => {
       if (!user?.id) return;
       update({ isLoading: true, error: null });
       try {
+        // 1. Fetch enrollment status (check if student is enrolled)
         const enrollmentRes = await axios.get(
           `http://localhost:3000/student/validate-enrolled-student/${user.id}`,
           getAuthHeaders(),
         );
-        if (!enrollmentRes.data.success)
-          return update({ isLoading: false, enrollment: null });
-        const enrollment = enrollmentRes.data.data;
-        update({ enrollment });
-        if (enrollment?.enrollment_id) {
+
+        // Response format: { success, items, ... }
+        const enrollmentItems = enrollmentRes.data?.items || [];
+        if (!enrollmentRes.data.success || enrollmentItems.length === 0) {
+          // Not enrolled yet
+          update({ isLoading: false, enrollment: null });
+          return;
+        }
+
+        // Extract the first enrollment record
+        const enrollmentData = enrollmentItems[0];
+        update({ enrollment: enrollmentData });
+
+        // 2. Fetch payment periods for this enrollment
+        if (enrollmentData.enrollment_id) {
           const paymentsRes = await axios.get(
-            `http://localhost:3000/student/payments-all-periods/${enrollment.enrollment_id}`,
+            `http://localhost:3000/student/payments-all-periods/${enrollmentData.enrollment_id}`,
             getAuthHeaders(),
           );
-          if (paymentsRes.data.success && paymentsRes.data.data.items) {
-            const payments = paymentsRes.data.data.items.map((item) => ({
+
+          // Response format: { success, items, ... }
+          if (
+            paymentsRes.data.success &&
+            Array.isArray(paymentsRes.data.items)
+          ) {
+            const payments = paymentsRes.data.items.map((item) => ({
               id: item.id,
               period: item.period,
               payment_status: item.payment_status,
@@ -664,24 +668,22 @@ const StudentPaymentStatus = () => {
               remarks: item.remarks,
             }));
             update({ payments });
-          } else update({ payments: [] });
+          } else {
+            update({ payments: [] });
+          }
         }
       } catch (err) {
+        console.error("Failed to load payment data:", err);
         update({ error: "Failed to load payment data. Please try again." });
       } finally {
         update({ isLoading: false });
       }
     };
+
     fetchData();
   }, [user, getAuthHeaders]);
 
-  const handlePaymentSubmit = async ({
-    amount,
-    referenceNumber,
-    remarks,
-    file,
-    period,
-  }) => {
+  const handlePaymentSubmit = async ({ amount, remarks, file, period }) => {
     update({ isSubmitting: true, submitStatus: null });
     try {
       const formData = new FormData();
@@ -701,7 +703,6 @@ const StudentPaymentStatus = () => {
           period,
           paymentType: "tuition",
           amount,
-          referenceNumber,
           remarks,
           paymentMethod: state.selectedMethod,
           remainingBalance: state.selectedPeriod?.balance - amount,
@@ -726,7 +727,9 @@ const StudentPaymentStatus = () => {
           showPromiseForm: false,
         });
         setTimeout(() => window.location.reload(), 2000);
-      } else throw new Error(res.data?.message || "Payment failed");
+      } else {
+        throw new Error(res.data?.message || "Payment failed");
+      }
     } catch (err) {
       update({
         submitStatus: {
@@ -784,8 +787,9 @@ const StudentPaymentStatus = () => {
           showPromiseForm: false,
         });
         setTimeout(() => window.location.reload(), 5000);
-      } else
+      } else {
         throw new Error(res.data?.message || "Failed to submit promise to pay");
+      }
     } catch (err) {
       update({
         submitStatus: {

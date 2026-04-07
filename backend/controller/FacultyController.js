@@ -5,6 +5,8 @@ import {
 import {
   getReviewQueueModel,
   postVerifiedDocumentModel,
+  getReviewQueuePaymentModel,
+  postVerifiedPaymentModel,
 } from "../models/FacultyModel.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
@@ -23,10 +25,6 @@ const getReviewQueue = async (req, res) => {
   }
 };
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here +++++++++++++++++++//
-
 const postVerifiedDocument = async (req, res) => {
   try {
     const data = await postVerifiedDocumentModel(req.body);
@@ -43,4 +41,43 @@ const postVerifiedDocument = async (req, res) => {
   }
 };
 
-export { getReviewQueue, postVerifiedDocument };
+const getReviewQueuePayment = async (req, res) => {
+  try {
+    const data = await getReviewQueuePaymentModel();
+
+    return globalResponseHandler(res, data, {
+      message: data ? "Workload successfully fetch." : "No pending to review.",
+      statusCode: 200,
+      meta: { count: data.length },
+    });
+  } catch (error) {
+    console.error("Error in getReviewQueue:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here postVerifiedPayment +++++++++++++++++++//
+const postVerifiedPayment = async (req, res) => {
+  try {
+    const data = await postVerifiedPaymentModel(req.body);
+
+    return globalResponseHandler(res, data, {
+      message: data
+        ? `Enrollment ID: ${req.params.fileNumber} are successssfully verified`
+        : `Enrollment ID ${req.params.fileNumber} are not successssfully verified`,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in postVerifiedPayment:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+export {
+  getReviewQueue,
+  postVerifiedDocument,
+  getReviewQueuePayment,
+  postVerifiedPayment,
+};

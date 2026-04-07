@@ -43,15 +43,13 @@ const documentReviewServices = (data) => {
       // for test documents_review | payment_pending
       queries.push(`
         UPDATE enrollment_profile
-        SET enrollment_status = 'documents_review' 
+        SET enrollment_status = 'payment_pending' 
         WHERE enrollment_id = $1 
         AND user_id = $2
         RETURNING *;
       `);
 
       values.push([data.fileId, data.studentId]);
-
-      message = `sample message proceed to payment`;
     } else {
       queries.push(`
         DELETE FROM transaction_table
@@ -76,10 +74,6 @@ const documentReviewServices = (data) => {
   }
 };
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here +++++++++++++++++++//
-
 const activeSemesterServices = async () => {
   try {
     let querySemester = `SELECT id FROM academic_year WHERE enrollment_open = 'true' LIMIT 1;`;
@@ -90,7 +84,34 @@ const activeSemesterServices = async () => {
   }
 };
 
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here getReviewQueuePaymentServices +++++++++++++++++++//
+
+const getReviewQueuePaymentServices = async () => {
+  try {
+    let query = `
+    SELECT * 
+    FROM transaction_table 
+    WHERE payment_status = 'review';
+    `;
+    return { query };
+  } catch (error) {
+    console.error("error getReviewQueuePaymentServices:", error);
+    throw error;
+  }
+};
+
+const Templated = async () => {
+  try {
+  } catch (error) {
+    console.error("error Templated:", error);
+    throw error;
+  }
+};
+
 export {
+  getReviewQueuePaymentServices,
   fetchReviewQueueServices,
   documentReviewServices,
   activeSemesterServices,
