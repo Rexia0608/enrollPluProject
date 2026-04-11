@@ -1,18 +1,6 @@
-//++++++++++++++++++ finalized here  +++++++++++++++++++//
+import { sendEmail } from "../utils/mailer.js";
 
 //++++++++++++++++++ finalized here  +++++++++++++++++++//
-
-/********************************* TEST HERES ****************************************/
-
-const Templated = async () => {
-  try {
-  } catch (error) {
-    console.error("error Templated:", error);
-    throw error;
-  }
-};
-
-/********************************* TEST HERES ****************************************/
 
 const enrollmentTransactionServices = (tuition_fee, semester) => {
   try {
@@ -80,7 +68,8 @@ const enrollmentProfileServices = (data) => {
     const facultyDefaultValidation = {
       document: false,
       isProfileAreValidated: false,
-      remarkNote: "wait for the validation team from faculty office.",
+      remarkNote:
+        "This process typically takes 2–3 business days. You can check the status of your application anytime by logging into your account and always check your registered email for more update.",
     };
 
     const statusMap = {
@@ -110,6 +99,7 @@ const enrollmentProfileServices = (data) => {
          WHERE user_id = $2 AND enrollment_year_code = $3
        )
        RETURNING *;`;
+
     return { profileQuery, profileValue };
   } catch (error) {
     console.error("enrollmentServices error:", error);
@@ -117,8 +107,33 @@ const enrollmentProfileServices = (data) => {
   }
 };
 
-//++++++++++++++++++ helper here +++++++++++++++++++//
+//++++++++++++++++++ finalized here  +++++++++++++++++++//
+
+/********************************* TEST HERES ****************************************/
+
+const Templated = async () => {
+  try {
+  } catch (error) {
+    console.error("error Templated:", error);
+    throw error;
+  }
+};
+
+/********************************* TEST HERES ****************************************/
 
 //++++++++++++++++++ helper here +++++++++++++++++++//
+const sendingEvaluationServices = async (type, emailaddress, message) => {
+  try {
+    await sendEmail(type, emailaddress, message);
+  } catch (error) {
+    console.error("error sendingEvaluationServices:", error);
+    throw error;
+  }
+};
+//++++++++++++++++++ helper here +++++++++++++++++++//
 
-export { enrollmentProfileServices, enrollmentTransactionServices };
+export {
+  enrollmentProfileServices,
+  enrollmentTransactionServices,
+  sendingEvaluationServices,
+};

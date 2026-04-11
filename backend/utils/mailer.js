@@ -30,7 +30,7 @@ transporter.verify((error, success) => {
  * @param {string} message - Content to include in email
  * @returns {Promise<Object>} Results of email sending attempts
  */
-export const sendEmail = async (type, to, message) => {
+export const sendEmail = async (type, to, message, attachments = []) => {
   console.log(
     `[Email Service] Type: ${type}, Recipients: ${Array.isArray(to) ? to.length : 1}, Message: ${message?.substring(0, 50)}...`,
   );
@@ -59,6 +59,7 @@ export const sendEmail = async (type, to, message) => {
           to: email,
           subject,
           html,
+          attachments,
         });
         return { email, messageId: info.messageId, status: "sent" };
       } catch (error) {
@@ -106,6 +107,12 @@ const getEmailConfig = (type, message) => {
         html: verifiedMsg(message),
       };
 
+    case "evaluation_email":
+      return {
+        subject: "Your Enrollment Application is Under Evaluation.",
+        html: evaluationMsg("email"),
+      };
+
     case "payment-validation":
       return {
         subject: "✅ Payment validation update.",
@@ -116,6 +123,12 @@ const getEmailConfig = (type, message) => {
       return {
         subject: "✅ Promised note validation update.",
         html: promisedNote(message),
+      };
+
+    case "payment-confirmed":
+      return {
+        subject: "Payment Receipt",
+        html: paymentConfirmed(message),
       };
 
     case "password-reset":
@@ -191,6 +204,68 @@ const verifiedMsg = (email) => {
     </div>
   </body>
   </html>
+  `;
+};
+
+/**
+ * Template: Evaluation Stage
+ */
+const evaluationMsg = () => {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px; line-height: 1.6;">
+    
+    <div style="border-left: 4px solid #f59e0b; padding-left: 16px; margin-bottom: 24px;">
+      <h2 style="color: #f59e0b; margin: 0; font-size: 24px;">📋 Enrollment Application Under Evaluation</h2>
+      <p style="color: #6b7280; margin: 4px 0 0; font-size: 14px;">From EnrollPlus Administration</p>
+    </div>
+
+    <p>Dear Student,</p>
+
+    <p>
+      Thank you for submitting your enrollment application to <strong>EnrollPlus</strong>.
+    </p>
+
+    <p>
+      Your application is now <strong>under evaluation</strong> by our faculty team. 
+      We will review your documents and notify you once a decision has been made kindly check your dashboard for the updates.
+    </p>
+
+    <div style="margin: 24px 0; text-align: center;">
+      <a
+        href="http://localhost:5173/student/dashboard"
+        style="
+          background-color: #f59e0b;
+          color: #ffffff;
+          padding: 12px 24px;
+          text-decoration: none;
+          border-radius: 6px;
+          font-weight: bold;
+          display: inline-block;
+        "
+      >
+        Check Application Status
+      </a>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+
+    <p style="font-size: 12px; color: #6b7280;">
+      If you have any questions, please contact our admissions office at support@enrollplus.com.
+    </p>
+
+    <p style="font-size: 12px; color: #6b7280; margin-bottom: 0;">
+      © ${new Date().getFullYear()} EnrollPlus. All rights reserved.
+    </p>
+  </div>
+</body>
+</html>
   `;
 };
 
@@ -479,5 +554,48 @@ const paymentValidation = (message) => {
       </table>
     </body>
     </html>
+  `;
+};
+
+/**
+ * Template: Payment confirmed
+ */
+const paymentConfirmed = (message) => {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px; border-radius: 8px; line-height: 1.6; color: #1f2937; text-align: left;">
+          
+          <div style="border-left: 4px solid #2563eb; padding-left: 16px; margin-bottom: 24px;">
+            <h2 style="color: #2563eb; margin: 0; font-size: 24px;">Payment Receipt</h2>
+            <p style="color: #6b7280; margin: 4px 0 0; font-size: 14px;">From EnrollPlus Administration</p>
+          </div>
+
+          ${message}
+
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+            <p style="font-size: 13px; color: #6b7280; font-style: italic; margin: 0;">
+              📧 This is an automated message — please don't reply to this email.
+            </p>
+          </div>
+
+          <p style="font-size: 12px; color: #9ca3af; margin: 24px 0 0;">
+            © ${new Date().getFullYear()} EnrollPlus. All rights reserved.
+          </p>
+          
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
   `;
 };

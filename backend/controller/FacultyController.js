@@ -3,6 +3,7 @@ import {
   errorResponseHandler,
 } from "../middleware/responseHandler.js";
 import {
+  getValidateReceiptModel,
   getReviewQueueModel,
   postVerifiedDocumentModel,
   getReviewQueuePaymentModel,
@@ -56,17 +57,14 @@ const getReviewQueuePayment = async (req, res) => {
   }
 };
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here postVerifiedPayment +++++++++++++++++++//
 const postVerifiedPayment = async (req, res) => {
   try {
     const data = await postVerifiedPaymentModel(req.body);
 
     return globalResponseHandler(res, data, {
       message: data
-        ? `Enrollment ID: ${req.params.fileNumber} are successssfully verified`
-        : `Enrollment ID ${req.params.fileNumber} are not successssfully verified`,
+        ? `${req.body.period} payment validated.`
+        : `${req.body.period} payment rejected`,
       statusCode: 200,
     });
   } catch (error) {
@@ -75,7 +73,27 @@ const postVerifiedPayment = async (req, res) => {
   }
 };
 
+const getValidateReceipt = async (req, res) => {
+  try {
+    const data = await getValidateReceiptModel(req.params.filename);
+
+    return globalResponseHandler(res, data, {
+      message: data ? "Receipt successfully fetch." : "No reciept result.",
+      statusCode: 200,
+      meta: { count: data.length },
+    });
+  } catch (error) {
+    console.error("Error in  getValidateReceipt:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here  +++++++++++++++++++//
+
 export {
+  getValidateReceipt,
   getReviewQueue,
   postVerifiedDocument,
   getReviewQueuePayment,

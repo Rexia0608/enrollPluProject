@@ -10,24 +10,25 @@ const uploadDir = path.join(__dirname, "../uploads/proof-of-payment");
 
 const deleteVerifiedPayment = async (req, res, next) => {
   try {
-    const { peymentId, action } = req.body;
+    const { enrollmentId, action, period } = req.body;
 
     // Basic validation
-    if (!peymentId) {
-      return res.status(400).json({ message: "peymentId is required" });
+    if (!enrollmentId) {
+      return res.status(400).json({ message: "enrollmentId is required" });
     }
 
-    if (!peymentId.match(/^[a-zA-Z0-9-_\.]+$/)) {
-      return res.status(400).json({ message: "Invalid peymentId" });
+    if (!enrollmentId.match(/^[a-zA-Z0-9-_\.]+$/)) {
+      return res.status(400).json({ message: "Invalid enrollmentId" });
     }
 
     // If status is not false, just continue
+
     if (action !== false) {
       return next();
     }
 
-    // --- status === false: delete all files starting with peymentId- ---
-    const prefix = `${peymentId}-`;
+    // --- status === false: delete all files starting with enrollmentId- ---
+    const prefix = `${enrollmentId}-${period}`;
     let deletedCount = 0;
 
     try {
@@ -44,7 +45,7 @@ const deleteVerifiedPayment = async (req, res, next) => {
       // Optionally continue even if deletion partially fails
     }
 
-    console.log(`Deleted ${deletedCount} file(s) for student ${peymentId}`);
+    console.log(`Deleted ${deletedCount} file(s) for student ${enrollmentId}`);
 
     // Attach info to request if needed
     req.fileDeleted = true;

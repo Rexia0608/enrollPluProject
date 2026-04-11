@@ -1,10 +1,13 @@
 import db from "../config/db.js";
 
 import {
+  postVerifiedPaymentServices,
   fetchReviewQueueServices,
   documentReviewServices,
   activeSemesterServices,
   getReviewQueuePaymentServices,
+  confirmedServices,
+  getValidateReceiptServices,
 } from "../services/facultyServices.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
@@ -66,18 +69,46 @@ const postVerifiedDocumentModel = async (passData) => {
   }
 };
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here postVerifiedPaymentModel +++++++++++++++++++//
-
 const postVerifiedPaymentModel = async (passData) => {
   try {
-    console.log(passData);
+    const { queries, values } = await postVerifiedPaymentServices(passData);
+    let data;
+
+    await db.query("BEGIN");
+
+    for (let i = 0; i < queries.length; i++) {
+      await db.query(queries[i], values[i]);
+    }
+
+    data = await db.query(queries[1], values[1]);
+
+    await confirmedServices(data.rows[0], passData);
+    await db.query("COMMIT");
+    // return data.rows[0];
   } catch (error) {
+    await db.query("ROLLBACK");
     console.error("error postVerifiedPaymentModel:", error);
     throw error;
   }
 };
+
+const getValidateReceiptModel = async (passData) => {
+  try {
+    let data;
+
+    const { query, value } = await getValidateReceiptServices(passData);
+    data = await db.query(query, value);
+
+    return data.rows[0];
+  } catch (error) {
+    console.error("error getValidateReceiptModel:", error);
+    throw error;
+  }
+};
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here +++++++++++++++++++//
 
 const Templated = async () => {
   try {
@@ -90,6 +121,7 @@ const Templated = async () => {
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 
 export {
+  getValidateReceiptModel,
   getReviewQueuePaymentModel,
   getReviewQueueModel,
   postVerifiedDocumentModel,

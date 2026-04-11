@@ -8,7 +8,7 @@ import DashboardContainer from "../components/layout/DashboardContainer";
 import FacultyOverview from "../components/faculty/FacultyOverview";
 import DocumentReview from "../components/faculty/DocumentReview";
 import PaymentValidation from "../components/faculty/PaymentValidation";
-import StudentDetails from "../components/faculty/StudentDetails";
+import QRReceiptScanner from "../components/faculty/QRReceiptScanner";
 import NotFound from "./NotFound";
 
 function FacultyDashboard() {
@@ -31,7 +31,7 @@ function FacultyDashboard() {
               <Route index element={<FacultyOverview />} />
               <Route path="documents" element={<DocumentReview />} />
               <Route path="payments" element={<PaymentValidation />} />
-              <Route path="students" element={<StudentDetails />} />
+              <Route path="receipt" element={<QRReceiptScanner />} />
               {/* Add more faculty routes as needed */}
 
               {/* 404 response when someone crawiling it will catch here */}

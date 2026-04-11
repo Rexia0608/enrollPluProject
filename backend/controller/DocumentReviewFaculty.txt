@@ -1,3 +1,9 @@
-    await db.query("BEGIN");
-    await db.query("COMMIT");
-     await db.query("ROLLBACK");
+TEST ACCOUNTS
+ADMIN 
+johnDoeAdmin12@gmail.com
+
+Faculty
+juanDelaCruzFaculty12@gmail.com 
+
+STUDENT 
+johnreycejas0608@gmail.com

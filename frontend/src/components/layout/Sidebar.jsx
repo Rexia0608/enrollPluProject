@@ -4,6 +4,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
+  ScanQrCode,
   Calendar,
   BookOpen,
   Settings,
@@ -48,9 +49,9 @@ function Sidebar({ role, isOpen = true }) {
       label: "Payment Validation",
     },
     {
-      to: "/faculty/dashboard/students",
-      icon: Users,
-      label: "Student Details",
+      to: "/faculty/dashboard/receipt",
+      icon: ScanQrCode,
+      label: "Scan Receipt",
     },
     {
       to: "/faculty/dashboard/notifications",

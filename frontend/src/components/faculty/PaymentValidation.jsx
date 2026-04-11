@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   CreditCard,
   CheckCircle,
@@ -8,6 +10,9 @@ import {
   AlertCircle,
   Filter,
   Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
@@ -57,9 +62,11 @@ function PaymentValidation() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
-  const [filter, setFilter] = useState("all");
+  const [periodFilter, setPeriodFilter] = useState("all");
   const [feedback, setFeedback] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   const fetchPaymentQueue = async () => {
     setLoading(true);
@@ -75,19 +82,21 @@ function PaymentValidation() {
           const proofFilename = item.proof_filename || `${item.enrollment_id}`;
           return {
             id: item.id,
-            studentName: `Student (${item.enrollment_id})`,
-            studentId: item.enrollment_id,
+            enrollmentId: item.enrollment_id,
+            period: item.period,
             amount: parseFloat(item.paid_amount).toLocaleString(undefined, {
               minimumFractionDigits: 2,
             }),
+            amountRaw: parseFloat(item.paid_amount),
             reference: item.id,
-            submitted: getRelativeTime(item.created_at),
+            submitted: getRelativeTime(item.updated_at),
             status: mapStatus(item.payment_status),
             method: item.payment_type || "Bank Transfer",
             proofFilename: proofFilename,
             proofUrl: getProofUrl(proofFilename),
             priority: "medium",
             feedback: item.remarks?.note || "",
+            createdAt: item.updated_at,
             raw: item,
           };
         });
@@ -110,20 +119,30 @@ function PaymentValidation() {
     fetchPaymentQueue();
   }, []);
 
-  const handleValidate = async (id, status) => {
+  const handleValidate = async (
+    enrollmentId,
+    status,
+    period,
+    amount,
+    reference,
+  ) => {
     setSelectedPayment(null);
     setFeedback("");
     const fileData = {
-      paymentId: id,
+      enrollmentId: enrollmentId,
+      period: period,
       action: status,
+      reference: reference,
+      paidAmount: amount,
       remark: feedback,
     };
     try {
-      await axios.patch(
+      const response = await axios.patch(
         "http://localhost:3000/faculty/verified-payment",
         fileData,
       );
-      await fetchPaymentQueue(); // refresh
+      toast(`${response.data.message}`, { type: "success" });
+      await fetchPaymentQueue();
     } catch (err) {
       console.error(err);
       alert(`Failed to ${status} payment.`);
@@ -168,15 +187,90 @@ function PaymentValidation() {
     }
   };
 
-  const filteredPayments = payments
-    .filter((p) => (filter === "all" ? true : p.status === filter))
-    .filter((p) =>
+  // Handle sorting when a column header is clicked
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  // Get sort icon for column header
+  const getSortIcon = (field) => {
+    if (sortField !== field)
+      return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
+    return sortDirection === "asc" ? (
+      <ArrowUp className="w-4 h-4 ml-1 inline" />
+    ) : (
+      <ArrowDown className="w-4 h-4 ml-1 inline" />
+    );
+  };
+
+  // Filter and sort payments
+  const filteredAndSortedPayments = useMemo(() => {
+    // First apply period filter
+    let filtered = payments.filter((p) =>
+      periodFilter === "all" ? true : p.period === periodFilter,
+    );
+
+    // Then apply search filter (enrollmentId or reference)
+    filtered = filtered.filter((p) =>
       searchTerm
-        ? p.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.reference.toLowerCase().includes(searchTerm.toLowerCase())
+        ? p.enrollmentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.reference
+            .toString()
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
         : true,
     );
+
+    // Then sort
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortField) {
+        case "enrollmentId":
+          aVal = a.enrollmentId;
+          bVal = b.enrollmentId;
+          break;
+        case "period":
+          aVal = a.period;
+          bVal = b.period;
+          break;
+        case "amount":
+          aVal = a.amountRaw;
+          bVal = b.amountRaw;
+          break;
+        case "reference":
+          aVal = a.reference;
+          bVal = b.reference;
+          break;
+        case "status":
+          aVal = a.status;
+          bVal = b.status;
+          break;
+        case "submitted":
+          aVal = new Date(a.createdAt);
+          bVal = new Date(b.createdAt);
+          break;
+        case "createdAt":
+          aVal = new Date(a.createdAt);
+          bVal = new Date(b.createdAt);
+          break;
+        default:
+          aVal = a.createdAt;
+          bVal = b.createdAt;
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [payments, periodFilter, searchTerm, sortField, sortDirection]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -242,11 +336,8 @@ function PaymentValidation() {
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-gray-900">
-                    {selectedPayment.studentName}
-                  </h4>
                   <p className="text-sm text-gray-600">
-                    Student ID: {selectedPayment.studentId}
+                    Enrollement number: {selectedPayment.enrollmentId}
                   </p>
                 </div>
                 <StatusBadge status={selectedPayment.status} />
@@ -265,7 +356,7 @@ function PaymentValidation() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Reference Number</span>
+                    <span className="text-gray-600">Transaction Number</span>
                     <span className="font-medium">
                       {selectedPayment.reference}
                     </span>
@@ -274,6 +365,12 @@ function PaymentValidation() {
                     <span className="text-gray-600">Payment Method</span>
                     <span className="font-medium">
                       {selectedPayment.method}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Payment Period</span>
+                    <span className="font-medium">
+                      {selectedPayment.period}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -327,7 +424,7 @@ function PaymentValidation() {
                     <img
                       src={selectedPayment.proofUrl}
                       alt="Proof of payment"
-                      className="w-full h-auto max-h-64 object-contain" // Changed from max-h-96 to max-h-64
+                      className="w-full h-auto max-h-64 object-contain"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = "";
@@ -374,14 +471,30 @@ function PaymentValidation() {
             {selectedPayment.status === "pending" && (
               <div className="flex flex-col sm:flex-row gap-3">
                 <PrimaryButton
-                  onClick={() => handleValidate(selectedPayment.id, true)}
+                  onClick={() =>
+                    handleValidate(
+                      selectedPayment.enrollmentId,
+                      true,
+                      selectedPayment.period,
+                      selectedPayment.amount,
+                      selectedPayment.id,
+                    )
+                  }
                   icon={CheckCircle}
                   className="sm:flex-1"
                 >
                   Validate Payment
                 </PrimaryButton>
                 <SecondaryButton
-                  onClick={() => handleValidate(selectedPayment.id, false)}
+                  onClick={() =>
+                    handleValidate(
+                      selectedPayment.enrollmentId,
+                      false,
+                      selectedPayment.period,
+                      selectedPayment.amount,
+                      selectedPayment.id,
+                    )
+                  }
                   icon={XCircle}
                   className="sm:flex-1 border-red-300 text-red-700 hover:bg-red-50"
                 >
@@ -399,7 +512,7 @@ function PaymentValidation() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by student name, ID, or reference..."
+                  placeholder="Search by enrollment ID or reference..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -409,14 +522,15 @@ function PaymentValidation() {
                 <div className="flex items-center">
                   <Filter className="w-5 h-5 text-gray-400 mr-2" />
                   <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
+                    value={periodFilter}
+                    onChange={(e) => setPeriodFilter(e.target.value)}
                     className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="all">All Payments</option>
-                    <option value="pending">Pending</option>
-                    <option value="validated">Validated</option>
-                    <option value="rejected">Rejected</option>
+                    <option value="all">All Periods</option>
+                    <option value="enrollment">Enrollment</option>
+                    <option value="prelim">Prelim</option>
+                    <option value="mid-term">Mid-term</option>
+                    <option value="final">Final</option>
                   </select>
                 </div>
               </div>
@@ -477,7 +591,8 @@ function PaymentValidation() {
                       Payment Queue
                     </h3>
                     <span className="text-sm text-gray-600">
-                      {filteredPayments.length} of {payments.length} payments
+                      {filteredAndSortedPayments.length} of {payments.length}{" "}
+                      payments
                     </span>
                   </div>
                 </div>
@@ -485,34 +600,58 @@ function PaymentValidation() {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Student
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort("enrollmentId")}
+                        >
+                          ENROLLMENT ID {getSortIcon("enrollmentId")}
+                        </th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort("period")}
+                        >
+                          PERIOD {getSortIcon("period")}
+                        </th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort("amount")}
+                        >
+                          AMOUNT {getSortIcon("amount")}
+                        </th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort("reference")}
+                        >
+                          REFERENCE {getSortIcon("reference")}
+                        </th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort("status")}
+                        >
+                          STATUS {getSortIcon("status")}
+                        </th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort("submitted")}
+                        >
+                          SUBMITTED {getSortIcon("submitted")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Reference
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
+                          ACTIONS
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {filteredPayments.map((payment) => (
+                      {filteredAndSortedPayments.map((payment) => (
                         <tr key={payment.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4">
-                            <div>
-                              <div className="font-medium text-gray-900">
-                                {payment.studentName}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                {payment.studentId}
-                              </div>
+                            <div className="font-medium text-gray-900">
+                              {payment.enrollmentId}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-gray-900 capitalize">
+                              {payment.period}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -527,12 +666,14 @@ function PaymentValidation() {
                             <div className="text-gray-900">
                               {payment.reference}
                             </div>
-                            <div className="text-sm text-gray-600">
-                              {payment.submitted}
-                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <StatusBadge status={payment.status} />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-600">
+                              {payment.submitted}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center space-x-2">
@@ -558,14 +699,14 @@ function PaymentValidation() {
                     </tbody>
                   </table>
                 </div>
-                {filteredPayments.length === 0 && (
+                {filteredAndSortedPayments.length === 0 && (
                   <div className="py-12 text-center">
                     <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <h4 className="text-lg font-medium text-gray-900 mb-2">
                       No payments found
                     </h4>
                     <p className="text-gray-600">
-                      {searchTerm || filter !== "all"
+                      {searchTerm || periodFilter !== "all"
                         ? "No payments match your current filters."
                         : "The payment queue is empty."}
                     </p>
@@ -576,6 +717,7 @@ function PaymentValidation() {
           </div>
         </div>
       )}
+      <ToastContainer />
     </div>
   );
 }

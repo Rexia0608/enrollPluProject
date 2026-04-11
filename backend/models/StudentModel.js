@@ -7,6 +7,7 @@ import {
 import {
   enrollmentProfileServices,
   enrollmentTransactionServices,
+  sendingEvaluationServices,
 } from "../services/studentServices.js";
 
 //*******************finalized*****************************/
@@ -108,21 +109,27 @@ const postEnrollStudentModel = async (data) => {
     ]);
 
     const users = await db.query(
-      `UPDATE users SET address = $1 WHERE id = $2 RETURNING first_name, last_name`,
+      `UPDATE users SET address = $1 WHERE id = $2 RETURNING first_name, last_name;`,
       [data.address, data.studentId],
     );
 
-    const { first_name, last_name } = users.rows[0];
-
-    await db.query(
-      `UPDATE credentials SET mobile_number = $1 WHERE user_id = $2 `,
+    const userCred = await db.query(
+      `UPDATE credentials SET mobile_number = $1 WHERE user_id = $2 RETURNING email;`,
       [data.contactNumber, data.studentId],
     );
+
+    const { email } = userCred.rows[0];
+    const { first_name, last_name } = users.rows[0];
 
     await db.query("COMMIT");
 
     console.log(`new enrollees added, name: ${first_name} ${last_name}`);
 
+    await sendingEvaluationServices(
+      "evaluation_email",
+      email,
+      result.rows[0].remarks.remarkNote,
+    );
     return result.rows[0];
   } catch (error) {
     await db.query("ROLLBACK");

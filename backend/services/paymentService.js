@@ -12,7 +12,7 @@ const paymentUpdateService = (data) => {
       query = `UPDATE transaction_table
                 SET
                     remarks = $1,
-                    payment_status = 'review'
+                    payment_status = 'review' 
                 WHERE 
                     enrollment_id = $2
                     AND period = $3
