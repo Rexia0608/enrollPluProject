@@ -71,20 +71,17 @@ const postVerifiedDocumentModel = async (passData) => {
 
 const postVerifiedPaymentModel = async (passData) => {
   try {
-    const { queries, values } = await postVerifiedPaymentServices(passData);
+    const { query, values } = await postVerifiedPaymentServices(passData);
     let data;
 
     await db.query("BEGIN");
 
-    for (let i = 0; i < queries.length; i++) {
-      await db.query(queries[i], values[i]);
-    }
-
-    data = await db.query(queries[1], values[1]);
+    data = await db.query(query, values);
 
     await confirmedServices(data.rows[0], passData);
+
     await db.query("COMMIT");
-    // return data.rows[0];
+    return data.rows[0];
   } catch (error) {
     await db.query("ROLLBACK");
     console.error("error postVerifiedPaymentModel:", error);

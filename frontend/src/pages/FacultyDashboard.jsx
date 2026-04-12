@@ -31,7 +31,7 @@ function FacultyDashboard() {
               <Route index element={<FacultyOverview />} />
               <Route path="documents" element={<DocumentReview />} />
               <Route path="payments" element={<PaymentValidation />} />
-              <Route path="receipt" element={<QRReceiptScanner />} />
+              <Route path="scanner" element={<QRReceiptScanner />} />
               {/* Add more faculty routes as needed */}
 
               {/* 404 response when someone crawiling it will catch here */}

@@ -104,85 +104,101 @@ const getReviewQueuePaymentServices = async () => {
 
 const postVerifiedPaymentServices = async (passData) => {
   try {
-    let queries = [];
-    let values = [];
+    let query;
+    let values;
 
     if (passData.action) {
-      var qr_svg = qr.image(`${passData.reference}`);
-      queries.push(`UPDATE transaction_table
-                SET
-                    remarks = $1,
-                    updated_at = NOW(), 
-                    payment_status = 'paid'
-                WHERE 
-                    enrollment_id = $2
-                    AND period = $3;
-                `);
+      const qr_svg = qr.image(`${passData.reference}`);
 
-      qr_svg.pipe(fs.createWriteStream(`uploads/qr/${passData.reference}.png`));
-
-      values.push([
-        JSON.stringify(`${passData.reference}`),
-        passData.enrollmentId,
-        passData.period,
-      ]);
-
-      queries.push(`
+      query = `
+        WITH updated_transaction AS (
+            UPDATE transaction_table t
+            SET
+                updated_at = NOW(),
+                payment_status = 'paid'
+            WHERE 
+                t.enrollment_id = $1
+                AND t.period = $2
+            RETURNING 
+                t.enrollment_id,
+                t.id,
+                t.remarks,
+                t.paid_amount,
+                t.updated_at
+        ),
+        updated_enrollment AS (
+            UPDATE enrollment_profile e
+            SET
+                enrollment_status = 'enrolled',
+                updated_at = NOW()
+            WHERE 
+                e.enrollment_id = $1
+            RETURNING 
+                e.enrollment_id,
+                e.user_id,
+                e.course_code_id,
+                e.year_level
+        )
         SELECT 
             c.email,
             u.first_name,
             u.last_name,
-            t.id,
-            t.remarks,
-            t.paid_amount, 
-            t.updated_at
-        FROM transaction_table t
-        JOIN enrollment_profile e 
-            ON t.enrollment_id = e.enrollment_id
-        JOIN users u
+            ut.id AS transaction_id,
+            e.year_level,
+            co.course_code,
+            ut.paid_amount,
+            ut.updated_at
+        FROM updated_transaction ut
+        JOIN updated_enrollment e 
+            ON ut.enrollment_id = e.enrollment_id
+        JOIN users u 
             ON e.user_id = u.id
         JOIN credentials c 
             ON u.id = c.user_id
-        WHERE t.enrollment_id = $1
-          AND t.period = $2
-          AND t.payment_status = 'paid';
-        `);
+        JOIN courses co 
+            ON e.course_code_id = co.id;
+      `;
 
-      values.push([passData.enrollmentId, passData.period]);
-    }
+      values = [passData.enrollmentId, passData.period];
 
-    if (passData.action && passData.period == "enrollment") {
-      queries.push(`UPDATE enrollment_profile
-                SET
-                    enrollment_status = 'enrolled',
-                    updated_at = NOW()
-                WHERE 
-                    enrollment_id = $1;
-                `);
-      values.push([passData.enrollmentId]);
+      qr_svg.pipe(fs.createWriteStream(`uploads/qr/${passData.reference}.png`));
     }
 
     if (!passData.action) {
-      queries.push(`UPDATE transaction_table
-                SET
-                    remarks = $1,
-                    paid_amount = 0.00,
-                    updated_at = NOW(),
-                    payment_per_period = $2,
-                    payment_status = 'pending'
-                WHERE 
-                    enrollment_id = $3
-                    AND period = $4;
-                `);
-      values.push([
-        JSON.stringify(passData.remark),
-        parseFloat(passData.paidAmount.replace(/,/g, "")).toFixed(2),
+      query = `
+        WITH updated AS (
+            UPDATE transaction_table t
+            SET
+                remarks = $1,
+                paid_amount = 0.00,
+                updated_at = NOW(),
+                payment_per_period = $2,
+                payment_status = 'pending'
+            WHERE
+                t.enrollment_id = $3
+                AND t.period = $4
+            RETURNING t.enrollment_id
+        )
+        SELECT 
+            c.email
+        FROM updated u
+        JOIN enrollment_profile e 
+            ON u.enrollment_id = e.enrollment_id
+        JOIN users usr 
+            ON e.user_id = usr.id
+        JOIN credentials c 
+            ON usr.id = c.user_id;
+      `;
+
+      values = [
+        passData.remarks,
+        parseFloat(passData.paidAmount.replace(/,/g, "")),
         passData.enrollmentId,
         passData.period,
-      ]);
+      ];
     }
 
-    return { queries, values };
+    return { query, values };
   } catch (error) {
     console.error("error postVerifiedPaymentServices:", error);
     throw error;
@@ -191,58 +207,64 @@ const postVerifiedPaymentServices = async (passData) => {
 
 const confirmedServices = async (data, passData) => {
   try {
-    const qrFilePath = path.join(
-      process.cwd(),
-      "uploads",
-      "qr",
-      `${data.remarks}.png`,
-    );
+    if (passData.action) {
+      const qrFilePath = path.join(
+        process.cwd(),
+        "uploads",
+        "qr",
+        `${data.transaction_id}.png`,
+      );
 
-    // Prepare attachment with a unique Content-ID
-    const attachments = [
-      {
-        filename: `QR_${data.remarks}.png`,
-        path: qrFilePath,
-        cid: "qr_cid", // this matches the img src
-      },
-    ];
+      const attachments = [
+        {
+          filename: `QR_${data.transaction_id}.png`,
+          path: qrFilePath,
+          cid: "qr_cid",
+        },
+      ];
 
-    const formattedAmount = parseFloat(data.paid_amount).toLocaleString(
-      "en-US",
-      {
-        style: "currency",
-        currency: "PHP",
-      },
-    );
+      const formattedAmount = parseFloat(data.paid_amount).toLocaleString(
+        "en-US",
+        {
+          style: "currency",
+          currency: "PHP",
+        },
+      );
 
-    const receiptContent = `
-    <table width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td style="vertical-align: top; padding-right: 20px;">
-          <p><strong>Student:</strong> ${escapeHtml(data.first_name)} ${escapeHtml(data.last_name)}</p>
-          <p><strong>Period:</strong> ${escapeHtml(passData.period)}</p>
-          <p><strong>Amount Paid:</strong> ${formattedAmount}</p>
-          <p><strong>Payment Date:</strong> ${new Date(data.updated_at).toLocaleString()}</p>
-          <p><strong>Reference:</strong> ${escapeHtml(passData.reference || "N/A")}</p>
-        </td> 
+      const receiptContent = `
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="vertical-align: top; padding-right: 20px;">
+            <p><strong>Student:</strong> ${escapeHtml(data.first_name)} ${escapeHtml(data.last_name)}</p>
+            <p><strong>Enrolled Course:</strong> ${escapeHtml(data.course_code)}</p> 
+            <p><strong>Year Level:</strong> ${escapeHtml(data.year_level)}</p>
+            <p><strong>Period:</strong> ${escapeHtml(passData.period)}</p>
+            <p><strong>Amount Paid:</strong> ${formattedAmount}</p>
+            <p><strong>Payment Date:</strong> ${new Date(data.updated_at).toLocaleString()}</p>
+            <p><strong>Reference:</strong> ${escapeHtml(passData.reference || "N/A")}</p>
+          </td> 
 
-        <td style="vertical-align: top; text-align: center;">
-          <img src="cid:qr_cid" alt="Payment QR Code"
-            style="max-width: 150px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px;" />
-          <p style="font-size: 12px; color: #6b7280;">Scan to verify payment</p>
-        </td>
-      </tr>
-    </table>
-      `;
+          <td style="vertical-align: top; text-align: center;">
+            <img src="cid:qr_cid" alt="Payment QR Code"
+              style="max-width: 150px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px;" />
+            <p style="font-size: 12px; color: #6b7280;">Scan to verify payment</p>
+          </td>
+        </tr>
+      </table>
+        `;
 
-    // Pass attachments as 4th argument
-    await sendEmail(
-      "payment-confirmed",
-      data.email,
-      receiptContent,
-      attachments,
-    );
-    await fs.promises.unlink(qrFilePath).catch(() => {});
+      await sendEmail(
+        "payment-confirmed",
+        data.email,
+        receiptContent,
+        attachments,
+      );
+      await fs.promises.unlink(qrFilePath).catch(() => {});
+    }
+
+    if (!passData.action) {
+      await sendEmail("payment-rejected", data.email, passData.remark);
+    }
   } catch (error) {
     console.error("error confirmedServices:", error);
     throw error;

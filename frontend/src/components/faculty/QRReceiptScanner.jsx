@@ -18,29 +18,41 @@ function QRReceiptScanner() {
   const html5QrCodeRef = useRef(null);
   const containerRef = useRef(null);
   const timeoutRef = useRef(null);
-  const isProcessingRef = useRef(false); // Synchronous guard
+  const isProcessingRef = useRef(false);
   const navigate = useNavigate();
+
+  // 🔁 Cleanup function – stops, clears, and removes DOM artifacts
+  const cleanupScanner = useCallback(async () => {
+    if (html5QrCodeRef.current) {
+      try {
+        if (html5QrCodeRef.current.isScanning) {
+          await html5QrCodeRef.current.stop();
+        }
+        await html5QrCodeRef.current.clear();
+      } catch (err) {
+        console.debug("Cleanup error:", err.message);
+      } finally {
+        html5QrCodeRef.current = null;
+        setScanning(false);
+      }
+    }
+    // Manually clear container to avoid leftover elements
+    if (containerRef.current) {
+      containerRef.current.innerHTML = "";
+    }
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().catch(() => {});
-      }
+      cleanupScanner();
     };
-  }, []);
+  }, [cleanupScanner]);
 
   const stopScanner = useCallback(async () => {
-    if (html5QrCodeRef.current && scanning) {
-      try {
-        await html5QrCodeRef.current.stop();
-        setScanning(false);
-      } catch (err) {
-        console.debug("Error stopping scanner:", err.message);
-      }
-    }
-  }, [scanning]);
+    await cleanupScanner();
+  }, [cleanupScanner]);
 
   const initializeHtml5Qrcode = useCallback(async () => {
     if (!containerRef.current) {
@@ -49,9 +61,11 @@ function QRReceiptScanner() {
     }
 
     try {
-      if (html5QrCodeRef.current) {
-        await html5QrCodeRef.current.stop().catch(() => {});
-      }
+      // Ensure any existing instance is fully cleaned up
+      await cleanupScanner();
+
+      // Give the camera hardware a moment to fully release
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       html5QrCodeRef.current = new Html5Qrcode("qr-reader-container");
 
@@ -69,10 +83,7 @@ function QRReceiptScanner() {
         { facingMode: "environment" },
         config,
         (decodedText) => {
-          // ✅ Synchronous guard: ignore if already processing or verified
           if (isProcessingRef.current || isVerified) return;
-
-          // Immediately block further scans
           isProcessingRef.current = true;
           handleQrCodeScanned(decodedText);
         },
@@ -87,10 +98,12 @@ function QRReceiptScanner() {
       setScannerError(null);
     } catch (err) {
       console.error("Failed to start scanner:", err);
-      setScannerError(`Failed to start camera: ${err.message}`);
+      const errorMsg =
+        err?.message || "Unknown camera error. Please refresh the page.";
+      setScannerError(`Failed to start camera: ${errorMsg}`);
       setCameraPermission(false);
     }
-  }, [isVerified]);
+  }, [cleanupScanner, isVerified]);
 
   const startScanner = useCallback(async () => {
     try {
@@ -120,14 +133,8 @@ function QRReceiptScanner() {
 
   const handleQrCodeScanned = useCallback(
     async (qrData) => {
-      if (html5QrCodeRef.current) {
-        try {
-          await html5QrCodeRef.current.stop();
-          setScanning(false);
-        } catch (err) {
-          console.debug("Error stopping scanner:", err.message);
-        }
-      }
+      // Stop scanner immediately to prevent multiple scans
+      await cleanupScanner();
 
       const transactionId = qrData.trim();
       console.debug("Transaction ID scanned:", transactionId);
@@ -161,13 +168,14 @@ function QRReceiptScanner() {
         }
         toast.error(errorMessage);
 
+        // Reset processing flag and restart scanner
         isProcessingRef.current = false;
         initializeHtml5Qrcode();
       } finally {
         setIsVerifying(false);
       }
     },
-    [initializeHtml5Qrcode],
+    [cleanupScanner, initializeHtml5Qrcode],
   );
 
   const handleScanAnother = useCallback(async () => {
@@ -177,16 +185,14 @@ function QRReceiptScanner() {
     setIsVerifying(false);
     setScannerError(null);
 
-    await stopScanner();
+    await cleanupScanner();
 
     if (cameraPermission) {
       initializeHtml5Qrcode();
     } else {
       startScanner();
     }
-  }, [cameraPermission, stopScanner, initializeHtml5Qrcode, startScanner]);
-
-  const handleGoBack = () => navigate(-1);
+  }, [cameraPermission, cleanupScanner, initializeHtml5Qrcode, startScanner]);
 
   const renderReceiptDetails = () => (
     <div className="space-y-6" aria-live="polite">
@@ -221,7 +227,6 @@ function QRReceiptScanner() {
           <div className="font-medium text-gray-900">
             {receiptData.year_series}
           </div>
-          {/* New row for Period */}
           <div className="text-gray-600">Period:</div>
           <div className="font-medium text-gray-900 capitalize">
             {receiptData.period || "N/A"}
@@ -247,12 +252,6 @@ function QRReceiptScanner() {
           className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           Scan Another Receipt
-        </button>
-        <button
-          onClick={handleGoBack}
-          className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-        >
-          Go Back
         </button>
       </div>
     </div>

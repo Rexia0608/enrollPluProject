@@ -78,7 +78,6 @@ function PaymentValidation() {
       const { success, items, message, error: apiError } = response.data;
       if (success && Array.isArray(items)) {
         const transformed = items.map((item) => {
-          // Assume proof_filename exists; fallback to item.id + '.jpg'
           const proofFilename = item.proof_filename || `${item.enrollment_id}`;
           return {
             id: item.id,
@@ -119,33 +118,52 @@ function PaymentValidation() {
     fetchPaymentQueue();
   }, []);
 
+  // ✅ FIXED: handleValidate with proper toast and feedback handling
   const handleValidate = async (
     enrollmentId,
-    status,
+    status, // true = validate, false = reject
     period,
     amount,
     reference,
   ) => {
+    // Close the detail view
     setSelectedPayment(null);
-    setFeedback("");
+
+    // For rejection, feedback is mandatory
+    if (status === false && !feedback.trim()) {
+      toast.error("Please provide feedback when rejecting a payment.");
+      return;
+    }
+
     const fileData = {
       enrollmentId: enrollmentId,
       period: period,
       action: status,
       reference: reference,
       paidAmount: amount,
-      remark: feedback,
+      remark: feedback.trim(),
     };
+
     try {
       const response = await axios.patch(
         "http://localhost:3000/faculty/verified-payment",
         fileData,
       );
-      toast(`${response.data.message}`, { type: "success" });
+      // Show success toast with the server message
+      toast.success(response.data.message);
+
+      // Clear feedback only after successful operation
+      setFeedback("");
+
+      // Refresh the payment queue
       await fetchPaymentQueue();
     } catch (err) {
       console.error(err);
-      alert(`Failed to ${status} payment.`);
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to update payment status.";
+      toast.error(errorMsg);
     }
   };
 
@@ -158,22 +176,18 @@ function PaymentValidation() {
     try {
       const response = await axios.get(url, { responseType: "blob" });
 
-      // Infer MIME type from file extension (or default to image/jpeg)
-      let mimeType = "image/jpeg"; // default
+      let mimeType = "image/jpeg";
       if (filename) {
         const ext = filename.split(".").pop().toLowerCase();
         if (ext === "png") mimeType = "image/png";
         else if (ext === "gif") mimeType = "image/gif";
         else if (ext === "webp") mimeType = "image/webp";
         else if (ext === "bmp") mimeType = "image/bmp";
-        // otherwise keep jpeg
       }
 
-      // Create blob with correct MIME type
       const blob = new Blob([response.data], { type: mimeType });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      // Ensure the filename has an extension; if not, append .jpg
       let finalFilename = filename || "proof.jpg";
       if (!finalFilename.includes(".")) finalFilename += ".jpg";
       link.download = finalFilename;
@@ -187,7 +201,6 @@ function PaymentValidation() {
     }
   };
 
-  // Handle sorting when a column header is clicked
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -197,7 +210,6 @@ function PaymentValidation() {
     }
   };
 
-  // Get sort icon for column header
   const getSortIcon = (field) => {
     if (sortField !== field)
       return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
@@ -208,14 +220,11 @@ function PaymentValidation() {
     );
   };
 
-  // Filter and sort payments
   const filteredAndSortedPayments = useMemo(() => {
-    // First apply period filter
     let filtered = payments.filter((p) =>
       periodFilter === "all" ? true : p.period === periodFilter,
     );
 
-    // Then apply search filter (enrollmentId or reference)
     filtered = filtered.filter((p) =>
       searchTerm
         ? p.enrollmentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -226,7 +235,6 @@ function PaymentValidation() {
         : true,
     );
 
-    // Then sort
     const sorted = [...filtered];
     sorted.sort((a, b) => {
       let aVal, bVal;
@@ -321,7 +329,10 @@ function PaymentValidation() {
       {selectedPayment ? (
         <div>
           <button
-            onClick={() => setSelectedPayment(null)}
+            onClick={() => {
+              setSelectedPayment(null);
+              setFeedback(""); // clear feedback when closing modal
+            }}
             className="flex items-center text-blue-600 hover:text-blue-700 font-medium mb-6"
           >
             ← Back to Payment List
@@ -429,12 +440,12 @@ function PaymentValidation() {
                         e.target.onerror = null;
                         e.target.src = "";
                         e.target.parentElement.innerHTML = `
-            <div class="p-6 text-center">
-              <CreditCard class="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p class="font-medium text-gray-900">Failed to load image</p>
-              <p class="text-sm text-gray-600 mt-1">The file may be missing or inaccessible.</p>
-            </div>
-          `;
+                          <div class="p-6 text-center">
+                            <CreditCard class="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                            <p class="font-medium text-gray-900">Failed to load image</p>
+                            <p class="text-sm text-gray-600 mt-1">The file may be missing or inaccessible.</p>
+                          </div>
+                        `;
                       }}
                     />
                   ) : (
@@ -678,7 +689,10 @@ function PaymentValidation() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() => setSelectedPayment(payment)}
+                                onClick={() => {
+                                  setSelectedPayment(payment);
+                                  setFeedback(""); // reset feedback when opening a new payment
+                                }}
                                 className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
                               >
                                 Review
@@ -717,7 +731,18 @@ function PaymentValidation() {
           </div>
         </div>
       )}
-      <ToastContainer />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 }

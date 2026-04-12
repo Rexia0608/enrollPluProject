@@ -49,9 +49,9 @@ function Sidebar({ role, isOpen = true }) {
       label: "Payment Validation",
     },
     {
-      to: "/faculty/dashboard/receipt",
+      to: "/faculty/dashboard/scanner",
       icon: ScanQrCode,
-      label: "Scan Receipt",
+      label: "Qr Scanner",
     },
     {
       to: "/faculty/dashboard/notifications",
