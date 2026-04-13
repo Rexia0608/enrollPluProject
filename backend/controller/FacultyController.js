@@ -8,6 +8,7 @@ import {
   postVerifiedDocumentModel,
   getReviewQueuePaymentModel,
   postVerifiedPaymentModel,
+  postPromissoryFileModel,
 } from "../models/FacultyModel.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
@@ -90,9 +91,25 @@ const getValidateReceipt = async (req, res) => {
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here  +++++++++++++++++++//
+//++++++++++++++++++ TEST here postPromissoryFile  +++++++++++++++++++//
+const postPromissoryFile = async (req, res) => {
+  try {
+    const data = await postPromissoryFileModel(req.body);
+
+    return globalResponseHandler(res, data, {
+      message: data
+        ? `Enrollment ID: ${req.params.fileNumber} are successssfully verified`
+        : `Enrollment ID ${req.params.fileNumber} are not successssfully verified`,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getReviewQueue:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
 
 export {
+  postPromissoryFile,
   getValidateReceipt,
   getReviewQueue,
   postVerifiedDocument,

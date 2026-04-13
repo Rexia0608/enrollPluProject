@@ -111,17 +111,20 @@ function PaymentValidation() {
       setLoading(false);
     }
   };
-
+  console.log(payments);
   useEffect(() => {
     fetchPaymentQueue();
 
+    // Set up interval to refetch every 5 minutes
     const intervalId = setInterval(
       () => {
         fetchPaymentQueue();
+        console.log(`refetch data updated.`);
       },
-      15 * 60 * 1000,
+      15 * 60 * 1000, // 15  minutes in milliseconds
     );
 
+    // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
 
@@ -132,7 +135,6 @@ function PaymentValidation() {
     }
 
     if (!selectedPayment?.proofUrl) return;
-    if (selectedPayment.raw?.remarks?.promiseStatus) return; // Skip for promise notes
 
     const fetchImage = async () => {
       try {
@@ -153,7 +155,9 @@ function PaymentValidation() {
 
   useEffect(() => {
     return () => {
-      if (imageBlobUrl) URL.revokeObjectURL(imageBlobUrl);
+      if (imageBlobUrl) {
+        URL.revokeObjectURL(imageBlobUrl);
+      }
     };
   }, [imageBlobUrl]);
 
@@ -168,15 +172,15 @@ function PaymentValidation() {
     setImageBlobUrl(null);
 
     if (status === false && !feedback.trim()) {
-      toast.error("Please provide feedback when rejecting.");
+      toast.error("Please provide feedback when rejecting a payment.");
       return;
     }
 
     const fileData = {
-      enrollmentId,
-      period,
+      enrollmentId: enrollmentId,
+      period: period,
       action: status,
-      reference,
+      reference: reference,
       paidAmount: amount,
       remark: feedback.trim(),
     };
@@ -196,39 +200,6 @@ function PaymentValidation() {
         err.message ||
         "Failed to update payment status.";
       toast.error(errorMsg);
-    }
-  };
-
-  // TODO: Replace with actual excuse letter approval endpoint
-  const handleExcuseLetter = async (approved) => {
-    if (!approved && !feedback.trim()) {
-      toast.error("Please provide feedback when rejecting the excuse letter.");
-      return;
-    }
-
-    const fileData = {
-      enrollmentId: selectedPayment.enrollmentId,
-      period: selectedPayment.period,
-      reference: selectedPayment.id,
-      action: approved, // adjust to your API
-      remark: feedback.trim(),
-    };
-
-    try {
-      // Replace with correct endpoint
-      const response = await axios.patch(
-        "http://localhost:3000/faculty/handle-excuse-letter",
-        fileData,
-      );
-      toast.success(response.data.message);
-      setFeedback("");
-      setSelectedPayment(null);
-      await fetchPaymentQueue();
-    } catch (err) {
-      console.error(err);
-      toast.error(
-        err.response?.data?.message || "Failed to process excuse letter.",
-      );
     }
   };
 
@@ -315,6 +286,9 @@ function PaymentValidation() {
           bVal = b.status;
           break;
         case "submitted":
+          aVal = new Date(a.createdAt);
+          bVal = new Date(b.createdAt);
+          break;
         case "createdAt":
           aVal = new Date(a.createdAt);
           bVal = new Date(b.createdAt);
@@ -384,8 +358,10 @@ function PaymentValidation() {
             onClick={() => {
               setSelectedPayment(null);
               setFeedback("");
-              if (imageBlobUrl) URL.revokeObjectURL(imageBlobUrl);
-              setImageBlobUrl(null);
+              if (imageBlobUrl) {
+                URL.revokeObjectURL(imageBlobUrl);
+                setImageBlobUrl(null);
+              }
             }}
             className="flex items-center text-blue-600 hover:text-blue-700 font-medium mb-6"
           >
@@ -402,7 +378,7 @@ function PaymentValidation() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">
-                    Enrollment number: {selectedPayment.enrollmentId}
+                    Enrollement number: {selectedPayment.enrollmentId}
                   </p>
                 </div>
                 <StatusBadge status={selectedPayment.status} />
@@ -445,175 +421,116 @@ function PaymentValidation() {
                     </span>
                   </div>
                   {selectedPayment.raw?.remarks?.promiseStatus && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Promise Date</span>
-                        <span className="font-medium">
-                          {new Date(
-                            selectedPayment.raw.remarks.date,
-                          ).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {selectedPayment.raw.remarks.note && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Promise Note</span>
-                          <span className="font-medium text-right max-w-[60%]">
-                            {selectedPayment.raw.remarks.note}
-                          </span>
-                        </div>
-                      )}
-                    </>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Promise Date</span>
+                      <span className="font-medium">
+                        {new Date(
+                          selectedPayment.raw.remarks.date,
+                        ).toLocaleDateString()}
+                      </span>
+                    </div>
                   )}
                 </div>
               </Card>
-
-              {/* Conditional Proof of Payment / Promise Note Section */}
-              {selectedPayment.raw?.remarks?.promiseStatus ? (
-                <Card>
-                  <h4 className="font-medium text-gray-900 mb-4">
-                    Promissory Note
+              <Card>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-medium text-gray-900">
+                    Proof of Payment
                   </h4>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">Promise Date:</span>{" "}
-                      {new Date(
-                        selectedPayment.raw.remarks.date,
-                      ).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-700 mt-2">
-                      <span className="font-medium">Note:</span>{" "}
-                      {selectedPayment.raw.remarks.note ||
-                        "No additional note provided."}
-                    </p>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        if (imageBlobUrl) window.open(imageBlobUrl, "_blank");
+                        else alert("Image not loaded yet.");
+                      }}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                      title="View full image"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() =>
+                        downloadProof(selectedPayment.proofFilename)
+                      }
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg"
+                      title="Download image"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
                   </div>
-                  <p className="text-sm text-gray-500 mt-3">
-                    This payment is covered by a promise note. No proof of
-                    payment image is required.
-                  </p>
-                </Card>
-              ) : (
-                <Card>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-900">
-                      Proof of Payment
-                    </h4>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => {
-                          if (imageBlobUrl) window.open(imageBlobUrl, "_blank");
-                          else alert("Image not loaded yet.");
-                        }}
-                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                        title="View full image"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          downloadProof(selectedPayment.proofFilename)
-                        }
-                        className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg"
-                        title="Download image"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                    {imageBlobUrl ? (
-                      <img
-                        src={imageBlobUrl}
-                        alt="Proof of payment"
-                        className="w-full h-auto max-h-64 object-contain"
-                      />
-                    ) : (
-                      <div className="p-6 text-center">
-                        <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="font-medium text-gray-900">
-                          Loading proof...
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          If this persists, the file may be missing or
-                          inaccessible.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              )}
-            </div>
-
-            {selectedPayment.status === "pending" && (
-              <>
-                <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-3">
-                    Feedback (Required for Rejection)
-                  </h4>
-                  <textarea
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                    placeholder="Provide feedback for the student. Required if rejecting."
-                    className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-sm text-gray-600 mt-2">
-                    Feedback will be sent to the student. Required when
-                    rejecting.
-                  </p>
                 </div>
-
-                {/* Action Buttons – Different for promise notes vs regular payments */}
-                {selectedPayment.raw?.remarks?.promiseStatus ? (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <PrimaryButton
-                      onClick={() => handleExcuseLetter(true)}
-                      icon={CheckCircle}
-                      className="sm:flex-1"
-                    >
-                      Approve Excuse Letter
-                    </PrimaryButton>
-                    <SecondaryButton
-                      onClick={() => handleExcuseLetter(false)}
-                      icon={XCircle}
-                      className="sm:flex-1 border-red-300 text-red-700 hover:bg-red-50"
-                    >
-                      Reject Excuse Letter
-                    </SecondaryButton>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <PrimaryButton
-                      onClick={() =>
-                        handleValidate(
-                          selectedPayment.enrollmentId,
-                          true,
-                          selectedPayment.period,
-                          selectedPayment.amount,
-                          selectedPayment.id,
-                        )
-                      }
-                      icon={CheckCircle}
-                      className="sm:flex-1"
-                    >
-                      Validate Payment
-                    </PrimaryButton>
-                    <SecondaryButton
-                      onClick={() =>
-                        handleValidate(
-                          selectedPayment.enrollmentId,
-                          false,
-                          selectedPayment.period,
-                          selectedPayment.amount,
-                          selectedPayment.id,
-                        )
-                      }
-                      icon={XCircle}
-                      className="sm:flex-1 border-red-300 text-red-700 hover:bg-red-50"
-                    >
-                      Reject Payment
-                    </SecondaryButton>
-                  </div>
-                )}
-              </>
+                <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                  {imageBlobUrl ? (
+                    <img
+                      src={imageBlobUrl}
+                      alt="Proof of payment"
+                      className="w-full h-auto max-h-64 object-contain"
+                    />
+                  ) : (
+                    <div className="p-6 text-center">
+                      <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="font-medium text-gray-900">
+                        Loading proof...
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        If this persists, the file may be missing or
+                        inaccessible.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+            {selectedPayment.status === "pending" && (
+              <div className="mb-6">
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Feedback (Required for Rejection)
+                </h4>
+                <textarea
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Provide feedback for the student. Required if rejecting payment."
+                  className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-sm text-gray-600 mt-2">
+                  Feedback will be sent to the student. Required when rejecting
+                  payment.
+                </p>
+              </div>
+            )}
+            {selectedPayment.status === "pending" && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <PrimaryButton
+                  onClick={() =>
+                    handleValidate(
+                      selectedPayment.enrollmentId,
+                      true,
+                      selectedPayment.period,
+                      selectedPayment.amount,
+                      selectedPayment.id,
+                    )
+                  }
+                  icon={CheckCircle}
+                  className="sm:flex-1"
+                >
+                  Validate Payment
+                </PrimaryButton>
+                <SecondaryButton
+                  onClick={() =>
+                    handleValidate(
+                      selectedPayment.enrollmentId,
+                      false,
+                      selectedPayment.period,
+                      selectedPayment.amount,
+                      selectedPayment.id,
+                    )
+                  }
+                  icon={XCircle}
+                  className="sm:flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Reject Payment
+                </SecondaryButton>
+              </div>
             )}
           </Card>
         </div>

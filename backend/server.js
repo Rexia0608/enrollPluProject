@@ -14,7 +14,6 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// IMPORTANT: needed for correct IP detection behind proxies (Render, Nginx, etc.)
 app.set("trust proxy", 1);
 
 // ----- Security Middlewares -----
@@ -22,7 +21,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // change this to your frontend domain in production
+    origin: ["http://localhost:5173"],
     credentials: true,
   }),
 );
@@ -32,8 +31,8 @@ app.use(express.json());
 // ----- Rate Limiting -----
 // Global limiter
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 60 * 60 * 1000,
+  max: 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: "Too many requests, please try again later.",
@@ -49,25 +48,13 @@ const authLimiter = rateLimit({
   message: "Too many authentication attempts. Please try again later.",
 });
 
-// Admin / Faculty limiter
-const adminFacultyLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 500,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: "Too many requests. Please slow down.",
-});
-
-// ----- Apply Global Limiter -----
-app.use(globalLimiter);
-
 // ----- Routes -----
 app.use("/enrollplus", authLimiter, userAuthRouter);
 
-app.use("/admin", adminFacultyLimiter, AdminRouter);
-app.use("/faculty", adminFacultyLimiter, FacultyRouter);
+app.use("/admin", AdminRouter);
+app.use("/faculty", FacultyRouter);
 
-app.use("/student", StudentRouter);
+app.use("/student", globalLimiter, StudentRouter);
 
 // ----- Start Server -----
 app.listen(port, () => {

@@ -276,9 +276,10 @@ function StudentStatus() {
     intervalRef.current = setInterval(
       () => {
         fetchEnrollmentData(false);
+        console.log(`refetch data updated.`);
       },
-      30 * 60 * 1000,
-    ); // 30 * 60 * 1000 30 minutes
+      15 * 60 * 1000, // 15 minutes
+    );
     return () => clearInterval(intervalRef.current);
   }, [fetchEnrollmentData]);
 

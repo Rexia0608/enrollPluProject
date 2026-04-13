@@ -13,26 +13,26 @@ import {
   Paperclip,
   ExternalLink,
   Mail,
-  Image as ImageIcon,
+  ImageIcon,
 } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Card from "../ui/Card";
 import PrimaryButton from "../ui/PrimaryButton";
 import SecondaryButton from "../ui/SecondaryButton";
 import StatusBadge from "../ui/StatusBadge";
 import axios from "axios";
 
-// API base URL – adjust to your backend URL
 const API_BASE_URL = "http://localhost:3000";
 
 function DocumentReviewCard({ student, backpage, onReviewComplete }) {
   const [documents, setDocuments] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
-  const [action, setAction] = useState(null);
-  const [actionMessage, setActionMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [imageErrors, setImageErrors] = useState({});
+  // Store blob URLs for each document
+  const [imageBlobUrls, setImageBlobUrls] = useState({});
 
   const getRequiredDocuments = (studentType) => {
     const commonDocs = [
@@ -79,20 +79,26 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
     ];
   };
 
-  // Build image URL using student.studentId (the UUID)
+  // Build the authenticated URL (same as before, but we'll fetch via axios)
   const getImageUrl = (fileKey) => {
-    if (!student?.studentId || !fileKey) {
-      console.warn("Missing studentId or fileKey", {
-        studentId: student?.studentId,
-        fileKey,
-      });
-      return null;
-    }
-    const url = `${API_BASE_URL}/faculty/review-document/${student.studentId}-${fileKey}`;
-    return url;
+    if (!student?.studentId || !fileKey) return null;
+    return `${API_BASE_URL}/faculty/review-document/${student.studentId}-${fileKey}`;
   };
 
-  // Initialize documents with real URLs
+  // Fetch a single image and return a blob URL
+  const fetchImageAsBlob = async (fileKey) => {
+    const url = getImageUrl(fileKey);
+    if (!url) return null;
+    try {
+      const response = await axios.get(url, { responseType: "blob" });
+      return URL.createObjectURL(response.data);
+    } catch (error) {
+      console.error(`Failed to fetch image for ${fileKey}:`, error);
+      return null;
+    }
+  };
+
+  // Initialize documents and fetch all images
   const initializeDocuments = useCallback(async () => {
     if (!student?.studentId) {
       setDocuments([]);
@@ -105,25 +111,33 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
       const studentType = student.type === "transferee" ? "transferee" : "new";
       const requiredDocs = getRequiredDocuments(studentType);
 
-      const docsWithUrls = requiredDocs.map((doc) => {
-        const imageUrl = doc.fileKey ? getImageUrl(doc.fileKey) : null;
-        return {
-          id: doc.id,
-          name: doc.name,
-          type: doc.fileKey ? "JPG" : "PDF",
-          size: doc.fileKey ? "Loading..." : "N/A",
-          uploaded: new Date().toLocaleDateString(),
-          status: "pending",
-          category: doc.category,
-          previewUrl: imageUrl,
-          downloadUrl: imageUrl,
-          fileKey: doc.fileKey,
-        };
-      });
+      // Create document objects without blob URLs first
+      const docs = requiredDocs.map((doc) => ({
+        id: doc.id,
+        name: doc.name,
+        type: doc.fileKey ? "JPG" : "PDF",
+        size: doc.fileKey ? "Loading..." : "N/A",
+        uploaded: new Date().toLocaleDateString(),
+        status: "pending",
+        category: doc.category,
+        fileKey: doc.fileKey,
+        downloadUrl: doc.fileKey ? getImageUrl(doc.fileKey) : null,
+      }));
 
-      setDocuments(docsWithUrls);
+      setDocuments(docs);
+
+      // Fetch images for documents that have a fileKey
+      const blobMap = {};
+      for (const doc of docs) {
+        if (doc.fileKey) {
+          const blobUrl = await fetchImageAsBlob(doc.fileKey);
+          if (blobUrl) blobMap[doc.id] = blobUrl;
+        }
+      }
+      setImageBlobUrls(blobMap);
     } catch (error) {
       console.error("Failed to initialize documents:", error);
+      toast.error("Failed to load documents. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -131,40 +145,82 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
 
   useEffect(() => {
     initializeDocuments();
+
+    // Cleanup all blob URLs when component unmounts or student changes
+    return () => {
+      Object.values(imageBlobUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
   }, [initializeDocuments]);
 
-  const getDocumentIcon = (type, hasUrl) => {
-    if (!hasUrl) return "text-gray-400 bg-gray-100";
+  // Cleanup specific blob URL when a document is removed or re-fetched
+  const revokeBlobUrl = (docId) => {
+    if (imageBlobUrls[docId]) {
+      URL.revokeObjectURL(imageBlobUrls[docId]);
+      setImageBlobUrls((prev) => {
+        const newUrls = { ...prev };
+        delete newUrls[docId];
+        return newUrls;
+      });
+    }
+  };
+
+  const getDocumentIcon = (type, hasBlob) => {
+    if (!hasBlob) return "text-gray-400 bg-gray-100";
     if (type === "PDF") return "text-red-600 bg-red-50";
     if (type === "JPG" || type === "PNG") return "text-green-600 bg-green-50";
     return "text-gray-600 bg-gray-50";
   };
 
   const handleViewDocument = (doc) => {
-    if (doc.previewUrl) {
-      window.open(doc.previewUrl, "_blank");
+    const blobUrl = imageBlobUrls[doc.id];
+    if (blobUrl) {
+      window.open(blobUrl, "_blank");
+    } else if (doc.downloadUrl) {
+      // Fallback to original URL (but likely will fail auth)
+      window.open(doc.downloadUrl, "_blank");
     } else {
-      alert(
+      toast.warning(
         "Document preview not available. The student may not have uploaded this document.",
       );
     }
   };
 
   const handleDownloadDocument = async (doc) => {
-    if (!doc.downloadUrl) {
-      alert("Document not available for download.");
+    // Prefer blob URL if available, otherwise try the raw URL
+    const blobUrl = imageBlobUrls[doc.id];
+    if (blobUrl) {
+      // Create a temporary link to download the blob
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${doc.name}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       return;
     }
-    try {
-      window.open(doc.downloadUrl, "_blank");
-    } catch (error) {
-      console.error("Download error:", error);
-      alert("Failed to download document.");
-    }
-  };
 
-  const handleImageError = (docId) => {
-    setImageErrors((prev) => ({ ...prev, [docId]: true }));
+    if (doc.downloadUrl) {
+      try {
+        // Fetch with axios to get authenticated blob
+        const response = await axios.get(doc.downloadUrl, {
+          responseType: "blob",
+        });
+        const blob = response.data;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${doc.name}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Download error:", error);
+        toast.error("Failed to download document. Please try again.");
+      }
+    } else {
+      toast.warning("Document not available for download.");
+    }
   };
 
   const handleApprove = async (fileId, studentId) => {
@@ -179,27 +235,21 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
     setFeedbackError("");
     try {
       await axios.patch(`${API_BASE_URL}/faculty/verified-document`, fileData);
-
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      setAction("approved");
-      setActionMessage("All documents approved successfully.");
+      toast.success("All documents approved successfully!");
       setDocuments((docs) =>
         docs.map((doc) => ({ ...doc, status: "approved" })),
       );
 
-      // Refresh the review queue in the parent component
       if (onReviewComplete) onReviewComplete();
 
       setTimeout(() => {
-        setAction(null);
-        setActionMessage("");
         backpage(null);
       }, 2500);
     } catch (error) {
       console.error("Failed to approve:", error);
-      setAction("error");
-      setActionMessage("Failed to approve. Please try again.");
+      toast.error("Failed to approve. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -209,6 +259,7 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
     if (isSubmitting) return;
     if (!feedback.trim()) {
       setFeedbackError("Please provide feedback for rejection.");
+      toast.warning("Please provide feedback when rejecting documents.");
       return;
     }
     setFeedbackError("");
@@ -223,24 +274,19 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
       await axios.patch(`${API_BASE_URL}/faculty/verified-document`, fileData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      setAction("rejected");
-      setActionMessage("Documents rejected. Feedback sent to student.");
+      toast.info("Documents rejected. Feedback sent to student.");
       setDocuments((docs) =>
         docs.map((doc) => ({ ...doc, status: "rejected" })),
       );
 
-      // Refresh the review queue in the parent component
       if (onReviewComplete) onReviewComplete();
 
       setTimeout(() => {
-        setAction(null);
-        setActionMessage("");
         backpage(null);
       }, 2500);
     } catch (error) {
       console.error("Failed to reject:", error);
-      setAction("error");
-      setActionMessage("Failed to reject. Please try again.");
+      toast.error("Failed to reject. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -248,7 +294,6 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
 
   const getStudentData = () => {
     if (student) return student;
-    // Fallback mock data
     return {
       id: 1,
       studentName: "John Doe",
@@ -338,9 +383,9 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
 
         <div className="space-y-4">
           {documents.map((doc) => {
-            const hasValidUrl = doc.previewUrl && !imageErrors[doc.id];
-            // Show image preview only if it's a JPG with a valid URL
-            const showPreview = hasValidUrl && doc.fileKey;
+            const blobUrl = imageBlobUrls[doc.id];
+            const hasBlob = !!blobUrl;
+            const showPreview = hasBlob && doc.fileKey;
 
             return (
               <div
@@ -350,7 +395,7 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-start space-x-4">
                     <div
-                      className={`w-12 h-12 rounded-lg flex items-center justify-center ${getDocumentIcon(doc.type, hasValidUrl)}`}
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center ${getDocumentIcon(doc.type, hasBlob)}`}
                     >
                       <FileText className="w-6 h-6" />
                     </div>
@@ -385,7 +430,7 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
                       className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="Preview"
                       aria-label={`Preview ${doc.name}`}
-                      disabled={!hasValidUrl}
+                      disabled={!hasBlob && !doc.downloadUrl}
                     >
                       <Eye className="w-5 h-5" />
                     </button>
@@ -395,13 +440,13 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
                       className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                       title="Download"
                       aria-label={`Download ${doc.name}`}
-                      disabled={!hasValidUrl}
+                      disabled={!hasBlob && !doc.downloadUrl}
                     >
                       <Download className="w-5 h-5" />
                     </button>
-                    {hasValidUrl && (
+                    {hasBlob && (
                       <a
-                        href={doc.previewUrl}
+                        href={blobUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
@@ -426,10 +471,9 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
                   <div className="flex items-center justify-center p-6 bg-white border border-gray-300 rounded">
                     {showPreview ? (
                       <img
-                        src={doc.previewUrl}
+                        src={blobUrl}
                         alt={doc.name}
                         className="max-w-full max-h-48 object-contain"
-                        onError={() => handleImageError(doc.id)}
                       />
                     ) : (
                       <div className="text-center">
@@ -443,14 +487,14 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
                               Student must submit physical copy.
                             </p>
                           </>
-                        ) : imageErrors[doc.id] ? (
+                        ) : !hasBlob ? (
                           <>
                             <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
                             <p className="text-sm text-gray-500">
                               Failed to load image
                             </p>
                             <p className="text-xs text-gray-400">
-                              The file may be missing or corrupted.
+                              The file may be missing or inaccessible.
                             </p>
                           </>
                         ) : (
@@ -542,31 +586,6 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
             </p>
           </div>
 
-          {action && actionMessage && (
-            <div
-              className={`p-4 rounded-lg ${
-                action === "approved"
-                  ? "bg-green-50 border border-green-200"
-                  : action === "rejected"
-                    ? "bg-red-50 border border-red-200"
-                    : "bg-yellow-50 border border-yellow-200"
-              }`}
-            >
-              <div className="flex items-center">
-                {action === "approved" && (
-                  <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                )}
-                {action === "rejected" && (
-                  <XCircle className="w-5 h-5 text-red-600 mr-2" />
-                )}
-                {action === "error" && (
-                  <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
-                )}
-                <span className="font-medium">{actionMessage}</span>
-              </div>
-            </div>
-          )}
-
           {documents.some((d) => d.status === "pending") && (
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <PrimaryButton
@@ -643,6 +662,20 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
           </div>
         </div>
       </Card>
+
+      {/* Toast Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 }

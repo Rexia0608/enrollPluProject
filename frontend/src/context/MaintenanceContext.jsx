@@ -49,7 +49,7 @@ export const MaintenanceProvider = ({ children }) => {
   useEffect(() => {
     checkMaintenanceStatus();
 
-    const interval = setInterval(checkMaintenanceStatus, 30000);
+    const interval = setInterval(checkMaintenanceStatus, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [user?.token]);
 

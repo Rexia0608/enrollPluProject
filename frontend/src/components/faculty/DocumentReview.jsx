@@ -90,11 +90,15 @@ function DocumentReview() {
     fetchReviewQueue(true);
   }, [fetchReviewQueue]);
 
-  // Background polling every 30 minutes (no indicator)
+  // Background polling every 15 minutes (no indicator)
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      fetchReviewQueue(false);
-    }, 1800000);
+    intervalRef.current = setInterval(
+      () => {
+        fetchReviewQueue(false);
+        console.log(`refetch data updated.`);
+      },
+      15 * 60 * 1000,
+    ); // 15 minutes
     return () => clearInterval(intervalRef.current);
   }, [fetchReviewQueue]);
 

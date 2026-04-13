@@ -10,6 +10,7 @@ import {
   postVerifiedDocument,
   getReviewQueuePayment,
   postVerifiedPayment,
+  postPromissoryFile,
 } from "../controller/FacultyController.js";
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.patch("/verified-document", deleteDocument, postVerifiedDocument);
 router.patch("/verified-payment", deleteVerifiedPayment, postVerifiedPayment);
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here 5DSLSY +++++++++++++++++++//
+//++++++++++++++++++ TEST here +++++++++++++++++++//
+router.patch("/handle-excuse-letter", postPromissoryFile);
 
 export default router;

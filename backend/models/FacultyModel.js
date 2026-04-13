@@ -107,6 +107,15 @@ const getValidateReceiptModel = async (passData) => {
 
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 
+const postPromissoryFileModel = async (passData) => {
+  try {
+    console.log(passData);
+  } catch (error) {
+    console.error("error  postPromissoryFileModel:", error);
+    throw error;
+  }
+};
+
 const Templated = async () => {
   try {
   } catch (error) {
@@ -118,6 +127,7 @@ const Templated = async () => {
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 
 export {
+  postPromissoryFileModel,
   getValidateReceiptModel,
   getReviewQueuePaymentModel,
   getReviewQueueModel,

@@ -137,7 +137,7 @@ const EnrollmentProfiling = ({ onSuccess, onCancel }) => {
 
         // ✅ FIX: Extract actual enrollment object from items array
         const checkData = enrollmentCheckRes.data;
-        console.log(checkData);
+
         if (
           checkData.success &&
           checkData.items &&
