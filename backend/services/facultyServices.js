@@ -309,7 +309,70 @@ const getValidateReceiptServices = async (passData) => {
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here +++++++++++++++++++//
+//++++++++++++++++++ TEST here  +++++++++++++++++++//
+
+const postPromissoryFileServices = async (passData) => {
+  try {
+    let query;
+    let value;
+    if (passData.action) {
+      query = `
+        WITH updated AS (
+            UPDATE transaction_table t
+            SET
+                remarks = $1,
+                updated_at = NOW(),
+                payment_status = 'pending'
+            WHERE
+                t.enrollment_id = $2
+                AND t.period = $3
+            RETURNING t.enrollment_id
+        )
+        SELECT 
+            c.email
+        FROM updated u
+        JOIN enrollment_profile e 
+            ON u.enrollment_id = e.enrollment_id
+        JOIN users usr 
+            ON e.user_id = usr.id
+        JOIN credentials c 
+            ON usr.id = c.user_id;
+      `;
+
+      value = [passData, passData.enrollmentId, passData.period];
+
+      return { query, value };
+    } else {
+      query = `
+        WITH updated AS (
+            UPDATE transaction_table t
+            SET
+                remarks = $1,
+                updated_at = NOW(),
+                payment_status = 'pending'
+            WHERE
+                t.enrollment_id = $2
+                AND t.period = $3
+            RETURNING t.enrollment_id
+        )
+        SELECT 
+            c.email
+        FROM updated u
+        JOIN enrollment_profile e 
+            ON u.enrollment_id = e.enrollment_id
+        JOIN users usr 
+            ON e.user_id = usr.id
+        JOIN credentials c 
+            ON usr.id = c.user_id;
+      `;
+      value = [passData, passData.enrollmentId, passData.period];
+    }
+    return { query, value };
+  } catch (error) {
+    console.error("error postPromissoryFileServices:", error);
+    throw error;
+  }
+};
 
 const Templated = async () => {
   try {
@@ -333,6 +396,7 @@ function escapeHtml(str) {
 
 export {
   confirmedServices,
+  postPromissoryFileServices,
   getValidateReceiptServices,
   postVerifiedPaymentServices,
   getReviewQueuePaymentServices,

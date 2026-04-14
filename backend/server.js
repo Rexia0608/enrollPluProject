@@ -32,7 +32,7 @@ app.use(express.json());
 // Global limiter
 const globalLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 50,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: "Too many requests, please try again later.",

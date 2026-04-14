@@ -304,6 +304,7 @@ CREATE TABLE transaction_table (
     paid_amount DECIMAL(12, 2) DEFAULT 0.00,
     balance DECIMAL(12, 2) DEFAULT 0.00,
     payment_per_period DECIMAL(12, 2) DEFAULT 0.00,
+    tracking_number VARCHAR(50) UNIQUE,
     
     -- Payment method
     payment_type VARCHAR(50) 

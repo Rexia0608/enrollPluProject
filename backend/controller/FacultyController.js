@@ -91,19 +91,20 @@ const getValidateReceipt = async (req, res) => {
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here postPromissoryFile  +++++++++++++++++++//
+//++++++++++++++++++ TEST here   +++++++++++++++++++//
+
 const postPromissoryFile = async (req, res) => {
   try {
     const data = await postPromissoryFileModel(req.body);
 
     return globalResponseHandler(res, data, {
       message: data
-        ? `Enrollment ID: ${req.params.fileNumber} are successssfully verified`
-        : `Enrollment ID ${req.params.fileNumber} are not successssfully verified`,
+        ? `Promissory note ${req.params.fileNumber} accepted successssfully reviewed.`
+        : `Promissory note ${req.params.fileNumber} rejected.`,
       statusCode: 200,
     });
   } catch (error) {
-    console.error("Error in getReviewQueue:", error);
+    console.error("Error in postPromissoryFile:", error);
     return errorResponseHandler(res, error, 500);
   }
 };

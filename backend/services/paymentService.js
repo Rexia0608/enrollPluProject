@@ -29,14 +29,16 @@ const paymentUpdateService = (data) => {
                     payment_status = 'review',
                     paid_amount = $1,
                     payment_per_period = payment_per_period - $2,
-                    payment_type = $3
-                WHERE enrollment_id = $4
-                AND period = $5
+                    tracking_number = $3,
+                    payment_type = $4
+                WHERE enrollment_id = $5
+                AND period = $6
                 RETURNING *;
                 `;
       value = [
         paymentDetails.amount,
         paymentDetails.amount,
+        paymentDetails.referenceNumber,
         paymentDetails.paymentMethod,
         user.activeEnrollmentId,
         paymentDetails.period,

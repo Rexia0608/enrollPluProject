@@ -8,6 +8,7 @@ import {
   getReviewQueuePaymentServices,
   confirmedServices,
   getValidateReceiptServices,
+  postPromissoryFileServices,
 } from "../services/facultyServices.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
@@ -109,7 +110,11 @@ const getValidateReceiptModel = async (passData) => {
 
 const postPromissoryFileModel = async (passData) => {
   try {
-    console.log(passData);
+    const { query, value } = await postPromissoryFileServices(passData);
+
+    const data = await db.query(query, value);
+    // promissoryy note sending email next
+    return data.rows;
   } catch (error) {
     console.error("error  postPromissoryFileModel:", error);
     throw error;

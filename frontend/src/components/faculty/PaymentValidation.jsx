@@ -89,6 +89,7 @@ function PaymentValidation() {
             submitted: getRelativeTime(item.updated_at),
             status: mapStatus(item.payment_status),
             method: item.payment_type || "Bank Transfer",
+            tracking_number: item.tracking_number,
             proofFilename: proofFilename,
             proofUrl: getProofUrl(proofFilename),
             priority: "medium",
@@ -210,7 +211,7 @@ function PaymentValidation() {
       enrollmentId: selectedPayment.enrollmentId,
       period: selectedPayment.period,
       reference: selectedPayment.id,
-      action: approved, // adjust to your API
+      action: approved,
       remark: feedback.trim(),
     };
 
@@ -229,6 +230,19 @@ function PaymentValidation() {
       toast.error(
         err.response?.data?.message || "Failed to process excuse letter.",
       );
+    }
+  };
+
+  const getPaymentMod = (paymentMethod) => {
+    switch (paymentMethod) {
+      case "maya":
+        return `Maya Reference ID`;
+      case "gcash":
+        return `GCash Reference Number`;
+      case "bank-transfer":
+        return "Confirmation or Transaction number";
+      default:
+        return "Transaction or Reference ID";
     }
   };
 
@@ -408,6 +422,7 @@ function PaymentValidation() {
                 <StatusBadge status={selectedPayment.status} />
               </div>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <Card>
                 <h4 className="font-medium text-gray-900 mb-4">
@@ -433,6 +448,14 @@ function PaymentValidation() {
                     </span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-gray-600">
+                      {getPaymentMod(selectedPayment.method)}
+                    </span>
+                    <span className="font-medium">
+                      {selectedPayment.tracking_number}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-gray-600">Payment Period</span>
                     <span className="font-medium">
                       {selectedPayment.period}
@@ -454,14 +477,6 @@ function PaymentValidation() {
                           ).toLocaleDateString()}
                         </span>
                       </div>
-                      {selectedPayment.raw.remarks.note && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Promise Note</span>
-                          <span className="font-medium text-right max-w-[60%]">
-                            {selectedPayment.raw.remarks.note}
-                          </span>
-                        </div>
-                      )}
                     </>
                   )}
                 </div>
@@ -481,7 +496,7 @@ function PaymentValidation() {
                       ).toLocaleDateString()}
                     </p>
                     <p className="text-sm text-gray-700 mt-2">
-                      <span className="font-medium">Note:</span>{" "}
+                      <span className="font-medium">Letter:</span>{" "}
                       {selectedPayment.raw.remarks.note ||
                         "No additional note provided."}
                     </p>
