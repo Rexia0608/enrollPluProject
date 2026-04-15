@@ -7,3 +7,39 @@ juanDelaCruzFaculty12@gmail.com
 
 STUDENT 
 johnreycejas0608@gmail.com
+
+
+
+  query = `
+            SELECT 
+          t.id,
+          t.enrollment_id,
+          t.period,
+          t.payment_status,
+          t.remarks,
+          t.updated_at,
+          t.paid_amount,
+
+          ay.semester,
+          ay.year_series,
+          ay.is_class_ongoing,
+
+          c.email
+
+      FROM transaction_table t
+
+      JOIN enrollment_profile e 
+          ON t.enrollment_id = e.enrollment_id
+
+      JOIN academic_year ay 
+          ON e.enrollment_year_code = ay.id
+
+      JOIN credentials c 
+          ON e.user_id = c.user_id
+
+      WHERE 
+          ay.is_class_ongoing = true
+          AND t.payment_status = 'pending'
+          AND t.remarks IS NOT NULL
+          AND t.paid_amount = 0; 
+    `;

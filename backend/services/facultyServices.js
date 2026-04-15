@@ -307,10 +307,6 @@ const getValidateReceiptServices = async (passData) => {
   }
 };
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here  +++++++++++++++++++//
-
 const postPromissoryFileServices = async (passData) => {
   try {
     let query;
@@ -374,6 +370,32 @@ const postPromissoryFileServices = async (passData) => {
   }
 };
 
+const confirmPromisorryFileServices = async (email, passData) => {
+  try {
+    if (passData.action) {
+      await sendEmail("promised-note-accepted", email, passData.remark);
+    } else {
+      await sendEmail("promised-note-rejected", email, passData.remark);
+    }
+  } catch (error) {
+    console.error("error confirmPromisorryFileServices:", error);
+    throw error;
+  }
+};
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here  +++++++++++++++++++//
+
+const promissoryAutomationServices = async () => {
+  try {
+    return query;
+  } catch (error) {
+    console.error("error promissoryAutomationServices:", error);
+    throw error;
+  }
+};
+
 const Templated = async () => {
   try {
   } catch (error) {
@@ -396,6 +418,8 @@ function escapeHtml(str) {
 
 export {
   confirmedServices,
+  promissoryAutomationServices,
+  confirmPromisorryFileServices,
   postPromissoryFileServices,
   getValidateReceiptServices,
   postVerifiedPaymentServices,

@@ -89,10 +89,6 @@ const getValidateReceipt = async (req, res) => {
   }
 };
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here   +++++++++++++++++++//
-
 const postPromissoryFile = async (req, res) => {
   try {
     const data = await postPromissoryFileModel(req.body);
@@ -108,6 +104,10 @@ const postPromissoryFile = async (req, res) => {
     return errorResponseHandler(res, error, 500);
   }
 };
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here   +++++++++++++++++++//
 
 export {
   postPromissoryFile,

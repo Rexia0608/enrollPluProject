@@ -216,7 +216,6 @@ function PaymentValidation() {
     };
 
     try {
-      // Replace with correct endpoint
       const response = await axios.patch(
         "http://localhost:3000/faculty/handle-excuse-letter",
         fileData,

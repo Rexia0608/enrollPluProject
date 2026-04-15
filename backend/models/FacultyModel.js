@@ -9,6 +9,7 @@ import {
   confirmedServices,
   getValidateReceiptServices,
   postPromissoryFileServices,
+  confirmPromisorryFileServices,
 } from "../services/facultyServices.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
@@ -104,19 +105,29 @@ const getValidateReceiptModel = async (passData) => {
   }
 };
 
-//++++++++++++++++++ finalized here +++++++++++++++++++//
-
-//++++++++++++++++++ TEST here +++++++++++++++++++//
-
 const postPromissoryFileModel = async (passData) => {
   try {
     const { query, value } = await postPromissoryFileServices(passData);
-
+    await db.query("BEGIN");
     const data = await db.query(query, value);
-    // promissoryy note sending email next
+    await confirmPromisorryFileServices(data.rows[0].email, passData);
+    await db.query("COMMIT");
     return data.rows;
   } catch (error) {
+    await db.query("ROLLBACK");
     console.error("error  postPromissoryFileModel:", error);
+    throw error;
+  }
+};
+
+//++++++++++++++++++ finalized here +++++++++++++++++++//
+
+//++++++++++++++++++ TEST here promissoryAutomationModel +++++++++++++++++++//
+
+const promissoryAutomationModel = async () => {
+  try {
+  } catch (error) {
+    console.error("error Templated:", error);
     throw error;
   }
 };

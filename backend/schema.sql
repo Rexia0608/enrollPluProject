@@ -120,7 +120,8 @@ CREATE TRIGGER update_academic_year_updated_at
 
 CREATE TABLE maintenance_settings (
     id SERIAL PRIMARY KEY,
-    is_active BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT false, 
+    payment_automation BOOLEAN DEFAULT false, 
     message TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
