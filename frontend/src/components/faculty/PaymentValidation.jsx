@@ -451,7 +451,9 @@ function PaymentValidation() {
                       {getPaymentMod(selectedPayment.method)}
                     </span>
                     <span className="font-medium">
-                      {selectedPayment.tracking_number}
+                      {selectedPayment.tracking_number
+                        ? selectedPayment.tracking_number
+                        : "N/A"}
                     </span>
                   </div>
                   <div className="flex justify-between">

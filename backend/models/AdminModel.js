@@ -18,6 +18,8 @@ import {
   updateSemesterServices,
   updatePasswordServices,
   findUserQueryServices,
+  getOverViewServices,
+  getOverViewFormatServices,
 } from "../services/adminServices.js";
 
 //++++++++++++++++++ need to refactor +++++++++++++++++++//
@@ -138,7 +140,6 @@ const deleteCoursesModel = async (id) => {
 
 const updateStatusAcademicYearModel = async (id, passData) => {
   try {
-    // If opening enrollment, close all others first (only one can be open)
     if (passData === true) {
       const { query, values } = updateStatusCloseAllAcademicYearServices(id);
       await db.query(query, values);
@@ -158,7 +159,6 @@ const updateStatusAcademicYearModel = async (id, passData) => {
 
 const updateClassStatusAcademicYearModel = async (passData, id) => {
   try {
-    // If CLASS, close all others first (only one can be open)
     if (passData.is_class_ongoing === true) {
       const { query, values } = updateClassCloseStatusAcademicYearServices(id);
       await db.query(query, values);
@@ -203,6 +203,20 @@ const updatePasswordModel = async (id) => {
   }
 };
 
+const getOverViewModel = async () => {
+  try {
+    const { query } = await getOverViewServices();
+
+    const passData = await db.query(query);
+    const data = getOverViewFormatServices(passData.rows);
+
+    return data;
+  } catch (error) {
+    console.error("Error in updatePasswordModel:", error);
+    throw error;
+  }
+};
+
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
 //++++++++++++++++++ TEST here +++++++++++++++++++//
@@ -230,6 +244,7 @@ const findUserQueryModel = async (user_id) => {
 /****************** helper Query here ********************/
 
 export {
+  getOverViewModel,
   findUserQueryModel,
   updatePasswordModel,
   updateSemesterModel,

@@ -1,13 +1,12 @@
 import db from "../config/db.js";
-import {
-  paymentUpdateService,
-  paymentPeriodService,
-  paymentService,
-} from "../services/paymentService.js";
+
 import {
   enrollmentProfileServices,
   enrollmentTransactionServices,
   sendingEvaluationServices,
+  paymentPeriodService,
+  paymentUpdateService,
+  paymentService,
 } from "../services/studentServices.js";
 
 //*******************finalized*****************************/

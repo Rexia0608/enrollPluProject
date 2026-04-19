@@ -311,17 +311,17 @@ const postPromissoryFileServices = async (passData) => {
   try {
     let query;
     let value;
+    console.log(passData);
     if (passData.action) {
       query = `
         WITH updated AS (
             UPDATE transaction_table t
-            SET
-                remarks = $1,
+             SET
                 updated_at = NOW(),
                 payment_status = 'pending'
             WHERE
-                t.enrollment_id = $2
-                AND t.period = $3
+                t.enrollment_id = $1
+                AND t.period = $2
             RETURNING t.enrollment_id
         )
         SELECT 
@@ -335,7 +335,7 @@ const postPromissoryFileServices = async (passData) => {
             ON usr.id = c.user_id;
       `;
 
-      value = [passData, passData.enrollmentId, passData.period];
+      value = [passData.enrollmentId, passData.period];
 
       return { query, value };
     } else {
@@ -343,12 +343,11 @@ const postPromissoryFileServices = async (passData) => {
         WITH updated AS (
             UPDATE transaction_table t
             SET
-                remarks = $1,
                 updated_at = NOW(),
                 payment_status = 'pending'
             WHERE
-                t.enrollment_id = $2
-                AND t.period = $3
+                t.enrollment_id = $1
+                AND t.period = $2
             RETURNING t.enrollment_id
         )
         SELECT 
@@ -361,7 +360,7 @@ const postPromissoryFileServices = async (passData) => {
         JOIN credentials c 
             ON usr.id = c.user_id;
       `;
-      value = [passData, passData.enrollmentId, passData.period];
+      value = [passData.enrollmentId, passData.period];
     }
     return { query, value };
   } catch (error) {
@@ -387,15 +386,6 @@ const confirmPromisorryFileServices = async (email, passData) => {
 
 //++++++++++++++++++ TEST here  +++++++++++++++++++//
 
-const promissoryAutomationServices = async () => {
-  try {
-    return query;
-  } catch (error) {
-    console.error("error promissoryAutomationServices:", error);
-    throw error;
-  }
-};
-
 const Templated = async () => {
   try {
   } catch (error) {
@@ -418,7 +408,6 @@ function escapeHtml(str) {
 
 export {
   confirmedServices,
-  promissoryAutomationServices,
   confirmPromisorryFileServices,
   postPromissoryFileServices,
   getValidateReceiptServices,

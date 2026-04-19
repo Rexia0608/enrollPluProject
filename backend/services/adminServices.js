@@ -298,9 +298,78 @@ const updatePasswordServices = async (passData) => {
   }
 };
 
+const getOverViewServices = async () => {
+  try {
+    let query = `
+    SELECT
+    (SELECT COUNT(*)::TEXT 
+     FROM users 
+     WHERE role = 'student'
+     AND status = true
+     ) AS total_students,
+
+    (SELECT COUNT(*)::TEXT 
+     FROM enrollment_profile 
+     WHERE enrollment_status = 'documents_review') AS pending_documents,
+
+    (SELECT COUNT(*)::TEXT 
+     FROM transaction_table 
+     WHERE payment_status = 'review') AS pending_payments,
+
+    (SELECT COUNT(*)::TEXT 
+     FROM enrollment_profile 
+     WHERE enrollment_status = 'enrolled') AS enrolled_students;
+    `;
+
+    return { query };
+  } catch (error) {
+    console.error("error getOverViewTestServices:", error);
+    throw error;
+  }
+};
+
+const getOverViewFormatServices = (passData) => {
+  try {
+    const data = [
+      {
+        title: "Total Student",
+        value: passData[0].total_students,
+        change: 12,
+        icon: "Users",
+        color: "blue",
+      },
+      {
+        title: "Pending Documents",
+        value: passData[0].pending_documents,
+        change: -5,
+        icon: "FileText",
+        color: "yellow",
+      },
+      {
+        title: "Pending Payments",
+        value: passData[0].pending_payments,
+        change: 8,
+        icon: "CreditCard",
+        color: "red",
+      },
+      {
+        title: "Enrolled Students",
+        value: passData[0].enrolled_students,
+        change: 15,
+        icon: "CheckCircle",
+        color: "green",
+      },
+    ];
+    return data;
+  } catch (error) {
+    console.error("error getOverViewFormatServices:", error);
+    throw error;
+  }
+};
+
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ test here  updatePasswordServices +++++++++++++++++++//
+//++++++++++++++++++ test here   +++++++++++++++++++//
 
 const Templated = () => {
   try {
@@ -348,6 +417,7 @@ const findUserQueryServices = (id) => {
 //++++++++++++++++++ helper Query here +++++++++++++++++++//
 
 export {
+  getOverViewFormatServices,
   updateClassCloseStatusAcademicYearServices,
   updateStatusCloseAllAcademicYearServices,
   updateClassStatusAcademicYearServices,
@@ -360,6 +430,7 @@ export {
   postNewCoursesServices,
   getAcademicServices,
   updateUserServices,
+  getOverViewServices,
   getAllUsersListServices,
   getAllCoursesListServices,
   updateCoursesServices,

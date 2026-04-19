@@ -798,7 +798,12 @@ const StudentPaymentStatus = () => {
     isSubmitting: false,
     submitStatus: null,
   });
+  const [toast, setToast] = useState(null);
   const update = (updates) => setState((prev) => ({ ...prev, ...updates }));
+  const showToast = (message, type = "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -873,7 +878,6 @@ const StudentPaymentStatus = () => {
         "paymentDetails",
         JSON.stringify({
           period,
-          paymentType: "tuition",
           amount,
           referenceNumber,
           remarks,
@@ -904,14 +908,27 @@ const StudentPaymentStatus = () => {
         throw new Error(res.data?.message || "Payment failed");
       }
     } catch (err) {
-      update({
-        submitStatus: {
-          type: "error",
-          message:
-            err.response?.data?.message ||
-            "Failed to process payment. Please try again.",
-        },
-      });
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to process payment. Please try again.";
+      if (
+        errorMessage.includes(
+          'duplicate key value violates unique constraint "transaction_table_tracking_number_key"',
+        )
+      ) {
+        showToast(
+          "This reference number has already been used. Please settle your balance.",
+          "error",
+        );
+      } else {
+        update({
+          submitStatus: {
+            type: "error",
+            message: errorMessage,
+          },
+        });
+      }
     } finally {
       update({ isSubmitting: false });
     }
@@ -964,14 +981,27 @@ const StudentPaymentStatus = () => {
         throw new Error(res.data?.message || "Failed to submit promise to pay");
       }
     } catch (err) {
-      update({
-        submitStatus: {
-          type: "error",
-          message:
-            err.response?.data?.message ||
-            "Failed to submit promise to pay. Please try again.",
-        },
-      });
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to submit promise to pay. Please try again.";
+      if (
+        errorMessage.includes(
+          'duplicate key value violates unique constraint "transaction_table_tracking_number_key"',
+        )
+      ) {
+        showToast(
+          "This reference number has already been used. Please use a different reference number.",
+          "error",
+        );
+      } else {
+        update({
+          submitStatus: {
+            type: "error",
+            message: errorMessage,
+          },
+        });
+      }
     } finally {
       update({ isSubmitting: false });
     }
@@ -1134,6 +1164,37 @@ const StudentPaymentStatus = () => {
           )}
         </AnimatePresence>
       </div>
+      {/* Toast Container */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-5 right-5 z-50 max-w-sm w-full"
+          >
+            <Card
+              className={`${toast.type === "error" ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"} shadow-lg`}
+              padding="sm"
+            >
+              <div className="flex items-center justify-between">
+                <p
+                  className={`text-sm ${toast.type === "error" ? "text-red-800" : "text-green-800"}`}
+                >
+                  {toast.message}
+                </p>
+                <button
+                  onClick={() => setToast(null)}
+                  className="ml-4 text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import express from "express";
 import {
-  overView,
   getMaintenanceMessege,
   deleteCourse,
 } from "../controller/AdminController.js";
@@ -22,6 +21,7 @@ import {
   postNewCourses,
   updateSemester,
   updatePassword,
+  getOverView,
 } from "../controller/AdminController.js";
 
 const router = express.Router();
@@ -29,14 +29,14 @@ const router = express.Router();
 router.get("/maintenance", getMaintenance);
 router.put("/maintenance", updateMaintenance);
 router.get("/maintenance-messege", getMaintenanceMessege);
-router.get("/overView", overView);
+
 router.get("/stats", getStats);
 router.post("/announcement", setAnnouncement);
 //******************  NEED TO REFACTOR ***********************//
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 router.get("/usersList", getAllUsers);
-
+router.get("/overView", getOverView);
 router.get("/courseList", getCourses);
 router.get("/academicYear", getAcademicYear);
 

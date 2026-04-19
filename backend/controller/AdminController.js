@@ -11,6 +11,7 @@ import {
 } from "../middleware/responseHandler.js";
 
 import {
+  getOverViewModel,
   updatePasswordModel,
   updateSemesterModel,
   updateUserModel,
@@ -69,6 +70,19 @@ const getMaintenanceMessege = async (req, res) => {
   }
 };
 
+const getOverView = async (req, res) => {
+  try {
+    const data = await getOverViewModel();
+
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in deleteCourse:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
 const getMaintenance = async (req, res) => {
   try {
     const { maintenanceState } = await getMaintenanceModel();
@@ -81,47 +95,6 @@ const getMaintenance = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-const overView = async (req, res) => {
-  try {
-    const systemOverview = [
-      {
-        title: "Total Students",
-        value: "1,248",
-        change: 12,
-        icon: "Users",
-        color: "blue",
-      },
-      {
-        title: "Pending Documents",
-        value: "42",
-        change: -5,
-        icon: "FileText",
-        color: "yellow",
-      },
-      {
-        title: "Pending Payments",
-        value: "28",
-        change: 8,
-        icon: "CreditCard",
-        color: "red",
-      },
-      {
-        title: "Enrolled Students",
-        value: "876",
-        change: 15,
-        icon: "CheckCircle",
-        color: "green",
-      },
-    ];
-    res.status(200).json(systemOverview);
-  } catch (error) {
-    console.error("Error in overView:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-//++++++++++++++++++ finalized here +++++++++++++++++++//
 
 const getAllUsers = async (req, res) => {
   try {
@@ -292,7 +265,7 @@ export {
   updateUser,
   getAllUsers,
   getCourses,
-  overView,
+  getOverView,
   getMaintenance,
   updateMaintenance,
   getMaintenanceMessege,

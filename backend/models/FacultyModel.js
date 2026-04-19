@@ -122,15 +122,7 @@ const postPromissoryFileModel = async (passData) => {
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here promissoryAutomationModel +++++++++++++++++++//
-
-const promissoryAutomationModel = async () => {
-  try {
-  } catch (error) {
-    console.error("error Templated:", error);
-    throw error;
-  }
-};
+//++++++++++++++++++ TEST here +++++++++++++++++++//
 
 const Templated = async () => {
   try {
@@ -141,6 +133,8 @@ const Templated = async () => {
 };
 
 //++++++++++++++++++ TEST here +++++++++++++++++++//
+
+//++++++++++++++++++ AUTOMATION here +++++++++++++++++++//
 
 export {
   postPromissoryFileModel,

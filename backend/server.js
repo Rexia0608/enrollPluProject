@@ -9,6 +9,8 @@ import AdminRouter from "./routes/adminRoutes.js";
 import StudentRouter from "./routes/studentRoutes.js";
 import FacultyRouter from "./routes/facultyRoutes.js";
 
+import "./automation/paymentReminderAutomation.js";
+
 dotenv.config();
 
 const app = express();
@@ -44,7 +46,7 @@ const authLimiter = rateLimit({
   max: 25,
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false, // safer for brute-force protection
+  skipSuccessfulRequests: false,
   message: "Too many authentication attempts. Please try again later.",
 });
 

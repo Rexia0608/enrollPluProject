@@ -4,12 +4,10 @@ import axios from "axios";
 
 const AdminContext = createContext(null);
 const API_BASE_URL_COURSE = "http://localhost:3000/admin/courseList";
-const API_BASE_URL_OVERVIEW = "http://localhost:3000/admin/overView";
 
 export const AdminProvider = ({ children }) => {
   const { user } = useAuth(); // Admin user
   const [initialCourses, setInitialCourses] = useState([]);
-  const [overView, setOverView] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Create axios instance with auth header
@@ -25,13 +23,11 @@ export const AdminProvider = ({ children }) => {
       setLoading(true);
 
       try {
-        const [initialCoursesRes, overViewRes] = await Promise.all([
+        const [initialCoursesRes] = await Promise.all([
           axios.get(API_BASE_URL_COURSE, getAuthHeaders()),
-          axios.get(API_BASE_URL_OVERVIEW, getAuthHeaders()),
         ]);
 
         setInitialCourses(initialCoursesRes.data.items);
-        setOverView(overViewRes.data);
       } catch (err) {
         console.error(
           "Admin data fetch error",
@@ -49,31 +45,14 @@ export const AdminProvider = ({ children }) => {
   useEffect(() => {
     if (!user) {
       setInitialCourses([]);
-      setOverView([]);
     }
   }, [user]);
-
-  // Functions to mutate data
-  const refreshUsers = async () => {
-    if (!user) return;
-    try {
-      const res = await axios.get(API_BASE_URL_USER, getAuthHeaders());
-      setUserList(res.data);
-    } catch (err) {
-      console.error(
-        "Error refreshing users",
-        err.response?.data || err.message || err,
-      );
-    }
-  };
 
   return (
     <AdminContext.Provider
       value={{
         initialCourses,
         loading,
-        overView,
-        refreshUsers,
         getAuthHeaders,
       }}
     >

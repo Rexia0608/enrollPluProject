@@ -1,5 +1,4 @@
 // components/ui/StatCard.jsx
-import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 function StatCard({ title, value, change, icon: Icon, color = "blue" }) {

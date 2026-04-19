@@ -429,7 +429,6 @@ const PaymentForm = ({
     return due <= balance ? due : balance;
   });
   const [referenceNumber, setReferenceNumber] = useState("");
-  const [remarks, setRemarks] = useState("");
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -538,7 +537,6 @@ const PaymentForm = ({
     onSubmit({
       amount: amountNum,
       referenceNumber: referenceNumber.trim(),
-      remarks,
       file,
       period: selectedPeriod.period,
     });
@@ -705,19 +703,6 @@ const PaymentForm = ({
           </div>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Remarks (Optional)
-          </label>
-          <textarea
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            rows="3"
-            placeholder="Add any additional notes..."
-          />
-        </div>
-
         <div className="flex gap-3">
           <button
             type="submit"
@@ -857,7 +842,6 @@ const StudentPaymentStatus = () => {
   const handlePaymentSubmit = async ({
     amount,
     referenceNumber,
-    remarks,
     file,
     period,
   }) => {
@@ -878,10 +862,8 @@ const StudentPaymentStatus = () => {
         "paymentDetails",
         JSON.stringify({
           period,
-          paymentType: "tuition",
           amount,
           referenceNumber,
-          remarks,
           paymentMethod: state.selectedMethod,
           remainingBalance: state.selectedPeriod?.balance - amount,
         }),
@@ -950,7 +932,7 @@ const StudentPaymentStatus = () => {
           period: state.selectedPeriod.period,
           amount: state.selectedPeriod.due,
           paymentStatus: "review",
-          referenceNumber: `PROMISE-${state.enrollment?.enrollment_id}`,
+          referenceNumber: state.enrollment?.enrollment_id,
           remarks: promiseData.notes,
           remainingBalance: state.selectedPeriod.balance,
         },
