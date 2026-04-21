@@ -9,6 +9,7 @@ import {
   getReviewQueuePaymentModel,
   postVerifiedPaymentModel,
   postPromissoryFileModel,
+  getKpiCardsModel,
 } from "../models/FacultyModel.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
@@ -107,9 +108,22 @@ const postPromissoryFile = async (req, res) => {
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here   +++++++++++++++++++//
+//++++++++++++++++++ TEST here  getKpiCards +++++++++++++++++++//
+const getKpiCards = async (req, res) => {
+  try {
+    const data = await getKpiCardsModel();
+
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getKpiCards:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
 
 export {
+  getKpiCards,
   postPromissoryFile,
   getValidateReceipt,
   getReviewQueue,

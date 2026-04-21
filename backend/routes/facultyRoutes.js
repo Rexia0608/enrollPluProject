@@ -11,6 +11,7 @@ import {
   getReviewQueuePayment,
   postVerifiedPayment,
   postPromissoryFile,
+  getKpiCards,
 } from "../controller/FacultyController.js";
 
 const router = express.Router();
@@ -22,9 +23,10 @@ router.get("/review-queue", getReviewQueue);
 router.get("/review-document/:filename", fetchdocument);
 router.patch("/verified-document", deleteDocument, postVerifiedDocument);
 router.patch("/verified-payment", deleteVerifiedPayment, postVerifiedPayment);
+router.patch("/handle-excuse-letter", postPromissoryFile);
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
 //++++++++++++++++++ TEST here +++++++++++++++++++//
-router.patch("/handle-excuse-letter", postPromissoryFile);
+router.get("/kpiCards", getKpiCards);
 
 export default router;

@@ -25,6 +25,11 @@ import {
   postAcademicYearModel,
   getAcademicYearModel,
   updateClassStatusAcademicYearModel,
+  getEnrollmentTrendModel,
+  getIncomeOverviewModel,
+  getPaymentProgressModel,
+  getEnrollmentFunnelModel,
+  getTopCoursesModel,
 } from "../models/AdminModel.js";
 
 //******************  NEED TO REFACTOR ***********************//
@@ -253,13 +258,76 @@ const updatePassword = async (req, res) => {
   }
 };
 
+const getEnrollmentTrend = async (req, res) => {
+  try {
+    const data = await getEnrollmentTrendModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getEnrollmentTrend:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const getIncomeOverview = async (req, res) => {
+  try {
+    const data = await getIncomeOverviewModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getincomeOverview:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const getPaymentProgress = async (req, res) => {
+  try {
+    const data = await getPaymentProgressModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getpaymentProgress:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
+const getEnrollmentFunnel = async (req, res) => {
+  try {
+    const data = await getEnrollmentFunnelModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getenrollmentFunnel:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
+
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here  +++++++++++++++++++//
-
+//++++++++++++++++++ TEST here getTopCourses +++++++++++++++++++//
+const getTopCourses = async (req, res) => {
+  try {
+    const data = await getTopCoursesModel();
+    return globalResponseHandler(res, data || null, {
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error("Error in getenrollmentFunnel:", error);
+    return errorResponseHandler(res, error, 500);
+  }
+};
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 
 export {
+  getTopCourses,
+  getEnrollmentFunnel,
+  getPaymentProgress,
+  getIncomeOverview,
+  getEnrollmentTrend,
   updatePassword,
   updateSemester,
   updateUser,

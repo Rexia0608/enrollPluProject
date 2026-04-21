@@ -11,15 +11,17 @@ import {
   FileText,
   CreditCard,
   Clock,
-  Shield,
-  BarChart,
-  Bell,
-  HelpCircle, // Added HelpCircle
+  HelpCircle,
 } from "lucide-react";
 
 function Sidebar({ role, isOpen = true }) {
   const adminItems = [
-    { to: "/admin/dashboard", icon: LayoutDashboard, label: "Overview" },
+    {
+      to: "/admin/dashboard",
+      icon: LayoutDashboard,
+      label: "Overview",
+      exact: true,
+    },
     {
       to: "/admin/dashboard/enrollment",
       icon: Calendar,
@@ -32,12 +34,15 @@ function Sidebar({ role, isOpen = true }) {
       label: "Courses Management",
     },
     { to: "/admin/dashboard/schedule", icon: Clock, label: "Schedules" },
-    { to: "/admin/dashboard/maintenance", icon: Shield, label: "Maintenance" },
-    { to: "/admin/dashboard/activity", icon: BarChart, label: "Activity Log" },
   ];
 
   const facultyItems = [
-    { to: "/faculty/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    {
+      to: "/faculty/dashboard",
+      icon: LayoutDashboard,
+      label: "Dashboard",
+      exact: true,
+    },
     {
       to: "/faculty/dashboard/documents",
       icon: FileText,
@@ -48,31 +53,22 @@ function Sidebar({ role, isOpen = true }) {
       icon: CreditCard,
       label: "Payment Validation",
     },
-    {
-      to: "/faculty/dashboard/scanner",
-      icon: ScanQrCode,
-      label: "Qr Scanner",
-    },
-    {
-      to: "/faculty/dashboard/notifications",
-      icon: Bell,
-      label: "Notifications",
-    },
+    { to: "/faculty/dashboard/scanner", icon: ScanQrCode, label: "Qr Scanner" },
   ];
 
   const studentItems = [
-    { to: "/student/dashboard", icon: LayoutDashboard, label: "Status" },
+    {
+      to: "/student/dashboard",
+      icon: LayoutDashboard,
+      label: "Status",
+      exact: true,
+    },
     {
       to: "/student/dashboard/enrollment",
       icon: FileText,
       label: "enrollment",
     },
     { to: "/student/dashboard/payments", icon: CreditCard, label: "Payments" },
-    {
-      to: "/student/dashboard/notifications",
-      icon: Bell,
-      label: "Notifications",
-    },
     { to: "/student/dashboard/support", icon: HelpCircle, label: "Help" },
   ];
 
@@ -101,6 +97,7 @@ function Sidebar({ role, isOpen = true }) {
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.exact === true}
               className={({ isActive }) =>
                 `flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
@@ -117,7 +114,7 @@ function Sidebar({ role, isOpen = true }) {
 
         <div className="mt-auto pt-6 border-t border-gray-200">
           <NavLink
-            to={`/${role}/settings`}
+            to={`/${role}/dashboard/settings`}
             className="flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
           >
             <Settings className="w-5 h-5" />

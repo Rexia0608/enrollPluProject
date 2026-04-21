@@ -2,14 +2,16 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import {
-  Home,
+  LayoutDashboard,
   Users,
+  ScanQrCode,
+  Calendar,
+  BookOpen,
+  Settings,
   FileText,
   CreditCard,
-  Bell,
-  Settings,
-  BookOpen, // Add this
-  BarChart, // Add this
+  Clock,
+  HelpCircle,
 } from "lucide-react";
 
 function MobileNav({ role }) {
@@ -17,26 +19,67 @@ function MobileNav({ role }) {
     switch (role) {
       case "admin":
         return [
-          { to: "/admin", icon: Home, label: "Home" },
-          { to: "/admin/users", icon: Users, label: "Users" },
-          { to: "/admin/courses", icon: BookOpen, label: "Courses" },
-          { to: "/admin/activity", icon: BarChart, label: "Activity" },
-          { to: "/admin/settings", icon: Settings, label: "Settings" },
+          {
+            to: "/admin/dashboard",
+            icon: LayoutDashboard,
+            label: "Overview",
+            exact: true,
+          },
+          {
+            to: "/admin/dashboard/enrollment",
+            icon: Calendar,
+            label: "Enrollment Control",
+          },
+          {
+            to: "/admin/dashboard/users",
+            icon: Users,
+            label: "User Management",
+          },
+          {
+            to: "/admin/dashboard/course",
+            icon: BookOpen,
+            label: "Courses Management",
+          },
+          { to: "/admin/dashboard/schedule", icon: Clock, label: "Schedules" },
         ];
       case "faculty":
         return [
-          { to: "/faculty", icon: Home, label: "Home" },
-          { to: "/faculty/documents", icon: FileText, label: "Documents" },
-          { to: "/faculty/payments", icon: CreditCard, label: "Payments" },
-          { to: "/faculty/students", icon: Users, label: "Students" },
-          { to: "/faculty/settings", icon: Settings, label: "Settings" },
+          {
+            to: "/faculty/dashboard",
+            icon: LayoutDashboard,
+            label: "Dashboard",
+            exact: true,
+          },
+          {
+            to: "/faculty/dashboard/documents",
+            icon: FileText,
+            label: "Document Review",
+          },
+          {
+            to: "/faculty/dashboard/payments",
+            icon: CreditCard,
+            label: "Payment Validation",
+          },
+          {
+            to: "/faculty/dashboard/scanner",
+            icon: ScanQrCode,
+            label: "Qr Scanner",
+          },
         ];
       case "student":
         return [
-          { to: "/student", icon: Home, label: "Status" },
-          { to: "/student/documents", icon: FileText, label: "Documents" },
-          { to: "/student/payments", icon: CreditCard, label: "Payments" },
-          { to: "/student/notifications", icon: Bell, label: "Alerts" },
+          { to: "/student/dashboard", icon: Home, label: "Status" },
+          {
+            to: "/student/dashboard/enrollment",
+            icon: FileText,
+            label: "enrollment",
+          },
+          {
+            to: "/student/dashboard/payments",
+            icon: CreditCard,
+            label: "Payments",
+          },
+          { to: "/student/dashboard/support", icon: HelpCircle, label: "Help" },
           { to: "/student/settings", icon: Settings, label: "Settings" },
         ];
       default:

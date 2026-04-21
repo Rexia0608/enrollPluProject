@@ -10,12 +10,25 @@ johnreycejas0608@gmail.com
 
 
 
-AUTOMATION|QUERY 
-
- queries.push(`SELECT * FROM maintenance_settings;`);
-
-    queries.push(`
-        UPDATE maintenance_settings 
-        SET payment_automation = $1
-        WHERE id = $2
-      `);
+Income Overview Graph
+SELECT 
+    t.period,
+    SUM(t.paid_amount) AS amount
+FROM transaction_table t
+JOIN enrollment_profile ep
+    ON t.enrollment_id = ep.enrollment_id
+JOIN academic_year ay
+    ON ep.enrollment_year_code = ay.id
+WHERE 
+    ay.enrollment_open = true
+    AND t.payment_status = 'paid'
+GROUP BY t.period
+ORDER BY 
+    CASE t.period
+        WHEN 'enrollment' THEN 1
+        WHEN 'prelim' THEN 2
+        WHEN 'mid-term' THEN 3
+        WHEN 'pre-final' THEN 4
+        WHEN 'final' THEN 5
+        WHEN 'summer' THEN 6
+    END;

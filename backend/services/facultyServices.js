@@ -382,6 +382,68 @@ const confirmPromisorryFileServices = async (email, passData) => {
   }
 };
 
+const getKpiCardServices = async () => {
+  try {
+    let query = `
+        SELECT
+    -- Pending Documents
+    (
+        SELECT COUNT(*)
+        FROM enrollment_profile ep
+        JOIN academic_year ay
+            ON ep.enrollment_year_code = ay.id
+        WHERE ay.enrollment_open = true
+        AND ep.enrollment_status = 'documents_pending'
+    ) AS pending_documents,
+
+    -- Pending Payment Validations
+    (
+        SELECT COUNT(*)
+        FROM transaction_table t
+        JOIN enrollment_profile ep
+            ON t.enrollment_id = ep.enrollment_id
+        JOIN academic_year ay
+            ON ep.enrollment_year_code = ay.id
+        WHERE ay.enrollment_open = true
+        AND t.payment_status = 'review'
+    ) AS pending_payment_validations,
+
+    -- Reviewed Today
+    (
+        SELECT COUNT(*)
+        FROM transaction_table t
+        JOIN enrollment_profile ep
+            ON t.enrollment_id = ep.enrollment_id
+        JOIN academic_year ay
+            ON ep.enrollment_year_code = ay.id
+        WHERE ay.enrollment_open = true
+        AND t.payment_status IN ('paid', 'rejected')
+        AND DATE(t.updated_at) = CURRENT_DATE
+    ) AS reviewed_today,
+
+    -- Avg Response Time
+    (
+        SELECT ROUND(
+            AVG(EXTRACT(EPOCH FROM (t.updated_at - t.created_at)) / 3600), 
+            2
+        )
+        FROM transaction_table t
+        JOIN enrollment_profile ep
+            ON t.enrollment_id = ep.enrollment_id
+        JOIN academic_year ay
+            ON ep.enrollment_year_code = ay.id
+        WHERE ay.enrollment_open = true
+        AND t.payment_status IN ('paid', 'rejected')
+    ) AS avg_response_hours;
+    `;
+
+    return { query };
+  } catch (error) {
+    console.error("error getKpiCardServices:", error);
+    throw error;
+  }
+};
+
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
 //++++++++++++++++++ TEST here  +++++++++++++++++++//
@@ -407,6 +469,7 @@ function escapeHtml(str) {
 //++++++++++++++++++ HELPER +++++++++++++++++++//
 
 export {
+  getKpiCardServices,
   confirmedServices,
   confirmPromisorryFileServices,
   postPromissoryFileServices,

@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { Users, FileText, CreditCard, CheckCircle } from "lucide-react";
 import StatCard from "../ui/StatCard";
-import RecentActivityCard from "./RecentActivityCard";
+import ActivityCard from "./ActivityCard";
 import { useAdmin } from "../../context/AdminContext";
+import LoadingPage from "../../pages/LoadingPage";
 import axios from "axios";
 
 // Map string icons to actual components
@@ -52,11 +53,7 @@ function AdminOverview() {
   }, []); // ✅ Empty dependency array – fetch once on mount
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Loading overview...</div>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (error) {
@@ -71,7 +68,9 @@ function AdminOverview() {
     <div>
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">System Overview</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Admin System Overview
+        </h1>
         <p className="text-gray-600">
           Monitor and manage enrollment system status
         </p>
@@ -87,7 +86,7 @@ function AdminOverview() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <RecentActivityCard />
+          <ActivityCard />
         </div>
       </div>
     </div>

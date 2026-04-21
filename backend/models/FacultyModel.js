@@ -10,6 +10,7 @@ import {
   getValidateReceiptServices,
   postPromissoryFileServices,
   confirmPromisorryFileServices,
+  getKpiCardServices,
 } from "../services/facultyServices.js";
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
@@ -120,12 +121,25 @@ const postPromissoryFileModel = async (passData) => {
   }
 };
 
+const getKpiCardsModel = async () => {
+  try {
+    const { query } = await getKpiCardServices();
+    const data = await db.query(query);
+
+    return data.rows;
+  } catch (error) {
+    console.error("error getKpiCardsModel:", error);
+    throw error;
+  }
+};
+
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here +++++++++++++++++++//
+//++++++++++++++++++ TEST here   +++++++++++++++++++//
 
 const Templated = async () => {
   try {
+    return data;
   } catch (error) {
     console.error("error Templated:", error);
     throw error;
@@ -137,6 +151,7 @@ const Templated = async () => {
 //++++++++++++++++++ AUTOMATION here +++++++++++++++++++//
 
 export {
+  getKpiCardsModel,
   postPromissoryFileModel,
   getValidateReceiptModel,
   getReviewQueuePaymentModel,

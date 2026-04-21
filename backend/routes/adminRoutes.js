@@ -12,6 +12,7 @@ import {
   postAcademicYear,
   updateCredentials,
   updateMaintenance,
+  getEnrollmentTrend,
   getMaintenance,
   updateCourses,
   updateUser,
@@ -22,6 +23,10 @@ import {
   updateSemester,
   updatePassword,
   getOverView,
+  getIncomeOverview,
+  getPaymentProgress,
+  getEnrollmentFunnel,
+  getTopCourses,
 } from "../controller/AdminController.js";
 
 const router = express.Router();
@@ -35,6 +40,7 @@ router.post("/announcement", setAnnouncement);
 //******************  NEED TO REFACTOR ***********************//
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
+
 router.get("/usersList", getAllUsers);
 router.get("/overView", getOverView);
 router.get("/courseList", getCourses);
@@ -58,9 +64,13 @@ router.put("/editCourse/:course_id", updateCourses);
 router.delete("/deleteCourse/:id", deleteCourse);
 
 //++++++++++++++++++ finalized here +++++++++++++++++++//
-
+router.get("/enrollmentTrend", getEnrollmentTrend);
 //++++++++++++++++++ test here +++++++++++++++++++//
-
+router.get("/enrollmentTrend", getEnrollmentTrend);
+router.get("/incomeOverview", getIncomeOverview);
+router.get("/paymentProgress", getPaymentProgress);
+router.get("/enrollmentFunnel", getEnrollmentFunnel);
+router.get("/topCourses", getTopCourses);
 //++++++++++++++++++ test here +++++++++++++++++++//
 
 //****************** for pending here ************************//

@@ -20,6 +20,11 @@ import {
   findUserQueryServices,
   getOverViewServices,
   getOverViewFormatServices,
+  getEnrollmentTrendServices,
+  getIncomeOverviewServices,
+  getPaymentProgressServices,
+  getEnrollmentFunnelServices,
+  getTopCoursesServices,
 } from "../services/adminServices.js";
 
 //++++++++++++++++++ need to refactor +++++++++++++++++++//
@@ -212,7 +217,71 @@ const getOverViewModel = async () => {
 
     return data;
   } catch (error) {
-    console.error("Error in updatePasswordModel:", error);
+    console.error("Error in ugetOverViewModel:", error);
+    throw error;
+  }
+};
+
+const getEnrollmentTrendModel = async () => {
+  try {
+    const { query } = await getEnrollmentTrendServices();
+
+    const data = await db.query(query);
+
+    return data.rows;
+  } catch (error) {
+    console.error("Error in getEnrollmentTrendModel:", error);
+    throw error;
+  }
+};
+
+const getIncomeOverviewModel = async () => {
+  try {
+    const { query } = await getIncomeOverviewServices();
+
+    const data = await db.query(query);
+
+    return data.rows;
+  } catch (error) {
+    console.error("Error in getincomeOverviewModel:", error);
+    throw error;
+  }
+};
+
+const getPaymentProgressModel = async () => {
+  try {
+    const { query } = await getPaymentProgressServices();
+
+    const data = await db.query(query);
+
+    return data.rows;
+  } catch (error) {
+    console.error("Error in getpaymentProgressModel:", error);
+    throw error;
+  }
+};
+
+const getEnrollmentFunnelModel = async () => {
+  try {
+    const { query } = await getEnrollmentFunnelServices();
+
+    const data = await db.query(query);
+
+    return data.rows;
+  } catch (error) {
+    console.error("Error in getenrollmentFunnelModel:", error);
+    throw error;
+  }
+};
+
+const getTopCoursesModel = async () => {
+  try {
+    const { query } = await getTopCoursesServices();
+
+    const data = await db.query(query);
+    return data.rows;
+  } catch (error) {
+    console.error("Error in getTopCoursesModel:", error);
     throw error;
   }
 };
@@ -221,7 +290,7 @@ const getOverViewModel = async () => {
 
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 
-//++++++++++++++++++ TEST here  +++++++++++++++++++//
+//++++++++++++++++++ TEST here +++++++++++++++++++//
 
 /****************** helper Query here ********************/
 const findUserQueryModel = async (user_id) => {
@@ -244,6 +313,11 @@ const findUserQueryModel = async (user_id) => {
 /****************** helper Query here ********************/
 
 export {
+  getTopCoursesModel,
+  getEnrollmentFunnelModel,
+  getPaymentProgressModel,
+  getIncomeOverviewModel,
+  getEnrollmentTrendModel,
   getOverViewModel,
   findUserQueryModel,
   updatePasswordModel,

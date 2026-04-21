@@ -12,7 +12,6 @@ import EnrollmentControl from "../components/admin/EnrollmentControl";
 import CourseManagement from "../components/admin/CourseManagement";
 import BurstEmailCard from "../components/admin/BurstEmailCard";
 import MaintenanceModeCard from "../components/admin/MaintenanceModeCard";
-import RecentActivityCard from "../components/admin/RecentActivityCard";
 import UserManagement from "../components/admin/UserManagement";
 import NotFound from "./NotFound";
 
@@ -37,8 +36,7 @@ function AdminDashboard() {
               <Route path="enrollment" element={<EnrollmentControl />} />
               <Route path="course" element={<CourseManagement />} />
               <Route path="schedule" element={<BurstEmailCard />} />
-              <Route path="activity" element={<RecentActivityCard />} />
-              <Route path="maintenance" element={<MaintenanceModeCard />} />
+              <Route path="settings" element={<MaintenanceModeCard />} />
               <Route path="users" element={<UserManagement />} />
 
               {/* 404 response when someone crawiling it will catch here */}

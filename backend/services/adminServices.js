@@ -367,11 +367,161 @@ const getOverViewFormatServices = (passData) => {
   }
 };
 
+const getEnrollmentTrendServices = async () => {
+  try {
+    let query = `
+    SELECT 
+    ay.year_series,
+    ay.semester,
+        COUNT(ep.enrollment_id) AS total_enrollees
+    FROM enrollment_profile ep
+    JOIN academic_year ay
+        ON ep.enrollment_year_code = ay.id
+    WHERE ep.enrollment_status = 'enrolled'
+    GROUP BY ay.year_series, ay.semester
+    ORDER BY ay.year_series ASC, ay.semester ASC;
+    `;
+
+    return { query };
+  } catch (error) {
+    console.error("error getEnrollmentTrendService:", error);
+    throw error;
+  }
+};
+
+const getIncomeOverviewServices = async () => {
+  try {
+    let query = `
+            SELECT 
+            t.period,
+            SUM(t.paid_amount) AS amount
+        FROM transaction_table t
+        JOIN enrollment_profile ep
+            ON t.enrollment_id = ep.enrollment_id
+        JOIN academic_year ay
+            ON ep.enrollment_year_code = ay.id
+        WHERE 
+            ay.enrollment_open = true
+            AND t.payment_status = 'paid'
+        GROUP BY t.period
+        ORDER BY 
+            CASE t.period
+                WHEN 'enrollment' THEN 1
+                WHEN 'prelim' THEN 2
+                WHEN 'mid-term' THEN 3
+                WHEN 'pre-final' THEN 4
+                WHEN 'final' THEN 5
+                WHEN 'summer' THEN 6
+            END;
+    `;
+    return { query };
+  } catch (error) {
+    console.error("error getincomeOverviewServices:", error);
+    throw error;
+  }
+};
+
+const getPaymentProgressServices = async () => {
+  try {
+    let query = `
+        SELECT 
+            SUM(t.paid_amount) AS total_paid,
+            SUM(t.payment_per_period) AS total_expected,
+            ROUND(
+                (SUM(t.paid_amount) / NULLIF(SUM(t.payment_per_period), 0)) * 100,
+                2
+            ) AS progress_percentage
+        FROM transaction_table t
+        JOIN enrollment_profile ep
+            ON t.enrollment_id = ep.enrollment_id
+        JOIN academic_year ay
+            ON ep.enrollment_year_code = ay.id
+        WHERE 
+            ay.enrollment_open = true;
+    `;
+    return { query };
+  } catch (error) {
+    console.error("error getincomeOverviewServices:", error);
+    throw error;
+  }
+};
+
+const getEnrollmentFunnelServices = async () => {
+  try {
+    let query = `
+            SELECT 
+            stage,
+            COUNT(*) AS total
+        FROM (
+            SELECT 
+                CASE 
+                    WHEN ep.enrollment_status IN (
+                        'documents_pending',
+                        'documents_review',
+                        'documents_approved'
+                    ) THEN 'Documents'
+
+                    WHEN ep.enrollment_status IN (
+                        'payment_pending',
+                        'payment_validated'
+                    ) THEN 'Payment'
+
+                    WHEN ep.enrollment_status = 'enrolled'
+                    THEN 'Enrolled'
+                END AS stage
+            FROM enrollment_profile ep
+            JOIN academic_year ay
+                ON ep.enrollment_year_code = ay.id
+            WHERE ay.enrollment_open = true
+        ) sub
+        WHERE stage IS NOT NULL
+        GROUP BY stage
+        ORDER BY 
+            CASE stage
+                WHEN 'Documents' THEN 1
+                WHEN 'Payment' THEN 2
+                WHEN 'Enrolled' THEN 3
+            END;
+    `;
+
+    return { query };
+  } catch (error) {
+    console.error("error getenrollmentFunnelServices:", error);
+    throw error;
+  }
+};
+
+const getTopCoursesServices = async () => {
+  try {
+    let query = `
+      SELECT 
+          c.course_name,
+          COUNT(ep.enrollment_id) AS total_enrollees
+      FROM enrollment_profile ep
+      JOIN courses c
+          ON ep.course_code_id = c.id
+      JOIN academic_year ay
+          ON ep.enrollment_year_code = ay.id
+      WHERE 
+          ay.enrollment_open = true
+          AND ep.enrollment_status = 'enrolled' -- optional but recommended
+      GROUP BY c.course_name
+      ORDER BY total_enrollees DESC
+      LIMIT 5;
+    `;
+
+    return { query };
+  } catch (error) {
+    console.error("error getenrollmentFunnelServices:", error);
+    throw error;
+  }
+};
+
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
-//++++++++++++++++++ test here   +++++++++++++++++++//
+//++++++++++++++++++ test here +++++++++++++++++++//
 
-const Templated = () => {
+const Templated = async () => {
   try {
     let query = ``;
     let values = [];
@@ -417,6 +567,11 @@ const findUserQueryServices = (id) => {
 //++++++++++++++++++ helper Query here +++++++++++++++++++//
 
 export {
+  getTopCoursesServices,
+  getEnrollmentFunnelServices,
+  getPaymentProgressServices,
+  getIncomeOverviewServices,
+  getEnrollmentTrendServices,
   getOverViewFormatServices,
   updateClassCloseStatusAcademicYearServices,
   updateStatusCloseAllAcademicYearServices,
