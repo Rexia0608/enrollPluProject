@@ -12,6 +12,7 @@ import UnauthorizedPage from "../pages/UnAuthorizedPage";
 import EmailValidationPage from "../pages/EmailValidationPage";
 import PasswordResetPage from "../pages/PasswordResetPage";
 import PasswordResetExpiredPage from "../pages/PassworResetExpiredPage";
+import LSTCLandingPage from "../pages/LSTCLandingPage";
 
 import ProtectedRoute from "../routes/ProtectedRoutes";
 import PublicRoute from "../routes/PublicRoute";
@@ -26,6 +27,7 @@ const Views = () => {
 
         {/* PUBLIC ROUTES - These should bypass MaintenanceGuard */}
         <Route element={<PublicRoute />}>
+          <Route path="/" element={<LSTCLandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
@@ -71,8 +73,9 @@ const Views = () => {
           </Route>
         </Route>
 
-        {/* ================= DEFAULT ================= */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* ================= DEFAULT =================  <LSTCLandingPage />*/}
+        <Route path="/" element={<LSTCLandingPage to="/" replace />} />
+        <Route path="/login" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

@@ -10,25 +10,31 @@ johnreycejas0608@gmail.com
 
 
 
-Income Overview Graph
-SELECT 
-    t.period,
-    SUM(t.paid_amount) AS amount
-FROM transaction_table t
-JOIN enrollment_profile ep
-    ON t.enrollment_id = ep.enrollment_id
-JOIN academic_year ay
-    ON ep.enrollment_year_code = ay.id
-WHERE 
-    ay.enrollment_open = true
-    AND t.payment_status = 'paid'
-GROUP BY t.period
-ORDER BY 
-    CASE t.period
-        WHEN 'enrollment' THEN 1
-        WHEN 'prelim' THEN 2
-        WHEN 'mid-term' THEN 3
-        WHEN 'pre-final' THEN 4
-        WHEN 'final' THEN 5
-        WHEN 'summer' THEN 6
-    END;
+VISION
+Laguna Science and Technology College envisions itself as a
+growing institution of learning and developing individuals
+technically, technologically and professionally thus becoming useful
+citizens of the nation contributing to its greatness.  
+
+MISSION
+The mission of Laguna Science and Technology College is to
+train young men and women to become productive citizens fully
+equipped with rightful skills and values that the modern industries
+demand. 
+
+
+
+
+
+OBJECTIVES
+. Provide individuals different opportunities to become God-fearing, self-disciplined and skilled.
+
+. Join hands with the government and private entities in meeting the current and future needs of the labor market.
+
+. Intensify linkages in providing employment to the current and future graduates. 
+
+. Get involved and realize the value and importance of becoming entrepreneurs with the aid of technical and vocational courses being offered.
+
+
+
+
