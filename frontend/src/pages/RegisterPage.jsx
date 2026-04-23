@@ -43,7 +43,6 @@ const RegisterPage = () => {
 
     // Validate only after user stops typing (simple debounce)
     if (name !== "gender") {
-      // Don't validate gender on every change
       const timer = setTimeout(() => validateField(name, value), 500);
       return () => clearTimeout(timer);
     }
@@ -54,7 +53,6 @@ const RegisterPage = () => {
     const updatedInputs = { ...inputs, gender: gender };
     setInputs(updatedInputs);
 
-    // Validate gender selection
     const { notValid } = await signUpValidation(updatedInputs);
     setInvalid((prev) => ({ ...prev, gender: notValid.gender || "" }));
   };
@@ -65,11 +63,9 @@ const RegisterPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Client-side validation
       const { notValid, isValid } = await signUpValidation(inputs);
 
       if (!isValid && Object.keys(notValid).length > 0) {
-        // Show validation errors
         setInvalid(notValid);
         const errorMessages = Object.values(notValid).join(", ");
         toast(errorMessages, {
@@ -77,26 +73,23 @@ const RegisterPage = () => {
           type: "error",
           autoClose: 5000,
         });
-        return; // Stop submission
+        return;
       }
 
       const body = inputs;
       const response = await axios.post(`${API_BASE_URL}`, body);
-      // Success toast
       toast(response.data.message, {
         toastId: "validation-success",
         type: "success",
         autoClose: 3000,
       });
 
-      // Navigate to email validation page
       setTimeout(() => {
         navigate("/email-validation", {
           state: { currentEmail: response.data.value },
         });
       }, 2500);
     } catch (error) {
-      // Handle server errors
       const errorMessage =
         error.response?.data?.error?.message ||
         error.response?.data?.message ||
@@ -108,7 +101,6 @@ const RegisterPage = () => {
         autoClose: 4000,
       });
 
-      // Optional: navigate to login if needed
       setTimeout(() => {
         navigate("/login");
       }, 3000);
@@ -116,13 +108,12 @@ const RegisterPage = () => {
       setIsSubmitting(false);
     }
   };
-  // Check if form is valid for enabling submit button
+
   const isFormValid = Object.values(invalid).every((error) => !error);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 md:p-8">
       <div className="w-full max-w-xl">
-        {/* Sign Up Form */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
           <div className="space-y-1 mb-6 text-center">
             <h2 className="text-2xl font-bold text-gray-900">Sign up here</h2>
@@ -144,7 +135,7 @@ const RegisterPage = () => {
                     name="fName"
                     type="text"
                     placeholder="First name"
-                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all ${
+                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
                       invalid.fName ? "border-red-500" : "border-gray-300"
                     }`}
                     required
@@ -167,7 +158,7 @@ const RegisterPage = () => {
                     name="lName"
                     type="text"
                     placeholder="Last name"
-                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all ${
+                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
                       invalid.lName ? "border-red-500" : "border-gray-300"
                     }`}
                     required
@@ -191,7 +182,7 @@ const RegisterPage = () => {
                   value={inputs.birthDate}
                   name="birthDate"
                   type="date"
-                  className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all ${
+                  className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
                     invalid.birthDate ? "border-red-500" : "border-gray-300"
                   }`}
                   required
@@ -215,7 +206,7 @@ const RegisterPage = () => {
                     onClick={() => handleGenderSelect(option)}
                     className={`py-3 text-sm font-medium rounded-lg border transition-all ${
                       inputs.gender === option
-                        ? "border-green-500 bg-green-50 text-green-700"
+                        ? "border-green-600 bg-green-50 text-green-700"
                         : "border-gray-300 text-gray-700 hover:bg-gray-50"
                     }`}
                   >
@@ -242,7 +233,7 @@ const RegisterPage = () => {
                     name="email"
                     type="email"
                     placeholder="Enter email"
-                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all ${
+                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
                       invalid.email ? "border-red-500" : "border-gray-300"
                     }`}
                     required
@@ -265,7 +256,7 @@ const RegisterPage = () => {
                     name="mNumber"
                     type="tel"
                     placeholder="Enter mobile"
-                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all ${
+                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
                       invalid.mNumber ? "border-red-500" : "border-gray-300"
                     }`}
                     required
@@ -290,7 +281,7 @@ const RegisterPage = () => {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
-                  className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all ${
+                  className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
                     invalid.password ? "border-red-500" : "border-gray-300"
                   }`}
                   required
@@ -317,10 +308,10 @@ const RegisterPage = () => {
             <button
               type="submit"
               disabled={isSubmitting || !isFormValid}
-              className={`w-full py-3.5 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-sm transition-all duration-200 ${
+              className={`w-full py-3.5 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 shadow-sm transition-all duration-200 ${
                 isSubmitting || !isFormValid
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-green-600 text-white hover:bg-green-700"
+                  ? "bg-green-400 text-white cursor-not-allowed"
+                  : "bg-green-600 text-white hover:bg-green-900"
               }`}
             >
               {isSubmitting ? "Signing Up..." : "Sign Up"}
@@ -332,7 +323,7 @@ const RegisterPage = () => {
             <NavLink to="/login">
               <p className="text-gray-600">
                 Already have an account?{" "}
-                <span className="text-green-600 hover:underline font-semibold">
+                <span className="text-green-600 hover:underline hover:text-green-900 font-semibold">
                   Sign in
                 </span>
               </p>

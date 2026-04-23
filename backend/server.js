@@ -19,11 +19,16 @@ const port = process.env.PORT || 3000;
 app.set("trust proxy", 1);
 
 // ----- Security Middlewares -----
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  }),
+);
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   }),
 );
@@ -57,6 +62,16 @@ app.use("/admin", AdminRouter);
 app.use("/faculty", FacultyRouter);
 
 app.use("/student", globalLimiter, StudentRouter);
+
+app.use(
+  "/faculty/get-images",
+  express.static("uploads/images", {
+    setHeaders: (res) => {
+      res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  }),
+);
 
 // ----- Start Server -----
 app.listen(port, () => {

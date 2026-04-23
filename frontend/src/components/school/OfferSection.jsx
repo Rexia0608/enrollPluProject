@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
 import {
   GraduationCap,
-  Target,
   BookOpen,
   Briefcase,
   Cpu,
   Wrench,
   Zap,
   Clock,
-  DollarSign,
 } from "lucide-react";
 import Card from "../ui/Card";
+import { useNavigate } from "react-router-dom";
 
 const OfferSection = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,29 +31,16 @@ const OfferSection = () => {
     return Briefcase;
   };
 
-  // Format tuition fee as USD
+  // Format tuition fee as PHP
   const formatTuition = (fee) => {
     const num = parseFloat(fee);
     if (isNaN(num)) return fee;
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("fil-PH", {
+      // or "en-PH"
       style: "currency",
-      currency: "USD",
+      currency: "PHP",
       minimumFractionDigits: 2,
     }).format(num);
-  };
-
-  // Status badge style
-  const getStatusBadge = (status) => {
-    const isActive = status?.toLowerCase() === "active";
-    return (
-      <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {isActive ? "Active" : status}
-      </span>
-    );
   };
 
   useEffect(() => {
@@ -123,7 +110,7 @@ const OfferSection = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
             What We Offer
           </h2>
           <p className="text-gray-600 text-lg">
@@ -163,19 +150,18 @@ const OfferSection = () => {
                       <span>{course.duration_type}</span>
                     </div>
                     <div className="flex items-center justify-center gap-1">
-                      <DollarSign className="w-4 h-4" />
                       <span className="font-medium">
                         {formatTuition(course.tuition_fee)}
                       </span>
-                    </div>
-                    <div className="flex justify-center">
-                      {getStatusBadge(course.course_status)}
                     </div>
                   </div>
 
                   {/* Action Button */}
                   <div className="mt-auto pt-2">
-                    <button className="w-full py-2 px-4 bg-white border border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-600 hover:text-white transition-colors">
+                    <button
+                      onClick={() => navigate("/instruction")}
+                      className="w-full py-2 px-4 bg-white border border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-600 hover:text-white transition-colors"
+                    >
                       Learn More →
                     </button>
                   </div>

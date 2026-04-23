@@ -3,7 +3,6 @@ import fetchdocument from "../middleware/fetchdocument.js";
 import deleteDocument from "../middleware/deleteDocument.js";
 import deleteVerifiedPayment from "../middleware/deleteVerifiedPayment.js";
 import fetchdocumentPayment from "../middleware/fetchdocumentPayment.js";
-import photofinder from "../middleware/photofinder.js";
 
 import {
   getValidateReceipt,
@@ -29,6 +28,5 @@ router.patch("/handle-excuse-letter", postPromissoryFile);
 
 //++++++++++++++++++ TEST here +++++++++++++++++++//
 router.get("/kpiCards", getKpiCards);
-router.get("/get-images/:file", photofinder);
 
 export default router;

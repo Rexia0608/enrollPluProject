@@ -1,9 +1,11 @@
 import React from "react";
 import { MapPin, ArrowRight } from "lucide-react";
 import PrimaryButton from "../ui/PrimaryButton";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <section
       id="home"
@@ -36,12 +38,13 @@ const HeroSection = () => {
 
             {/* Title */}
             <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-5">
-              Laguna Science and{" "}
-              <span className="text-blue-400">Technology College</span>
+              Laguna{" "}
+              <span className="text-green-500">Technology Science and</span>{" "}
+              College
             </h1>
 
             {/* Description */}
-            <p className="text-white/80 text-lg mb-6">
+            <p className="text-white text-lg mb-6">
               Empowering students through technical excellence, innovation, and
               career-ready skills for a competitive future.
             </p>
@@ -52,6 +55,7 @@ const HeroSection = () => {
                 className="bg-green-500 hover:bg-green-600"
                 size="lg"
                 icon={ArrowRight}
+                onClick={() => navigate("/login")}
               >
                 Enroll Now
               </PrimaryButton>

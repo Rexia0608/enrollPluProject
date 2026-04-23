@@ -13,6 +13,7 @@ import EmailValidationPage from "../pages/EmailValidationPage";
 import PasswordResetPage from "../pages/PasswordResetPage";
 import PasswordResetExpiredPage from "../pages/PassworResetExpiredPage";
 import LSTCLandingPage from "../pages/LSTCLandingPage";
+import InstructionPage from "../pages/InstructionPage";
 
 import ProtectedRoute from "../routes/ProtectedRoutes";
 import PublicRoute from "../routes/PublicRoute";
@@ -28,6 +29,7 @@ const Views = () => {
         {/* PUBLIC ROUTES - These should bypass MaintenanceGuard */}
         <Route element={<PublicRoute />}>
           <Route path="/" element={<LSTCLandingPage />} />
+          <Route path="/instruction" element={<InstructionPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>

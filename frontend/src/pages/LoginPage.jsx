@@ -101,7 +101,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Side - Welcome Content (Hidden on mobile, shown on larger screens) */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-1/2 bg-linear-to-br from-blue-600 to-blue-800 p-8 md:p-12 flex-col justify-center">
+      <div className="hidden lg:flex lg:w-1/2 xl:w-1/2 bg-green-900 p-8 md:p-12 flex-col justify-center">
         <div className="max-w-lg mx-auto text-white space-y-8">
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
@@ -110,13 +110,13 @@ const LoginPage = () => {
               </div>
               <div>
                 <h1 className="text-4xl font-bold">EnrollPlus</h1>
-                <p className="text-blue-200 font-medium">
+                <p className="text-green-200 font-medium">
                   School Enrollment System
                 </p>
               </div>
             </div>
 
-            <p className="text-xl font-light text-blue-100 leading-relaxed">
+            <p className="text-xl font-light text-green-100 leading-relaxed">
               Streamline your school's enrollment process with our comprehensive
               management system designed for administrators, faculty, and
               students.
@@ -147,31 +147,6 @@ const LoginPage = () => {
                 </li>
               </ul>
             </div>
-
-            <div className="pt-6 border-t border-blue-500/30">
-              <h3 className="text-lg font-semibold mb-3">Demo Access</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                  <div className="font-medium">Admin</div>
-                  <div className="text-sm text-blue-200">admin@school.edu</div>
-                </div>
-                <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                  <div className="font-medium">Faculty</div>
-                  <div className="text-sm text-blue-200">
-                    faculty@school.edu
-                  </div>
-                </div>
-                <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                  <div className="font-medium">Student</div>
-                  <div className="text-sm text-blue-200">
-                    student@school.edu
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-blue-200 mt-3">
-                Password: <span className="font-mono">demo123</span>
-              </p>
-            </div>
           </div>
         </div>
       </div>
@@ -182,12 +157,12 @@ const LoginPage = () => {
           {/* Mobile Logo (Only shows on mobile) */}
           <div className="lg:hidden text-center mb-6">
             <div className="flex items-center justify-center space-x-3">
-              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
                 <Building className="w-7 h-7 text-white" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">EnrollPlus</h1>
-                <p className="text-blue-600 font-medium text-sm">
+                <p className="text-green-600 font-medium text-sm">
                   School Enrollment System
                 </p>
               </div>
@@ -204,7 +179,7 @@ const LoginPage = () => {
             <form className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-900">
                   Email Address
                 </label>
                 <div className="relative">
@@ -214,7 +189,7 @@ const LoginPage = () => {
                     type="email"
                     onChange={(e) => onChange(e)}
                     placeholder="Enter your email"
-                    className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all border-gray-300"
+                    className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all border-gray-300"
                     required
                     disabled={isLoading}
                   />
@@ -229,7 +204,7 @@ const LoginPage = () => {
               {/* Password Field */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-900">
                     Password
                   </label>
                 </div>
@@ -241,7 +216,7 @@ const LoginPage = () => {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all border-gray-300"
+                    className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all border-gray-300"
                     required
                     disabled={isLoading}
                   />
@@ -269,10 +244,10 @@ const LoginPage = () => {
               <button
                 onClick={onSubmit}
                 disabled={isLoading}
-                className={`w-full py-3.5 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm transition-all duration-200 ${
+                className={`w-full py-3.5 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-sm transition-all duration-200 ${
                   isLoading
-                    ? "bg-blue-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                    ? "bg-green-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-900 text-white"
                 }`}
               >
                 {isLoading ? (
@@ -311,16 +286,16 @@ const LoginPage = () => {
                 Quick Demo
               </h3>
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                <div className="flex items-center justify-between p-2 bg-green-50 rounded">
                   <span className="text-sm">Admin</span>
-                  <span className="text-xs font-mono text-blue-600">
-                    admin@school.edu
+                  <span className="text-xs font-mono text-green-600">
+                    johnDoeAdmin12@gmail.com
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-2 bg-green-50 rounded">
                   <span className="text-sm">Faculty</span>
                   <span className="text-xs font-mono text-green-600">
-                    faculty@school.edu
+                    juanDelaCruzFaculty12@gmail.com
                   </span>
                 </div>
               </div>
@@ -329,7 +304,7 @@ const LoginPage = () => {
             {/* Help Text */}
             <NavLink to="/register">
               <div className="mt-6 text-center">
-                <p className="text-sm text-blue-600 hover:underline hover:text-blue-700 font-medium">
+                <p className="text-sm text-green-600 hover:underline hover:text-green-900 font-medium">
                   Create an Accout
                 </p>
               </div>
@@ -337,7 +312,7 @@ const LoginPage = () => {
 
             <NavLink to="/***">
               <div className="mt-6 text-center">
-                <p className="text-sm text-blue-600 hover:underline hover:text-blue-700 font-medium">
+                <p className="text-sm text-green-600 hover:underline hover:text-green-900 font-medium">
                   Forgot password?
                 </p>
               </div>

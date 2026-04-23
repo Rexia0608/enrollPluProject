@@ -12,6 +12,7 @@ import {
   CreditCard,
   Clock,
   HelpCircle,
+  Home,
 } from "lucide-react";
 
 function MobileNav({ role }) {

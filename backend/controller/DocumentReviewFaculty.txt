@@ -9,31 +9,9 @@ STUDENT
 johnreycejas0608@gmail.com
 
 
-
-VISION
-Laguna Science and Technology College envisions itself as a
-growing institution of learning and developing individuals
-technically, technologically and professionally thus becoming useful
-citizens of the nation contributing to its greatness.  
-
-MISSION
-The mission of Laguna Science and Technology College is to
-train young men and women to become productive citizens fully
-equipped with rightful skills and values that the modern industries
-demand. 
-
-
-
-
-
-OBJECTIVES
-. Provide individuals different opportunities to become God-fearing, self-disciplined and skilled.
-
-. Join hands with the government and private entities in meeting the current and future needs of the labor market.
-
-. Intensify linkages in providing employment to the current and future graduates. 
-
-. Get involved and realize the value and importance of becoming entrepreneurs with the aid of technical and vocational courses being offered.
+import { useNavigate } from "react-router-dom";
+  const navigate = useNavigate();
+  onClick={() => navigate("/login")}
 
 
 

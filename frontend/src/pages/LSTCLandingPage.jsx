@@ -1,7 +1,5 @@
 import React from "react";
 import {
-  Target,
-  BookOpen,
   Briefcase,
   HeartHandshake,
   Sparkles,
@@ -16,8 +14,11 @@ import Navbar from "../components/school/Navbar";
 import HeroSection from "../components/school/heroSection";
 import OfferSection from "../components/school/offerSection";
 import Footer from "../components/school/footer";
+import Features from "../components/school/Features";
+import { useNavigate } from "react-router-dom";
 
 const LSTCLandingPage = () => {
+  const navigate = useNavigate();
   const objectives = [
     {
       icon: HeartHandshake,
@@ -80,54 +81,12 @@ const LSTCLandingPage = () => {
       <HeroSection />
 
       {/* Vision & Mission */}
-      <section id="vision" className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="h-full hover:shadow-lg transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="bg-blue-100 rounded-xl p-3">
-                  <Target className="w-6 h-6 text-green-500" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                    Vision
-                  </h2>
-                  <p className="text-gray-600 leading-relaxed">
-                    Laguna Science and Technology College envisions itself as a
-                    growing institution of learning and developing individuals
-                    technically, technologically, and professionally—thus
-                    becoming useful citizens of the nation contributing to its
-                    greatness.
-                  </p>
-                </div>
-              </div>
-            </Card>
-            <Card className="h-full hover:shadow-lg transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="bg-purple-100 rounded-xl p-3">
-                  <BookOpen className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                    Mission
-                  </h2>
-                  <p className="text-gray-600 leading-relaxed">
-                    To train young men and women to become productive citizens
-                    fully equipped with rightful skills and values that the
-                    modern industries demand.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
+      <Features />
       {/* Objectives */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
               Our Objectives
             </h2>
             <p className="text-gray-600">
@@ -162,7 +121,7 @@ const LSTCLandingPage = () => {
       <section id="why" className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
               Why Choose LSTC?
             </h2>
             <p className="text-gray-600">
@@ -202,6 +161,7 @@ const LSTCLandingPage = () => {
             <PrimaryButton
               size="lg"
               className="bg-green-500 text-shadow-white hover:bg-green-300"
+              onClick={() => navigate("/login")}
             >
               Enroll Now
             </PrimaryButton>

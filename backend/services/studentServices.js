@@ -166,7 +166,7 @@ const paymentUpdateService = (data) => {
     let query;
     let value;
     let paid;
-    console.log(data);
+
     if (promiseNote.promiseStatus) {
       paid = true;
       query = `UPDATE transaction_table

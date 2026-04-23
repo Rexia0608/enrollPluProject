@@ -1,7 +1,7 @@
-import PrimaryButton from "../ui/PrimaryButton";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const Navbar = () => {
+const BrandedNav = () => {
   const navigate = useNavigate();
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
@@ -22,40 +22,14 @@ const Navbar = () => {
               </p>
             </div>
           </div>
-          <div className="hidden md:flex items-center space-x-8">
-            <a
-              href="#home"
-              className="text-gray-700 hover:text-blue-600 transition"
-            >
-              Home
-            </a>
-            <a
-              href="#vision"
-              className="text-gray-700 hover:text-blue-600 transition"
-            >
-              About
-            </a>
-            <a
-              href="#programs"
-              className="text-gray-700 hover:text-blue-600 transition"
-            >
-              Programs
-            </a>
-            <a
-              href="#why"
-              className="text-gray-700 hover:text-blue-600 transition"
-            >
-              Why LSTC
-            </a>
-          </div>
           <div className="flex items-center space-x-3">
-            <PrimaryButton
+            {/* Replaced PrimaryButton with a standard button */}
+            <button
               onClick={() => navigate("/login")}
-              className="bg-green-500"
-              size="md"
+              className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
             >
               Enroll Now
-            </PrimaryButton>
+            </button>
           </div>
         </div>
       </div>
@@ -63,4 +37,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default BrandedNav;
