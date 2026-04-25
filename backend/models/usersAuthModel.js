@@ -49,7 +49,7 @@ const registerUserModel = async (passData) => {
 const userAuthSetPasswordModel = async (id, passData) => {
   try {
     const { query, values } = await userAuthSetPasswordServices(id, passData);
-    console.log(query, values);
+
     const updatedData = await db.query(query, values);
 
     await userAuthEmailSenderServices(

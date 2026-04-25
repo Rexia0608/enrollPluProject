@@ -11,7 +11,7 @@ const paymentReminderModel = async () => {
     const automationSwitch = await db.query(queries[0]);
     let dueDate = new Date(automationSwitch.rows[0].remarks.date);
     let now = new Date();
-
+    console.log(automationSwitch.rows.length > 0 && now >= dueDate);
     if (automationSwitch.rows.length > 0 && now >= dueDate) {
       await reminderServices(automationSwitch.rows[0]);
       console.log(

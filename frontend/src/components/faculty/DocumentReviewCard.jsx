@@ -57,13 +57,13 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
           id: "transcript",
           name: "Transcript of Records",
           category: "Academic",
-          fileKey: null,
+          fileKey: "transcript",
         },
         {
           id: "honorableDismissal",
           name: "Honorable Dismissal",
           category: "Academic",
-          fileKey: null,
+          fileKey: "honorableDismissal",
         },
       ];
     }
@@ -108,7 +108,8 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
 
     setIsLoading(true);
     try {
-      const studentType = student.type === "transferee" ? "transferee" : "new";
+      const studentType =
+        student.details.studentType === "transferee" ? "transferee" : "new";
       const requiredDocs = getRequiredDocuments(studentType);
 
       // Create document objects without blob URLs first
@@ -176,7 +177,6 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
     if (blobUrl) {
       window.open(blobUrl, "_blank");
     } else if (doc.downloadUrl) {
-      // Fallback to original URL (but likely will fail auth)
       window.open(doc.downloadUrl, "_blank");
     } else {
       toast.warning(
@@ -308,8 +308,11 @@ function DocumentReviewCard({ student, backpage, onReviewComplete }) {
   };
 
   const currentStudent = getStudentData();
+
   const studentTypeLabel =
-    currentStudent.type === "transferee" ? "Transferee" : "New Student";
+    currentStudent.details.studentType === "transferee"
+      ? "Transferee"
+      : "New Student";
 
   if (isLoading) {
     return (

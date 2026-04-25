@@ -181,6 +181,7 @@ function UserManagement() {
         const transformedUsers = items.map((user) => ({
           id: user.id,
           name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+          email: user.email, // ✅ add this line
           first_name: user.first_name,
           last_name: user.last_name,
           role: user.role,
@@ -250,14 +251,20 @@ function UserManagement() {
     });
   };
 
-  const filteredUsers = getSortedUsers().filter(
-    (user) =>
-      (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.displayId.toLowerCase().includes(searchTerm.toLowerCase())) &&
+  const filteredUsers = getSortedUsers().filter((user) => {
+    const nameMatch =
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false;
+    const emailMatch =
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false;
+    const idMatch =
+      user.displayId?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false;
+
+    return (
+      (nameMatch || emailMatch || idMatch) &&
       (statusFilter === "all" || user.status === statusFilter) &&
-      (roleFilter === "all" || user.role === roleFilter),
-  );
+      (roleFilter === "all" || user.role === roleFilter)
+    );
+  });
 
   const handleResetPassword = async (id) => {
     if (

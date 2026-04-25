@@ -29,11 +29,31 @@ const schema = Joi.object({
     .iso()
     .required()
     .custom((value, helpers) => {
-      const currentYear = new Date().getFullYear();
-      const birthYear = new Date(value).getFullYear();
+      const today = new Date();
+      const birthDate = new Date(value);
 
+      const currentYear = today.getFullYear();
+      const birthYear = birthDate.getFullYear();
+
+      // Prevent current year birth date
       if (birthYear === currentYear) {
         return helpers.error("date.thisYear");
+      }
+
+      // Calculate age
+      let age = currentYear - birthYear;
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+      ) {
+        age--;
+      }
+
+      // Minimum age requirement: 12 years old
+      if (age < 12) {
+        return helpers.error("date.minAge");
       }
 
       return value;
@@ -41,6 +61,7 @@ const schema = Joi.object({
     .messages({
       "date.base": "Birth date is required",
       "date.thisYear": "Birth date must not be in the current year",
+      "date.minAge": "Student must be at least 12 years old",
     }),
 
   gender: Joi.string().valid("Male", "Female").required().messages({

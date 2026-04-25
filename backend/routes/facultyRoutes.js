@@ -21,12 +21,12 @@ router.get("/queue-proof-of-payment-review", getReviewQueuePayment);
 router.get("/review-proof-of-payment/:filename", fetchdocumentPayment);
 router.get("/review-queue", getReviewQueue);
 router.get("/review-document/:filename", fetchdocument);
+router.get("/kpiCards", getKpiCards);
 router.patch("/verified-document", deleteDocument, postVerifiedDocument);
 router.patch("/verified-payment", deleteVerifiedPayment, postVerifiedPayment);
 router.patch("/handle-excuse-letter", postPromissoryFile);
 //++++++++++++++++++ finalized here +++++++++++++++++++//
 
 //++++++++++++++++++ TEST here +++++++++++++++++++//
-router.get("/kpiCards", getKpiCards);
 
 export default router;

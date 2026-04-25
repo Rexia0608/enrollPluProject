@@ -7,6 +7,7 @@ import { NavLink } from "react-router-dom";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { motion } from "framer-motion"; // ← animation library
 
 // Constants
 const API_BASE_URL = "http://localhost:3000/enrollplus/login";
@@ -18,9 +19,8 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
-  const [isLoading, setIsLoading] = useState(false); // New state for button loading/disabled
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 🔐 AUTH CONTEXT
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -33,40 +33,21 @@ const LoginPage = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-
-    // Prevent multiple submissions
     if (isLoading) return;
-
     const { notValid } = await signInValidation(inputs);
     setInvalid(notValid);
-
     if (Object.keys(notValid).length !== 0) {
       toast(Object.values(notValid).join(", "), { type: "error" });
       return;
     }
-
     try {
-      // Disable button
       setIsLoading(true);
-
       const response = await axios.post(API_BASE_URL, inputs);
-
-      // Correctly destructure from response.data.response
       const { user, token } = response.data.response;
-
-      // Save to AuthContext
-      login({
-        ...user,
-        token,
-      });
-
-      // Optional persistence
+      login({ ...user, token });
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-
       toast("Login successful!", { type: "success" });
-
-      // Redirect by role after toast
       setTimeout(() => {
         if (user.role === "admin") navigate("/admin/dashboard");
         else if (user.role === "faculty") navigate("/faculty/dashboard");
@@ -79,9 +60,7 @@ const LoginPage = () => {
         });
         setTimeout(() => {
           navigate("/email-validation", {
-            state: {
-              currentEmail: inputs.email,
-            },
+            state: { currentEmail: inputs.email },
           });
         }, 1500);
       } else {
@@ -98,16 +77,61 @@ const LoginPage = () => {
     }
   };
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 120 },
+    },
+  };
+
+  const leftVariants = {
+    hidden: { x: -50, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  };
+
+  const rightVariants = {
+    hidden: { x: 50, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Left Side - Welcome Content (Hidden on mobile, shown on larger screens) */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-1/2 bg-green-900 p-8 md:p-12 flex-col justify-center">
+    <div className="min-h-screen bg-gray-50 flex overflow-hidden">
+      {/* Left Side - Animated */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={leftVariants}
+        className="hidden lg:flex lg:w-1/2 xl:w-1/2 bg-green-900 p-8 md:p-12 flex-col justify-center"
+      >
         <div className="max-w-lg mx-auto text-white space-y-8">
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+              <motion.div
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm"
+              >
                 <Building className="w-10 h-10" />
-              </div>
+              </motion.div>
               <div>
                 <h1 className="text-4xl font-bold">EnrollPlus</h1>
                 <p className="text-green-200 font-medium">
@@ -116,46 +140,61 @@ const LoginPage = () => {
               </div>
             </div>
 
-            <p className="text-xl font-light text-green-100 leading-relaxed">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-xl font-light text-green-100 leading-relaxed"
+            >
               Streamline your school's enrollment process with our comprehensive
               management system designed for administrators, faculty, and
               students.
-            </p>
+            </motion.p>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Key Features</h2>
-              <ul className="space-y-3">
-                <li className="flex items-center space-x-3">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            <h2 className="text-2xl font-bold">Key Features</h2>
+            <ul className="space-y-3">
+              {[
+                "Role-based dashboards for admin, faculty, and students",
+                "Real-time enrollment status updates via email",
+                "Document upload and review system",
+                "Payment QR validation and tracking",
+              ].map((feature, idx) => (
+                <motion.li
+                  key={idx}
+                  variants={itemVariants}
+                  className="flex items-center space-x-3"
+                >
                   <div className="w-2 h-2 bg-white rounded-full"></div>
-                  <span>
-                    Role-based dashboards for admin, faculty, and students
-                  </span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                  <span>Document upload and review system</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                  <span>Payment validation and tracking</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                  <span>Real-time enrollment status updates</span>
-                </li>
-              </ul>
-            </div>
-          </div>
+                  <span>{feature}</span>
+                </motion.li>
+              ))}
+            </ul>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Right Side - Login Form (Always visible, takes full width on mobile) */}
-      <div className="w-full lg:w-1/2 xl:w-1/2 flex items-center justify-center p-4 md:p-8">
+      {/* Right Side - Login Form (Animated) */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={rightVariants}
+        className="w-full lg:w-1/2 xl:w-1/2 flex items-center justify-center p-4 md:p-8"
+      >
         <div className="w-full max-w-md space-y-8">
-          {/* Mobile Logo (Only shows on mobile) */}
-          <div className="lg:hidden text-center mb-6">
+          {/* Mobile Logo (with fade-in) */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="lg:hidden text-center mb-6"
+          >
             <div className="flex items-center justify-center space-x-3">
               <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
                 <Building className="w-7 h-7 text-white" />
@@ -167,18 +206,23 @@ const LoginPage = () => {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Login Form */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
-            <div className="space-y-1 mb-6">
+          {/* Form Card with Staggered Children */}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8"
+          >
+            <motion.div variants={itemVariants} className="space-y-1 mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
               <p className="text-gray-600">Please sign in to your account</p>
-            </div>
+            </motion.div>
 
             <form className="space-y-6">
               {/* Email Field */}
-              <div className="space-y-2">
+              <motion.div variants={itemVariants} className="space-y-2">
                 <label className="block text-sm font-medium text-gray-900">
                   Email Address
                 </label>
@@ -189,26 +233,29 @@ const LoginPage = () => {
                     type="email"
                     onChange={(e) => onChange(e)}
                     placeholder="Enter your email"
-                    className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all border-gray-300"
+                    className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all duration-200 border-gray-300"
                     required
                     disabled={isLoading}
                   />
                 </div>
-                <p className="text-xs text-gray-500">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: invalid.email ? 1 : 0 }}
+                  className="text-xs text-gray-500"
+                >
                   <span className="font-mono text-red-600">
                     {invalid.email}
                   </span>
-                </p>
-              </div>
+                </motion.p>
+              </motion.div>
 
               {/* Password Field */}
-              <div className="space-y-2">
+              <motion.div variants={itemVariants} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-sm font-medium text-gray-900">
                     Password
                   </label>
                 </div>
-
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
@@ -216,7 +263,7 @@ const LoginPage = () => {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all border-gray-300"
+                    className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 border-gray-300"
                     required
                     disabled={isLoading}
                   />
@@ -227,21 +274,28 @@ const LoginPage = () => {
                     disabled={isLoading}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
                     )}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: invalid.password ? 1 : 0 }}
+                  className="text-xs text-gray-500"
+                >
                   <span className="font-mono text-red-600">
                     {invalid.password}
                   </span>
-                </p>
-              </div>
+                </motion.p>
+              </motion.div>
 
               {/* Submit Button */}
-              <button
+              <motion.button
+                variants={itemVariants}
+                whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                whileTap={{ scale: isLoading ? 1 : 0.98 }}
                 onClick={onSubmit}
                 disabled={isLoading}
                 className={`w-full py-3.5 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-sm transition-all duration-200 ${
@@ -277,11 +331,14 @@ const LoginPage = () => {
                 ) : (
                   "Sign In"
                 )}
-              </button>
+              </motion.button>
             </form>
 
-            {/* Mobile Demo Info (Only shows on mobile) */}
-            <div className="lg:hidden mt-6 pt-6 border-t border-gray-200">
+            {/* Mobile Demo Info (Animated) */}
+            <motion.div
+              variants={itemVariants}
+              className="lg:hidden mt-6 pt-6 border-t border-gray-200"
+            >
               <h3 className="text-sm font-medium text-gray-900 mb-3">
                 Quick Demo
               </h3>
@@ -299,36 +356,45 @@ const LoginPage = () => {
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Help Text */}
-            <NavLink to="/register">
-              <div className="mt-6 text-center">
-                <p className="text-sm text-green-600 hover:underline hover:text-green-900 font-medium">
-                  Create an Accout
-                </p>
-              </div>
-            </NavLink>
+            {/* Help Links with hover animations */}
+            <motion.div variants={itemVariants}>
+              <NavLink to="/register">
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-green-600 hover:underline hover:text-green-900 font-medium transition-all duration-200">
+                    Create an Account
+                  </p>
+                </div>
+              </NavLink>
+            </motion.div>
 
-            <NavLink to="/***">
-              <div className="mt-6 text-center">
-                <p className="text-sm text-green-600 hover:underline hover:text-green-900 font-medium">
-                  Forgot password?
-                </p>
-              </div>
-            </NavLink>
-          </div>
+            <motion.div variants={itemVariants}>
+              <NavLink to="/***">
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-green-600 hover:underline hover:text-green-900 font-medium transition-all duration-200">
+                    Forgot password?
+                  </p>
+                </div>
+              </NavLink>
+            </motion.div>
+          </motion.div>
 
           {/* Footer Note */}
-          <div className="text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="text-center"
+          >
             <p className="text-xs text-gray-400">
               © {new Date().getFullYear()} EnrollPlus • Developed by: John Rey
               C.
             </p>
-          </div>
+          </motion.div>
         </div>
         <ToastContainer />
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -55,9 +55,9 @@ const HeroSection = () => {
                 className="bg-green-500 hover:bg-green-600"
                 size="lg"
                 icon={ArrowRight}
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/register")}
               >
-                Enroll Now
+                Register Now
               </PrimaryButton>
             </div>
           </motion.div>

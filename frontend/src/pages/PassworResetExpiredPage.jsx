@@ -51,7 +51,7 @@ function PasswordResetExpiredPage() {
         </p>
         <button
           onClick={redirectToGmail}
-          className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="mt-6 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
         >
           Open Gmail
         </button>

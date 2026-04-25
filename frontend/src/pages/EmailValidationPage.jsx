@@ -354,8 +354,8 @@ function EmailValidationPage() {
                     aria-label={`Digit ${index + 1} of verification code`}
                     className={`
                       w-14 h-14 text-center text-xl font-semibold
-                      border border-blue-300 rounded-lg
-                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                      border border-green-500 rounded-lg
+                      focus:ring-2 focus:ring-green-600 focus:border-green-700
                       outline-none transition-colors
                       disabled:opacity-50 disabled:cursor-not-allowed
                       ${isSubmitting ? "opacity-50" : ""}
@@ -398,8 +398,8 @@ function EmailValidationPage() {
                   w-full py-3 rounded-lg font-semibold transition-colors
                   ${
                     isSubmitting || submitDisabledRef.current
-                      ? "bg-blue-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
+                      ? "bg-green-600 cursor-not-allowed"
+                      : "bg-green-600 hoverbg-green-900"
                   }
                   text-white
                 `}

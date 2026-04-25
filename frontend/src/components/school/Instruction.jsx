@@ -108,13 +108,19 @@ const Instruction = () => {
                       <ol className="list-decimal list-inside space-y-2 pl-2">
                         <li>
                           <span className="font-semibold">
-                            Complete registration
+                            <a href="/register">Complete registration</a>
                           </span>{" "}
-                          - Create your account with your personal details.
+                          - Create your account with your personal details. you
+                          can click{" "}
+                          <a className="text-blue-600" href="/register">
+                            here!
+                          </a>
                         </li>
                         <li>
-                          <span className="font-semibold">Log in</span> to your
-                          new account using your credentials.
+                          <span className="font-semibold">
+                            <a href="/register">Log in</a>
+                          </span>{" "}
+                          to your new account using your credentials.
                         </li>
                         <li>
                           <span className="font-semibold">

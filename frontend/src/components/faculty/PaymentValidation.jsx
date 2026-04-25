@@ -133,7 +133,7 @@ function PaymentValidation() {
     }
 
     if (!selectedPayment?.proofUrl) return;
-    if (selectedPayment.raw?.remarks?.promiseStatus) return; // Skip for promise notes
+    if (selectedPayment.raw?.remarks?.promiseStatus) return;
 
     const fetchImage = async () => {
       try {

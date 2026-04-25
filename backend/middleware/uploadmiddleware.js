@@ -18,6 +18,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const { studentId } = req.body;
+
     const fieldName = file.fieldname;
 
     // Get file extension

@@ -5,6 +5,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { motion } from "framer-motion"; // ← animation library
 
 // Constants
 const API_BASE_URL = "http://localhost:3000/enrollplus/register";
@@ -111,19 +112,57 @@ const RegisterPage = () => {
 
   const isFormValid = Object.values(invalid).every((error) => !error);
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 15, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 150 },
+    },
+  };
+
+  const errorVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: { opacity: 1, height: "auto", transition: { duration: 0.2 } },
+    exit: { opacity: 0, height: 0, transition: { duration: 0.2 } },
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-xl">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
-          <div className="space-y-1 mb-6 text-center">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="w-full max-w-xl"
+      >
+        {/* Main Card */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8"
+        >
+          {/* Header */}
+          <motion.div
+            variants={itemVariants}
+            className="space-y-1 mb-6 text-center"
+          >
             <h2 className="text-2xl font-bold text-gray-900">Sign up here</h2>
             <p className="text-gray-600">Easy and efficient.</p>
-          </div>
+          </motion.div>
 
           <form onSubmit={onSubmit} className="space-y-6">
             {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <motion.div variants={itemVariants} className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   First name
                 </label>
@@ -135,18 +174,26 @@ const RegisterPage = () => {
                     name="fName"
                     type="text"
                     placeholder="First name"
-                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
+                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all duration-200 ${
                       invalid.fName ? "border-red-500" : "border-gray-300"
                     }`}
                     required
                   />
                 </div>
                 {invalid.fName && (
-                  <p className="text-sm text-red-500">{invalid.fName}</p>
+                  <motion.p
+                    variants={errorVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="text-sm text-red-500"
+                  >
+                    {invalid.fName}
+                  </motion.p>
                 )}
-              </div>
+              </motion.div>
 
-              <div className="space-y-2">
+              <motion.div variants={itemVariants} className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Last name
                 </label>
@@ -158,20 +205,28 @@ const RegisterPage = () => {
                     name="lName"
                     type="text"
                     placeholder="Last name"
-                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
+                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all duration-200 ${
                       invalid.lName ? "border-red-500" : "border-gray-300"
                     }`}
                     required
                   />
                 </div>
                 {invalid.lName && (
-                  <p className="text-sm text-red-500">{invalid.lName}</p>
+                  <motion.p
+                    variants={errorVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="text-sm text-red-500"
+                  >
+                    {invalid.lName}
+                  </motion.p>
                 )}
-              </div>
+              </motion.div>
             </div>
 
             {/* Birthday */}
-            <div className="space-y-2">
+            <motion.div variants={itemVariants} className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Birthday
               </label>
@@ -182,28 +237,38 @@ const RegisterPage = () => {
                   value={inputs.birthDate}
                   name="birthDate"
                   type="date"
-                  className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
+                  className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all duration-200 ${
                     invalid.birthDate ? "border-red-500" : "border-gray-300"
                   }`}
                   required
                 />
               </div>
               {invalid.birthDate && (
-                <p className="text-sm text-red-500">{invalid.birthDate}</p>
+                <motion.p
+                  variants={errorVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="text-sm text-red-500"
+                >
+                  {invalid.birthDate}
+                </motion.p>
               )}
-            </div>
+            </motion.div>
 
             {/* Gender */}
-            <div className="space-y-2">
+            <motion.div variants={itemVariants} className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Gender
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {["Female", "Male"].map((option) => (
-                  <button
+                  <motion.button
                     key={option}
                     type="button"
                     onClick={() => handleGenderSelect(option)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     className={`py-3 text-sm font-medium rounded-lg border transition-all ${
                       inputs.gender === option
                         ? "border-green-600 bg-green-50 text-green-700"
@@ -211,17 +276,25 @@ const RegisterPage = () => {
                     }`}
                   >
                     {option}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
               {invalid.gender && (
-                <p className="text-sm text-red-500">{invalid.gender}</p>
+                <motion.p
+                  variants={errorVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="text-sm text-red-500"
+                >
+                  {invalid.gender}
+                </motion.p>
               )}
-            </div>
+            </motion.div>
 
             {/* Email and Mobile */}
             <div className="space-y-4">
-              <div className="space-y-2">
+              <motion.div variants={itemVariants} className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Email
                 </label>
@@ -233,18 +306,26 @@ const RegisterPage = () => {
                     name="email"
                     type="email"
                     placeholder="Enter email"
-                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
+                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all duration-200 ${
                       invalid.email ? "border-red-500" : "border-gray-300"
                     }`}
                     required
                   />
                 </div>
                 {invalid.email && (
-                  <p className="text-sm text-red-500">{invalid.email}</p>
+                  <motion.p
+                    variants={errorVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="text-sm text-red-500"
+                  >
+                    {invalid.email}
+                  </motion.p>
                 )}
-              </div>
+              </motion.div>
 
-              <div className="space-y-2">
+              <motion.div variants={itemVariants} className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Mobile number
                 </label>
@@ -256,20 +337,28 @@ const RegisterPage = () => {
                     name="mNumber"
                     type="tel"
                     placeholder="Enter mobile"
-                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
+                    className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all duration-200 ${
                       invalid.mNumber ? "border-red-500" : "border-gray-300"
                     }`}
                     required
                   />
                 </div>
                 {invalid.mNumber && (
-                  <p className="text-sm text-red-500">{invalid.mNumber}</p>
+                  <motion.p
+                    variants={errorVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="text-sm text-red-500"
+                  >
+                    {invalid.mNumber}
+                  </motion.p>
                 )}
-              </div>
+              </motion.div>
             </div>
 
             {/* Password */}
-            <div className="space-y-2">
+            <motion.div variants={itemVariants} className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Password
               </label>
@@ -281,7 +370,7 @@ const RegisterPage = () => {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
-                  className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all ${
+                  className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-900 outline-none transition-all duration-200 ${
                     invalid.password ? "border-red-500" : "border-gray-300"
                   }`}
                   required
@@ -293,19 +382,30 @@ const RegisterPage = () => {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
                   )}
                 </button>
               </div>
               {invalid.password && (
-                <p className="text-sm text-red-500">{invalid.password}</p>
+                <motion.p
+                  variants={errorVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="text-sm text-red-500"
+                >
+                  {invalid.password}
+                </motion.p>
               )}
-            </div>
+            </motion.div>
 
             {/* Sign Up Button */}
-            <button
+            <motion.button
+              variants={itemVariants}
+              whileHover={{ scale: isSubmitting || !isFormValid ? 1 : 1.02 }}
+              whileTap={{ scale: isSubmitting || !isFormValid ? 1 : 0.98 }}
               type="submit"
               disabled={isSubmitting || !isFormValid}
               className={`w-full py-3.5 px-4 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 shadow-sm transition-all duration-200 ${
@@ -315,30 +415,34 @@ const RegisterPage = () => {
               }`}
             >
               {isSubmitting ? "Signing Up..." : "Sign Up"}
-            </button>
+            </motion.button>
           </form>
 
           {/* Already have an account */}
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <motion.div
+            variants={itemVariants}
+            className="mt-6 pt-6 border-t border-gray-200 text-center"
+          >
             <NavLink to="/login">
               <p className="text-gray-600">
                 Already have an account?{" "}
-                <span className="text-green-600 hover:underline hover:text-green-900 font-semibold">
+                <span className="text-green-600 hover:underline hover:text-green-900 font-semibold transition-colors">
                   Sign in
                 </span>
               </p>
             </NavLink>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Footer Note */}
-        <div className="mt-8 text-center">
+        <motion.div variants={itemVariants} className="mt-8 text-center">
           <p className="text-xs text-gray-400">
             © {new Date().getFullYear()} EnrollPlus • Developed by: John Rey C.
           </p>
-        </div>
+        </motion.div>
+
         <ToastContainer />
-      </div>
+      </motion.div>
     </div>
   );
 };
