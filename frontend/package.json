@@ -12,6 +12,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.4",
+    "dotenv": "^17.4.2",
     "framer-motion": "^12.26.2",
     "html5-qrcode": "^2.3.8",
     "joi": "^18.0.2",

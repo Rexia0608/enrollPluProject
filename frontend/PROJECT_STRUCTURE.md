@@ -1,6 +1,7 @@
 # Project Structure Documentation
 
 ## Overview
+
 Dashboard application with role-based access (Admin, Faculty, Student)
 
 ## Directory Structure
@@ -93,6 +94,7 @@ dashboard/
 ## Folder Breakdown
 
 ### Root Level Files
+
 - **eslint.config.js** - ESLint configuration
 - **index.html** - Main HTML file
 - **package.json** - Project dependencies and scripts
@@ -100,12 +102,15 @@ dashboard/
 - **vite.config.js** - Vite bundler configuration
 
 ### public/
+
 - Static assets (images, etc.)
 
 ### src/
+
 Main source code directory
 
 #### components/
+
 Reusable React components organized by feature/role
 
 - **admin/** - Admin-specific components
@@ -115,25 +120,35 @@ Reusable React components organized by feature/role
 - **ui/** - Reusable UI components (Button, Card, Dialog, etc.)
 
 #### context/
+
 React Context for state management
+
 - **AuthContext.jsx** - Authentication state
 
 #### pages/
+
 Page-level components representing routes
+
 - Dashboard pages for each role
 - Authentication pages (Login, Register)
 - Error pages (NotFound, Unauthorized)
 - Maintenance page
 
 #### routes/
+
 Route configuration
+
 - **ProtectedRotues.jsx** - Protected route wrapper
 
 #### utils/
+
 Utility functions
+
 - **signInValidation.jsx** - Sign in validation logic
 - **signUpValidation.jsx** - Sign up validation logic
 
 #### view/
+
 View configuration/management
+
 - **views.jsx** - View definitions
