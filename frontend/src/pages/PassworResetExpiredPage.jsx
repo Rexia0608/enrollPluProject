@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import timeUpImage from "/img/timeUp.gif";
 
 function PasswordResetExpiredPage() {
   const [countdown, setCountdown] = useState(15);
@@ -34,7 +33,7 @@ function PasswordResetExpiredPage() {
       >
         <img
           width={200}
-          src={timeUpImage}
+          src="http://localhost:3000/faculty/get-images/timeUp.gif"
           alt="Session expired illustration"
           className="mx-auto mb-4"
         />

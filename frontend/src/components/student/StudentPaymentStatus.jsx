@@ -790,52 +790,50 @@ const StudentPaymentStatus = () => {
     setTimeout(() => setToast(null), 5000);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.id) return;
-      update({ isLoading: true, error: null });
-      try {
-        const enrollmentRes = await axios.get(
-          `http://localhost:3000/student/validate-enrolled-student/${user.id}`,
+  const fetchData = async () => {
+    if (!user?.id) return;
+    update({ isLoading: true, error: null });
+    try {
+      const enrollmentRes = await axios.get(
+        `http://localhost:3000/student/validate-enrolled-student/${user.id}`,
+        getAuthHeaders(),
+      );
+      const enrollmentItems = enrollmentRes.data?.items || [];
+      if (!enrollmentRes.data.success || enrollmentItems.length === 0) {
+        update({ isLoading: false, enrollment: null });
+        return;
+      }
+      const enrollmentData = enrollmentItems[0];
+      update({ enrollment: enrollmentData });
+      if (enrollmentData.enrollment_id) {
+        const paymentsRes = await axios.get(
+          `http://localhost:3000/student/payments-all-periods/${enrollmentData.enrollment_id}`,
           getAuthHeaders(),
         );
-        const enrollmentItems = enrollmentRes.data?.items || [];
-        if (!enrollmentRes.data.success || enrollmentItems.length === 0) {
-          update({ isLoading: false, enrollment: null });
-          return;
+        if (paymentsRes.data.success && Array.isArray(paymentsRes.data.items)) {
+          const payments = paymentsRes.data.items.map((item) => ({
+            id: item.id,
+            period: item.period,
+            payment_status: item.payment_status,
+            paid_amount: parseFloat(item.paid_amount || 0),
+            balance: parseFloat(item.balance || 0),
+            payment_per_period: parseFloat(item.payment_per_period || 0),
+            remarks: item.remarks,
+          }));
+          update({ payments });
+        } else {
+          update({ payments: [] });
         }
-        const enrollmentData = enrollmentItems[0];
-        update({ enrollment: enrollmentData });
-        if (enrollmentData.enrollment_id) {
-          const paymentsRes = await axios.get(
-            `http://localhost:3000/student/payments-all-periods/${enrollmentData.enrollment_id}`,
-            getAuthHeaders(),
-          );
-          if (
-            paymentsRes.data.success &&
-            Array.isArray(paymentsRes.data.items)
-          ) {
-            const payments = paymentsRes.data.items.map((item) => ({
-              id: item.id,
-              period: item.period,
-              payment_status: item.payment_status,
-              paid_amount: parseFloat(item.paid_amount || 0),
-              balance: parseFloat(item.balance || 0),
-              payment_per_period: parseFloat(item.payment_per_period || 0),
-              remarks: item.remarks,
-            }));
-            update({ payments });
-          } else {
-            update({ payments: [] });
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load payment data:", err);
-        update({ error: "Failed to load payment data. Please try again." });
-      } finally {
-        update({ isLoading: false });
       }
-    };
+    } catch (err) {
+      console.error("Failed to load payment data:", err);
+      update({ error: "Failed to load payment data. Please try again." });
+    } finally {
+      update({ isLoading: false });
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [user, getAuthHeaders]);
 
@@ -886,7 +884,7 @@ const StudentPaymentStatus = () => {
           selectedMethod: null,
           showPromiseForm: false,
         });
-        setTimeout(() => window.location.reload(), 2000);
+        await fetchData();
       } else {
         throw new Error(res.data?.message || "Payment failed");
       }

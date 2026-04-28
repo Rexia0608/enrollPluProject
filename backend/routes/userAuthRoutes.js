@@ -7,7 +7,7 @@ import {
   UserRegisterController,
   userAuthDetailCotnroller,
   userAuthSetPasswordController,
-} from "../controller/UserAuthController.js";
+} from "../controller/userAuthController.js";
 import OtpVaildation from "../middleware/OtpVaildation.js";
 import ResendOtpVadation from "../middleware/ResendOtpVadation.js";
 import loginValidation from "../middleware/LoginValidation.js";

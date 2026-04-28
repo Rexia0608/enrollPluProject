@@ -8,6 +8,8 @@ import DashboardContainer from "../components/layout/DashboardContainer";
 import StudentStatus from "../components/student/StudentStatus";
 import EnrollmentProfiling from "../components/student/EnrollmentProfiling";
 import StudentPaymentStatus from "../components/student/StudentPaymentStatus";
+import UpcomingFeatures from "./UpcomingFeatures";
+
 import NotFound from "./NotFound";
 
 function StudentDashboard() {
@@ -30,6 +32,8 @@ function StudentDashboard() {
               <Route index element={<StudentStatus />} />
               <Route path="enrollment" element={<EnrollmentProfiling />} />
               <Route path="payments" element={<StudentPaymentStatus />} />
+              <Route path="support" element={<UpcomingFeatures />} />
+              <Route path="settings" element={<UpcomingFeatures />} />
 
               {/* 404 response when someone crawiling it will catch here */}
               <Route path="*" element={<NotFound />} />

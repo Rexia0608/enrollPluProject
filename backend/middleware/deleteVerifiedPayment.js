@@ -12,7 +12,6 @@ const deleteVerifiedPayment = async (req, res, next) => {
   try {
     const { enrollmentId, action, period } = req.body;
 
-    // Basic validation
     if (!enrollmentId) {
       return res.status(400).json({ message: "enrollmentId is required" });
     }

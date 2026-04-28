@@ -2,7 +2,6 @@
 import { React, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
-import MaintenanceImage from "/img/maintenance.gif?url";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { useState } from "react";
@@ -37,7 +36,7 @@ function MaintenancePage() {
       <div className="text-center">
         <img
           width={400}
-          src={MaintenanceImage}
+          src="http://localhost:3000/faculty/get-images/maintenance.gif"
           alt="System under maintenance"
           className="mx-auto mb-8"
         />
