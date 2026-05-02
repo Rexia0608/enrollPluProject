@@ -34,6 +34,7 @@ function StudentDashboard() {
               <Route path="payments" element={<StudentPaymentStatus />} />
               <Route path="support" element={<UpcomingFeatures />} />
               <Route path="settings" element={<UpcomingFeatures />} />
+              <Route path="profile" element={<UpcomingFeatures />} />
 
               {/* 404 response when someone crawiling it will catch here */}
               <Route path="*" element={<NotFound />} />

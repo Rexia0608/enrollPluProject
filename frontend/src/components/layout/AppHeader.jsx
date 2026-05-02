@@ -21,7 +21,6 @@ const AppHeader = ({ title, onMenuClick }) => {
   const location = useLocation();
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const profileRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -94,13 +93,7 @@ const AppHeader = ({ title, onMenuClick }) => {
       navigate("/login");
     }
   };
-  const notifications = [
-    { id: 1, title: "New enrollment request", time: "10 min ago", read: false },
-    { id: 2, title: "Payment received", time: "1 hour ago", read: true },
-    { id: 3, title: "System update", time: "2 hours ago", read: true },
-  ];
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
   const roleConfig = getRoleConfig();
 
   return (
@@ -157,67 +150,6 @@ const AppHeader = ({ title, onMenuClick }) => {
             >
               <HelpCircle className="w-5 h-5 text-gray-600" />
             </button>
-
-            {/* Notifications */}
-            <div className="relative" ref={notificationsRef}>
-              <button
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
-                aria-label="Notifications"
-              >
-                <Bell className="w-5 h-5 text-gray-600" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Notifications Dropdown */}
-              {isNotificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-gray-200">
-                    <h3 className="font-semibold text-gray-900">
-                      Notifications
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {unreadCount} unread notification
-                      {unreadCount !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${!notification.read ? "bg-blue-50" : ""}`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <p className="font-medium text-gray-900">
-                            {notification.title}
-                          </p>
-                          {!notification.read && (
-                            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {notification.time}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="px-4 py-2 border-t border-gray-200">
-                    <button
-                      onClick={() => navigate("/notifications")}
-                      className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      View all notifications
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
